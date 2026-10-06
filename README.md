@@ -16,7 +16,10 @@ Waterloo course pages at short URLs. A GitHub Action pulls the university's own 
 
 Calendar years 2024–25 onward come from Kuali and are rebuilt here. New years appear automatically when Waterloo publishes them.
 
-## Where the data comes from
+## How I intially thought about approaching it
+uwloo./[2627≥YYyy≥5758]/[subj] uses new course index uwaterloo.ca/academic-calendar/[(under)graduate]-studies/catalog#/courses/ to replicate ucalendar.uwaterloo.ca/[≤2324]/COURSE/course-[SUBJ].html, and uwloo./[subj][ID][suffix] is an updated version of uwflow.com’s outdated requisites and pathways vs acal.fast.uwaterloo.ca/course/[current or 4#’s:Century less 20 + /YY/ + 1stMofTerm]/[subj]/[ID#] and quest.pecs.uW/psc/PB/ACADEMIC/SA/c/NUI_FRAMEWORK.PT_LANDINGPAGE.GBL#:~:text=Class,Search and https://classes.uwaterloo.ca/cgi-bin/cgiwrap/infocour/salook.pl?level=under&sess=[4#’s]&subject=[subj]
+
+## Where the data comes from (All AI gen text below) 
 
 | Source | Used for | Key |
 | --- | --- | --- |
