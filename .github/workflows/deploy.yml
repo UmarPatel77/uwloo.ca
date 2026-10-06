@@ -27,24 +27,43 @@ jobs:
         with:
           node-version: 22
 
-      # Kuali and Open Data responses are cached between runs, so a normal
-      # day only refetches the live calendar's changed courses and this term's seats.
+      # Turns on Pages (source: GitHub Actions), sets the custom domain from CNAME,
+      # enforces HTTPS once the certificate exists, and keeps Cloudflare DNS correct.
+      # Safe to run every time: it only changes what's wrong. See README → Automatic setup.
+      - name: Set up Pages and DNS
+        run: node scripts/setup.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PAGES_ADMIN_TOKEN: ${{ secrets.PAGES_ADMIN_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # From https://github.com/settings/pages_verified_domains (public: it's in DNS anyway)
+          PAGES_VERIFICATION_CODE: 67c92b5ca5948dbed6ce19ff0a1f40
+
+      # Kuali and Open Data responses are cached between runs, so a normal day
+      # only refetches changed courses and this term's seats.
       - name: Restore data cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: .cache
-          key: uwloo-data-${{ github.run_id }}
+          key: uwloo-data-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: uwloo-data-
 
       - name: Test
         run: npm test
 
       - name: Build
+        id: build
         run: node scripts/build.mjs
         env:
           UW_API_KEY: ${{ secrets.UW_API_KEY }}
 
-      - uses: actions/configure-pages@v5
+      # Saved even if a later step fails, so downloaded data is never thrown away.
+      - name: Save data cache
+        if: always() && steps.build.outcome != 'skipped'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache
+          key: uwloo-data-${{ github.run_id }}-${{ github.run_attempt }}
 
       - uses: actions/upload-pages-artifact@v4
         with:

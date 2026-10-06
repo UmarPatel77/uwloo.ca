@@ -6,7 +6,17 @@ import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import * as kuali from './lib/kuali.mjs';
 import * as opendata from './lib/opendata.mjs';
-import { coursePage, homePage, notFoundPage, redirectPage, SITE, subjectPage, yearPage } from './lib/render.mjs';
+import {
+  coursePage,
+  homePage,
+  notFoundPage,
+  redirectPage,
+  SITE,
+  termIndexPage,
+  termSubjectPage,
+  yearPage,
+  yearSubjectPage,
+} from './lib/render.mjs';
 import { offeredHint, slug, treeCodes } from './lib/requisites.mjs';
 import { shiftTerm, termCode, termRange } from './lib/terms.mjs';
 
@@ -15,6 +25,7 @@ const TERMS_BACK = Number(process.env.TERMS_BACK ?? 6);
 const TERMS_AHEAD = Number(process.env.TERMS_AHEAD ?? 2);
 const SECTION_TERMS = Number(process.env.SECTION_TERMS ?? 2); // current + next
 const byNumber = (a, b) => a.number.localeCompare(b.number, 'en', { numeric: true });
+const byCode = (a, b) => a.localeCompare(b, 'en', { numeric: true });
 
 async function write(path, content) {
   const full = join(OUT, path);
@@ -26,26 +37,57 @@ async function writeAll(entries, n = 64) {
   for (let i = 0; i < entries.length; i += n) await Promise.all(entries.slice(i, i + n).map(([p, c]) => write(p, c)));
 }
 
+/** subject → courses, numerically sorted. */
+function bySubject(courses) {
+  const out = new Map();
+  for (const c of courses) {
+    if (!out.has(c.subject)) out.set(c.subject, []);
+    out.get(c.subject).push(c);
+  }
+  for (const list of out.values()) list.sort(byNumber);
+  return out;
+}
+
 async function main() {
   const builtAt = new Date();
   const css = await readFile('site/style.css');
   const js = await readFile('site/app.js');
   const version = createHash('sha1').update(css).update(js).digest('hex').slice(0, 8);
 
-  // 1. Calendars (Kuali)
-  const catalogs = await kuali.loadCatalogList(builtAt);
-  if (!catalogs.length) throw new Error('No undergraduate calendars found in Kuali');
-  for (const cat of catalogs) cat.courses = await kuali.loadCourses(cat);
-  const current = catalogs.find((c) => c.status === 'current');
-  console.log(`Current calendar: ${current.label}`);
+  // 1. Calendars (Kuali): undergrad by academic year, grad by term.
+  const { ug, grad } = await kuali.loadCatalogList(builtAt);
+  if (!ug.length) throw new Error('No undergraduate calendars found in Kuali');
+  if (!grad.length) console.warn('! No graduate calendars found in Kuali; building undergrad only');
+  for (const cat of [...ug, ...grad]) {
+    cat.courses = await kuali.loadCourses(cat);
+    cat.bySubject = bySubject(cat.courses.values());
+    cat.subjects = new Set(cat.bySubject.keys());
+  }
+  const current = ug.find((c) => c.status === 'current');
+  const gradCurrent = grad.find((c) => c.status === 'current') ?? null;
+  console.log(`Current calendars: ${current.label} undergraduate, ${gradCurrent?.label ?? 'none'} graduate`);
 
-  // Which version of each course gets the /code/ page: current calendar, then newer, then most recent older.
-  const priority = [current, ...catalogs.filter((c) => c.status === 'future'), ...catalogs.filter((c) => c.status === 'past').reverse()];
+  // The grad calendar shown on a year's subject pages: the latest term of that academic year that has started.
+  const gradForYear = (yearCode) => {
+    const inYear = grad.filter((g) => g.yearCode === yearCode);
+    return inYear.filter((g) => g.status !== 'future').at(-1) ?? inYear.at(-1) ?? null;
+  };
+  const ugYears = new Set(ug.map((c) => c.yearCode));
+
+  // Which version of each course gets the /code/ page: the live calendars, then newer ones, then the most recent older ones.
+  const priority = [
+    current,
+    gradCurrent,
+    ...ug.filter((c) => c.status === 'future'),
+    ...grad.filter((c) => c.status === 'future'),
+    ...ug.filter((c) => c.status === 'past').reverse(),
+    ...grad.filter((c) => c.status === 'past').reverse(),
+  ].filter(Boolean);
   const primary = new Map();
   for (const cat of priority) for (const [code, course] of cat.courses) if (!primary.has(code)) primary.set(code, { cat, course });
   const known = new Set(primary.keys());
 
-  // "Leads to": every course whose prerequisites or corequisites mention this one.
+  // "Leads to": every course whose prerequisites or corequisites mention this one (undergrad and grad).
   const leadsTo = new Map();
   for (const [code, { course }] of primary) {
     for (const ref of treeCodes([...(course.prereq ?? []), ...(course.coreq ?? [])])) {
@@ -94,20 +136,34 @@ async function main() {
   // 3. Render
   const pages = [];
   const sitemap = [];
-  const calendarBaseFor = (cat) => (cat.status === 'current' ? kuali.CALENDAR_PAGE : null);
+  const ctxBase = { builtAt, version };
 
-  for (const [code, { cat, course }] of primary) {
-    const history = [];
+  // Where a course sits on a calendar page: grad terms that share a year page link there, others to their term page.
+  const subjectHref = (cat, subject, code) =>
+    cat.level === 'ug' || (ugYears.has(cat.yearCode) && gradForYear(cat.yearCode) === cat)
+      ? `/${cat.yearCode}/${slug(subject)}/#${code}`
+      : `/${cat.term}/${slug(subject)}/#${code}`;
+
+  const historyIn = (list, code, href) => {
+    const out = [];
     let prevSig = null;
-    for (const k of catalogs) {
+    for (const k of list) {
       const v = k.courses.get(code);
       if (!v) {
         prevSig = null;
         continue;
       }
-      history.push({ cat: k, changed: prevSig !== null && prevSig !== v.signature });
+      out.push({ cat: k, changed: prevSig !== null && prevSig !== v.signature, href: href(k, v) });
       prevSig = v.signature;
     }
+    return out;
+  };
+
+  for (const [code, { cat, course }] of primary) {
+    const history = {
+      ug: historyIn(ug, code, (k, v) => `/${k.yearCode}/${slug(v.subject)}/#${code}`),
+      grad: historyIn(grad, code, (k, v) => `/${k.term}/${slug(v.subject)}/#${code}`),
+    };
     const strip = offerings
       ? termWindow.map((term) => {
           const t = offerings.terms[term];
@@ -119,10 +175,11 @@ async function main() {
     const sectionsByTerm = Object.entries(sections).map(([term, data]) => ({ term, list: data[code] ?? [] }));
     const leads = [...(leadsTo.get(code) ?? [])]
       .map((c) => ({ code: c, title: primary.get(c).course.title }))
-      .sort((a, b) => a.code.localeCompare(b.code, 'en', { numeric: true }));
+      .sort((a, b) => byCode(a.code, b.code));
     pages.push([
       `${slug(code)}/index.html`,
       coursePage({
+        ...ctxBase,
         course,
         cat,
         known,
@@ -133,71 +190,100 @@ async function main() {
         hint: offeredHint(course.description, course.notesHtml),
         sectionsByTerm,
         curTerm,
-        calendarBase: calendarBaseFor(cat),
-        builtAt,
-        version,
+        subjectHref: subjectHref(cat, course.subject, code).replace(/#.*$/, ''),
       }),
     ]);
     sitemap.push(`/${slug(code)}/`);
   }
 
-  const subjectsByYear = new Map();
-  for (const cat of catalogs) {
-    const bySubject = new Map();
-    for (const c of cat.courses.values()) {
-      if (!bySubject.has(c.subject)) bySubject.set(c.subject, []);
-      bySubject.get(c.subject).push(c);
-    }
-    const subjects = [...bySubject.entries()]
-      .map(([subject, list]) => ({ subject, name: list[0].subjectName, count: list.length, list: list.sort(byNumber) }))
-      .sort((a, b) => a.subject.localeCompare(b.subject));
-    subjectsByYear.set(cat, subjects);
-    for (const s of subjects) {
+  // Year pages (/2627/cs): undergrad, then that year's grad calendar.
+  const yearSubjects = new Map(); // yearCode → [{subject, name, ug, grad}]
+  for (const cat of ug) {
+    const gradCat = ugYears.has(cat.yearCode) ? gradForYear(cat.yearCode) : null;
+    const subjects = [...new Set([...cat.subjects, ...(gradCat?.subjects ?? [])])].sort();
+    const rows = [];
+    for (const subject of subjects) {
+      const ugCourses = cat.bySubject.get(subject) ?? [];
+      const ugCodes = new Set(ugCourses.map((c) => c.code));
+      const gradCourses = (gradCat?.bySubject.get(subject) ?? []).filter((c) => !ugCodes.has(c.code));
+      const name = (ugCourses[0] ?? gradCourses[0]).subjectName;
+      rows.push({ subject, name, ug: ugCourses.length, grad: gradCourses.length });
       pages.push([
-        `${cat.yearCode}/${slug(s.subject)}/index.html`,
-        subjectPage({
+        `${cat.yearCode}/${slug(subject)}/index.html`,
+        yearSubjectPage({
+          ...ctxBase,
           cat,
-          catalogs,
-          subject: s.subject,
-          subjectName: s.name,
-          courses: s.list,
+          catalogs: ug,
+          gradCat,
+          gradCatalogs: grad,
+          subject,
+          subjectName: name,
+          ugCourses,
+          gradCourses,
           known,
-          faculty: subjectFaculty(s.subject),
-          calendarBase: calendarBaseFor(cat),
-          builtAt,
-          version,
+          faculty: subjectFaculty(subject),
         }),
       ]);
-      if (cat === current) sitemap.push(`/${cat.yearCode}/${slug(s.subject)}/`);
+      if (cat === current) sitemap.push(`/${cat.yearCode}/${slug(subject)}/`);
     }
-    pages.push([`${cat.yearCode}/index.html`, yearPage({ cat, catalogs, subjects, builtAt, version })]);
+    yearSubjects.set(cat.yearCode, rows);
+    pages.push([`${cat.yearCode}/index.html`, yearPage({ ...ctxBase, cat, catalogs: ug, gradCat, subjects: rows })]);
     sitemap.push(`/${cat.yearCode}/`);
   }
 
-  // /cs → current year's CS page, as a real file so it isn't a 404.
+  // Grad term pages (/1249/cs): one subject exactly as that term's Graduate Calendar has it.
+  for (const cat of grad) {
+    const rows = [];
+    for (const [subject, courses] of [...cat.bySubject.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+      rows.push({ subject, name: courses[0].subjectName, ug: 0, grad: courses.length });
+      pages.push([
+        `${cat.term}/${slug(subject)}/index.html`,
+        termSubjectPage({ ...ctxBase, cat, gradCatalogs: grad, subject, subjectName: courses[0].subjectName, courses, known, faculty: subjectFaculty(subject) }),
+      ]);
+      if (cat === gradCurrent) sitemap.push(`/${cat.term}/${slug(subject)}/`);
+    }
+    pages.push([`${cat.term}/index.html`, termIndexPage({ ...ctxBase, cat, gradCatalogs: grad, subjects: rows })]);
+    sitemap.push(`/${cat.term}/`);
+  }
+
+  // /cs → the current year's CS page (or the newest page that has the subject), as a real file so it isn't a 404.
   const allSubjects = new Set();
-  for (const subjects of subjectsByYear.values()) for (const s of subjects) allSubjects.add(s.subject);
+  for (const cat of [...ug, ...grad]) for (const s of cat.subjects) allSubjects.add(s);
   for (const s of allSubjects) {
-    const target = (subjectsByYear.get(current).some((x) => x.subject === s) ? current : catalogs.findLast((k) => k.courses.size && subjectsByYear.get(k).some((x) => x.subject === s))).yearCode;
-    pages.push([`${slug(s)}/index.html`, redirectPage(`/${target}/${slug(s)}/`)]);
+    const year = [current, ...[...ug].reverse()].find((k) => yearSubjects.get(k.yearCode)?.some((r) => r.subject === s));
+    const term = [...grad].reverse().find((k) => k.subjects.has(s));
+    const target = year ? `/${year.yearCode}/${slug(s)}/` : `/${term.term}/${slug(s)}/`;
+    pages.push([`${slug(s)}/index.html`, redirectPage(target)]);
   }
 
   const groupNames = { mat: 'Mathematics', eng: 'Engineering', sci: 'Science', hea: 'Health', env: 'Environment', art: 'Arts' };
-  const homeSubjects = subjectsByYear.get(current);
+  const homeSubjects = yearSubjects.get(current.yearCode);
   const groups = subjectVotes.size
     ? [...Object.entries(groupNames), ['other', 'Other']]
         .map(([key, name]) => ({ key, name, subjects: homeSubjects.filter((s) => (subjectFaculty(s.subject) ?? 'other') === key) }))
         .filter((g) => g.subjects.length)
     : [{ key: 'all', name: 'Subjects', subjects: homeSubjects }];
-  pages.push(['index.html', homePage({ current, catalogs, groups, courseCount: current.courses.size, builtAt, version })]);
+  const liveCount = new Set([...current.courses.keys(), ...(gradCurrent?.courses.keys() ?? [])]).size;
+  pages.push(['index.html', homePage({ ...ctxBase, current, catalogs: ug, gradCatalogs: grad, groups, courseCount: liveCount })]);
   sitemap.push('/');
 
-  const meta = { years: catalogs.map((c) => c.yearCode), current: current.yearCode, subjects: [...allSubjects].map(slug).sort() };
-  pages.push(['404.html', notFoundPage({ meta, builtAt, version })]);
+  // Optional page numbers inside the 1963–64 to 1994–95 PDFs: { "8889": { "CS": 412, "CS134": 415 } }
+  let pdfPages = {};
+  try {
+    pdfPages = JSON.parse(await readFile('data/archive-pages.json', 'utf8'));
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw new Error(`data/archive-pages.json: ${err.message}`);
+  }
+  const meta = {
+    years: ug.map((c) => c.yearCode),
+    current: current.yearCode,
+    gradTerms: grad.map((c) => c.term),
+    subjects: [...allSubjects].map(slug).sort(),
+    pdfPages,
+  };
+  pages.push(['404.html', notFoundPage({ ...ctxBase, meta })]);
 
-  const search = [...primary.entries()]
-    .map(([code, { course }]) => [code, course.title])
-    .sort((a, b) => a[0].localeCompare(b[0], 'en', { numeric: true }));
+  const search = [...primary.entries()].map(([code, { course }]) => [code, course.title]).sort((a, b) => byCode(a[0], b[0]));
   pages.push(['search.json', JSON.stringify(search)]);
   pages.push(['sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemap.map((p) => `<url><loc>${SITE}${p}</loc></url>`).join('\n')}\n</urlset>\n`]);
   pages.push(['robots.txt', `User-agent: *\nAllow: /\nSitemap: ${SITE}/sitemap.xml\n`]);
@@ -208,7 +294,8 @@ async function main() {
   await mkdir(OUT, { recursive: true });
   await cp('site', OUT, { recursive: true });
   await writeAll(pages);
-  console.log(`Wrote ${pages.length} files to ${OUT}/ (${primary.size} course pages)`);
+  const gradOnly = [...primary.values()].filter((p) => p.cat.level === 'grad').length;
+  console.log(`Wrote ${pages.length} files to ${OUT}/ (${primary.size} course pages, ${gradOnly} from the Graduate Calendar)`);
 }
 
 main().catch((err) => {

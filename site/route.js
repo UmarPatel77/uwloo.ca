@@ -4,11 +4,20 @@
 //   /cs                               → /{current year}/cs/
 //   /2627/cs   (Kuali years)          → /2627/cs/
 //   /2627/cs135, /2627/cs/135         → /2627/cs/#CS135
-//   /2223/cs   (2324 and earlier)     → ucalendar.uwaterloo.ca/2223/COURSE/course-CS.html
+//   /2223/cs   (9596 to 2324)         → ucalendar.uwaterloo.ca/2223/COURSE/course-CS.html
 //   /2223/cs135                       → …/course-CS.html#CS135
+//   /8889/cs   (6364 to 9495)         → ucalendar.uwaterloo.ca/6394/1988-89.pdf, at the CS page if indexed
+//   /8889/cs134                       → same PDF, at CS 134's page if indexed
+//   /1249, /1249/cs   (grad terms)    → /1249/cs/  Graduate Calendar for that term (Spring 2024 on)
 //   /1269/cs135, /1269/cs/135         → acal.fast.uwaterloo.ca/course/1269/CS/135
 
 const UCAL = 'https://ucalendar.uwaterloo.ca';
+const PDF_ARCHIVE = 'http://www.ucalendar.uwaterloo.ca/6394';
+const FIRST_ONLINE = 1963; // 1963–64, the oldest calendar UW has online
+const FIRST_HTML = 1995; // 1995–96; 1963–64 to 1994–95 are scanned PDFs
+
+/** 1988 → http://www.ucalendar.uwaterloo.ca/6394/1988-89.pdf */
+export const pdfUrl = (start) => `${PDF_ARCHIVE}/${start}-${String((start + 1) % 100).padStart(2, '0')}.pdf`;
 const ACAL = 'https://acal.fast.uwaterloo.ca/course';
 
 export function splitCode(s) {
@@ -29,6 +38,18 @@ export function yearInfo(s) {
 }
 
 const isTerm = (s) => /^\d\d\d[159]$/.test(s);
+const SEASONS = { 1: 'Winter', 5: 'Spring', 9: 'Fall' };
+const termName = (t) => `${SEASONS[t[3]]} ${(Number(t[0]) + 19) * 100 + Number(t.slice(1, 3))}`;
+
+/** /1249 or /1249/cs: a Graduate Calendar term page, or why there isn't one. */
+function gradTerm(term, meta, subject) {
+  const terms = meta.gradTerms ?? [];
+  if (terms.includes(term)) return { type: 'redirect', to: `/${term}/${subject ? `${subject}/` : ''}` };
+  if (terms.length && Number(term) < Number(terms[0])) {
+    return { type: 'notfound', message: `Graduate Calendars before ${termName(terms[0])} aren’t on uwloo yet.` };
+  }
+  return { type: 'notfound', message: `There’s no ${termName(term)} Graduate Calendar yet.` };
+}
 const isSubject = (s) => /^[a-z]{2,8}$/.test(s);
 
 function yearTarget(y, meta, subject, number) {
@@ -38,15 +59,24 @@ function yearTarget(y, meta, subject, number) {
     if (!S) return { type: 'redirect', to: `/${y.code}/` };
     return { type: 'redirect', to: `/${y.code}/${S.toLowerCase()}/${code ? `#${code}` : ''}` };
   }
-  if (y.start >= 1957 && y.start <= 2023) {
+  if (y.start >= FIRST_HTML && y.start <= 2023) {
     if (!S) return { type: 'redirect', to: `${UCAL}/${y.code}/` };
     return { type: 'redirect', to: `${UCAL}/${y.code}/COURSE/course-${S}.html${code ? `#${code}` : ''}` };
   }
-  const why = y.start < 1957 ? 'Waterloo’s first calendar is 1957–58.' : `The ${y.start}–${String((y.start + 1) % 100).padStart(2, '0')} calendar isn’t published yet.`;
+  if (y.start >= FIRST_ONLINE && y.start < FIRST_HTML) {
+    // Page numbers come from data/archive-pages.json when someone has indexed that year.
+    const pages = meta.pdfPages?.[y.code] ?? {};
+    const page = (code && pages[code]) || (S && pages[S]);
+    return { type: 'redirect', to: `${pdfUrl(y.start)}${page ? `#page=${page}` : ''}` };
+  }
+  const why =
+    y.start < FIRST_ONLINE
+      ? 'Waterloo’s online calendar archive starts at 1963–64.'
+      : `The ${y.start}–${String((y.start + 1) % 100).padStart(2, '0')} calendar isn’t published yet.`;
   return { type: 'notfound', message: why };
 }
 
-/** meta: { years: ['2425','2526','2627'], current: '2627', subjects: ['cs', 'math', …] } */
+/** meta: { years: ['2425','2526','2627'], current: '2627', gradTerms: ['1245', …], subjects: ['cs', 'math', …], pdfPages?: { '8889': { CS: 412 } } } */
 export function resolve(pathname, meta) {
   let path;
   try {
@@ -67,6 +97,7 @@ export function resolve(pathname, meta) {
 
   if (segs.length === 1) {
     if (year) return done(yearTarget(year, meta));
+    if (isTerm(a)) return done(gradTerm(a, meta));
     const code = normalizeCode(a);
     if (code) return done({ type: 'redirect', to: `/${code}/` });
     if (isSubject(a) && (!meta.subjects || meta.subjects.includes(a))) return done({ type: 'redirect', to: `/${meta.current}/${a}/` });
@@ -78,6 +109,8 @@ export function resolve(pathname, meta) {
     const parts = splitCode(segs.length === 2 ? b : `${b}${c}`);
     if (parts && segs.length <= 3) return done(yearTarget(year, meta, parts.subject, parts.number));
   }
+
+  if (isTerm(a) && segs.length === 2 && isSubject(b)) return done(gradTerm(a, meta, b));
 
   if (isTerm(a)) {
     const parts = splitCode(segs.length === 2 ? b : `${b}${c ?? ''}`);

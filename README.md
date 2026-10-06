@@ -6,21 +6,25 @@ Waterloo course pages at short URLs. A GitHub Action pulls the university's own 
 
 | You type | You get |
 | --- | --- |
-| `uwloo.ca/cs135` (also `/CS135`, `/cs-135`, `/cs/135`) | Course page: prerequisites, corequisites, antirequisites, what it leads to, the last 7 terms it ran, this term's and next term's sections with seats, and links out |
-| `uwloo.ca/2627/cs` | Every CS course in the 2026–27 calendar on one page, ucalendar style |
+| `uwloo.ca/cs135`, `uwloo.ca/cs686` (also `/CS135`, `/cs-135`, `/cs/135`) | Course page, undergrad or grad: prerequisites, corequisites, antirequisites, what it leads to, the last 7 terms it ran, this term's and next term's sections with seats, and links out |
+| `uwloo.ca/2627/cs` | Every CS course for 2026–27 on one page, ucalendar style: the Undergraduate Calendar's courses, then the Graduate Calendar's (that year's latest term) |
 | `uwloo.ca/2627/cs135` | Same page, scrolled to CS 135 |
+| `uwloo.ca/1249/cs` | Graduate CS courses exactly as the Fall 2024 Graduate Calendar has them, for every term from Spring 2024 on |
+| `uwloo.ca/1249` | All subjects in the Fall 2024 Graduate Calendar |
 | `uwloo.ca/cs` | The current calendar year's CS page |
 | `uwloo.ca/2627` | All subjects in the 2026–27 calendar |
-| `uwloo.ca/2324/cs` and any year back to `5758` | Redirects to `ucalendar.uwaterloo.ca/2324/COURSE/course-CS.html` |
+| `uwloo.ca/2324/cs`, any year from `9596` to `2324` | Redirects to `ucalendar.uwaterloo.ca/2324/COURSE/course-CS.html` |
+| `uwloo.ca/8889/cs`, any year from `6364` to `9495` | Redirects to that year's scanned calendar, `ucalendar.uwaterloo.ca/6394/1988-89.pdf`, at the CS page if `data/archive-pages.json` has it |
+| `uwloo.ca/6263/…` and earlier | Not online; says the archive starts at 1963–64 |
 | `uwloo.ca/1269/cs135` | Redirects to `acal.fast.uwaterloo.ca/course/1269/CS/135` |
 
-Calendar years 2024–25 onward come from Kuali and are rebuilt here. New years appear automatically when Waterloo publishes them.
+Undergraduate calendars from 2024–25 and graduate calendars from Spring 2024 come from Kuali and are rebuilt here. New years and terms appear automatically when Waterloo publishes them. Graduate calendars before Spring 2024 aren't included yet.
 
 ## Where the data comes from
 
 | Source | Used for | Key |
 | --- | --- | --- |
-| Kuali catalog API (`uwaterloocm.kuali.co/api/v1/catalog`), the JSON behind `uwaterloo.ca/academic-calendar/undergraduate-studies/catalog` | Every course, description, requisite, note, and cross-listing, for each calendar year | None |
+| Kuali catalog API (`uwaterloocm.kuali.co/api/v1/catalog`), the JSON behind `uwaterloo.ca/academic-calendar/undergraduate-studies/catalog` | Every undergraduate and graduate course, description, requisite, note, and cross-listing, for each calendar year (undergrad) and term (grad) | None |
 | UW Open Data API v3 (`openapi.data.uwaterloo.ca/v3`) | Which terms a course ran in, faculty, sections and seats for the current and next term | Free, optional |
 
 Pages link out to the Schedule of Classes, Quest Class Search, acal, the official calendar entry, and UW Flow reviews. Those sites are linked, not scraped: the Schedule of Classes disallows automated access and is being retired, and Quest needs a session.
@@ -29,33 +33,55 @@ Open Data withholds instructor names and rooms and can trail Quest by up to two 
 
 ## Setup
 
-1. **Create the repo.** Push this folder to a new GitHub repo (any name, e.g. `uwloo.ca`) on the `main` branch.
-2. **Turn on Pages.** Settings → Pages → Source: **GitHub Actions**.
-3. **Add the Open Data key (optional but recommended).** Keys are requested through the API itself:
+Most of this is automatic. Every workflow run starts with `scripts/setup.mjs`, which turns on GitHub Pages with source **GitHub Actions**, sets the custom domain from `CNAME`, keeps the Cloudflare DNS records correct, and turns on **Enforce HTTPS** as soon as GitHub has issued the certificate. It only changes what's wrong, so it's safe on every run. Each run's summary page shows a status table.
+
+### One-time steps
+
+1. **Push this folder** to a public GitHub repo on the `main` branch.
+2. **Add two tokens** as repository secrets (Settings → Secrets and variables → Actions → New repository secret):
+
+   | Secret | Where to make it | Permissions |
+   | --- | --- | --- |
+   | `PAGES_ADMIN_TOKEN` | <https://github.com/settings/personal-access-tokens/new> (fine-grained) | Repository access: only this repo. Repository permissions: **Pages** read and write, **Administration** read and write |
+   | `CLOUDFLARE_API_TOKEN` | <https://dash.cloudflare.com/profile/api-tokens> → Create Token → template **Edit zone DNS** | Zone resources: include, specific zone, `uwloo.ca` |
+
+   The workflow's built-in token isn't allowed to change Pages settings, which is why the first is needed. Fine-grained tokens expire (a year at most); if it lapses, runs keep deploying and the summary shows a warning until you replace it.
+3. **Optional: add `UW_API_KEY`** the same way, for offering history and seats. Keys are requested through the API itself:
 
    ```sh
    curl -X POST https://openapi.data.uwaterloo.ca/v3/account/register \
      -d 'email=YOU@uwaterloo.ca&project=uwloo.ca&uri=https%3A%2F%2Fuwloo.ca'
    ```
 
-   An email arrives with the key and a confirmation code; activate it with `POST /v3/account/confirm` (email + code), per the [getting started guide](https://github.com/uwaterloo/OpenData/wiki/Home---Getting-Started). Then Settings → Secrets and variables → Actions → New repository secret, name `UW_API_KEY`. Without a key the site still builds; course pages just skip the term strip and sections.
-4. **Run it.** Actions → "Build and deploy uwloo.ca" → Run workflow. The first run fetches every course in every Kuali year (several thousand requests, roughly 15–30 minutes). Later runs reuse the cache and take a few minutes.
-5. **Verify the domain.** Your GitHub profile → Settings → Pages → Add a domain → `uwloo.ca`, then add the TXT record it shows. This stops anyone else from claiming the domain on GitHub.
-6. **Point DNS at GitHub** (at your registrar, for `uwloo.ca`):
+   The email you get has the key and a code; activate it with `POST /v3/account/confirm`, per the [getting started guide](https://github.com/uwaterloo/OpenData/wiki/Home---Getting-Started).
+4. **Run it.** Actions → "Build and deploy uwloo.ca" → Run workflow. The first build fetches every course in every undergraduate and graduate calendar (about 30–60 minutes); later runs reuse the cache and take a few minutes.
+5. **Verify the domain, once.** GitHub has no API for this button. The workflow puts the TXT record in Cloudflare (the code is in `.github/workflows/deploy.yml`), then you click **Verify** at <https://github.com/settings/pages_verified_domains>.
 
-   | Type | Name | Value |
-   | --- | --- | --- |
-   | A | @ | 185.199.108.153 |
-   | A | @ | 185.199.109.153 |
-   | A | @ | 185.199.110.153 |
-   | A | @ | 185.199.111.153 |
-   | AAAA | @ | 2606:50c0:8000::153 |
-   | AAAA | @ | 2606:50c0:8001::153 |
-   | AAAA | @ | 2606:50c0:8002::153 |
-   | AAAA | @ | 2606:50c0:8003::153 |
-   | CNAME | www | `YOUR-GITHUB-USERNAME.github.io` |
+HTTPS is usually ready within an hour of the first run. The next run (daily, or Run workflow) turns on Enforce HTTPS.
 
-7. **Set the custom domain.** Settings → Pages → Custom domain: `uwloo.ca` → Save. Once the DNS check passes, tick **Enforce HTTPS**. GitHub redirects `www.uwloo.ca` to `uwloo.ca` on its own.
+### What setup puts in Cloudflare
+
+| Type | Name | Content | Proxy |
+| --- | --- | --- | --- |
+| CNAME | `uwloo.ca` | `<owner>.github.io` | DNS only |
+| CNAME | `www` | `<owner>.github.io` | DNS only |
+| TXT | `_github-pages-challenge-<owner>` | the verification code | — |
+
+Records stay **DNS only** because GitHub can't issue its certificate through Cloudflare's proxy. Other records in the zone are left alone. Without `CLOUDFLARE_API_TOKEN`, setup skips DNS and you add these by hand.
+
+### Without the tokens
+
+Setup still checks things and says what's missing. Set Settings → Pages → Source to **GitHub Actions**, enter `uwloo.ca` under Custom domain, add the DNS records above, and tick Enforce HTTPS when GitHub offers it.
+
+## Page numbers for the PDF years
+
+`data/archive-pages.json` maps a year to the PDF page where each subject (and optionally each course) starts:
+
+```json
+{ "8889": { "CS": 412, "CS134": 415, "MATH": 389 } }
+```
+
+`/8889/cs` then opens the 1988–89 PDF at page 412; `/8889/cs134` at 415. Anything not listed opens the PDF at the start. Use the page number your PDF viewer shows (the PDF's own page count, not the number printed on the page). The ucalendar host disallows automated access, so the build never downloads these PDFs; the index is filled in by hand or from copies you've downloaded.
 
 ## Local development
 
@@ -85,6 +111,7 @@ Environment variables for `scripts/build.mjs`:
 
 ```
 .github/workflows/deploy.yml   daily build + Pages deploy
+scripts/setup.mjs              Pages settings + Cloudflare DNS, run before each build
 scripts/build.mjs              fetch, join, render, write dist/
 scripts/lib/kuali.mjs          calendar years and courses
 scripts/lib/opendata.mjs       offerings, faculty, sections
@@ -92,6 +119,7 @@ scripts/lib/requisites.mjs     Kuali requisite HTML → plain-language tree
 scripts/lib/render.mjs         page templates
 scripts/lib/terms.mjs          term codes (1269) and year codes (2627)
 scripts/test.mjs               unit tests, run before every build
+data/archive-pages.json        optional page numbers inside the 1963–64 to 1994–95 PDFs
 site/                          CSS, client JS, the URL router used by 404.html
 ```
 

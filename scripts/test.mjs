@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { toSection } from './lib/opendata.mjs';
+import { desiredRecords, planPages, planRecord } from './setup.mjs';
+import { classifyCatalogs } from './lib/kuali.mjs';
 import { kualiToTree, norm, renderTree, sanitize, treeCodes } from './lib/requisites.mjs';
 import { parseYearCode, shiftTerm, termCode, termName, termRange } from './lib/terms.mjs';
 import { resolve } from '../site/route.js';
@@ -27,7 +29,7 @@ test('academic year codes', () => {
   assert.equal(parseYearCode('2628'), null);
 });
 
-const meta = { years: ['2425', '2526', '2627'], current: '2627', subjects: ['cs', 'math'] };
+const meta = { years: ['2425', '2526', '2627'], current: '2627', subjects: ['cs', 'math'], gradTerms: ['1245', '1249', '1251', '1255', '1259', '1261', '1265', '1269'] };
 const to = (p) => resolve(p, meta).to;
 
 test('router: course codes in any form', () => {
@@ -46,11 +48,28 @@ test('router: subjects and Kuali years', () => {
   assert.equal(resolve('/zzz', meta).type, 'notfound');
 });
 
-test('router: 2324 and earlier go to ucalendar', () => {
+test('router: 9596 to 2324 go to ucalendar pages', () => {
   assert.equal(to('/2324/cs'), 'https://ucalendar.uwaterloo.ca/2324/COURSE/course-CS.html');
   assert.equal(to('/0910/math135'), 'https://ucalendar.uwaterloo.ca/0910/COURSE/course-MATH.html#MATH135');
-  assert.equal(to('/5758'), 'https://ucalendar.uwaterloo.ca/5758/');
+  assert.equal(to('/9596/math'), 'https://ucalendar.uwaterloo.ca/9596/COURSE/course-MATH.html');
   assert.match(resolve('/2829/cs', meta).message, /isn’t published yet/);
+});
+
+test('router: 6364 to 9495 go to that year’s PDF', () => {
+  assert.equal(to('/9495/math'), 'http://www.ucalendar.uwaterloo.ca/6394/1994-95.pdf');
+  assert.equal(to('/8889/cs'), 'http://www.ucalendar.uwaterloo.ca/6394/1988-89.pdf');
+  assert.equal(to('/6364'), 'http://www.ucalendar.uwaterloo.ca/6394/1963-64.pdf');
+  assert.equal(to('/9900/cs'), 'https://ucalendar.uwaterloo.ca/9900/COURSE/course-CS.html');
+  assert.match(resolve('/6263/math', meta).message, /starts at 1963–64/);
+  assert.match(resolve('/5758', meta).message, /starts at 1963–64/);
+});
+
+test('router: indexed PDF pages', () => {
+  const m = { ...meta, pdfPages: { 8889: { CS: 412, CS134: 415 } } };
+  assert.equal(resolve('/8889/cs', m).to, 'http://www.ucalendar.uwaterloo.ca/6394/1988-89.pdf#page=412');
+  assert.equal(resolve('/8889/cs134', m).to, 'http://www.ucalendar.uwaterloo.ca/6394/1988-89.pdf#page=415');
+  assert.equal(resolve('/8889/cs/999', m).to, 'http://www.ucalendar.uwaterloo.ca/6394/1988-89.pdf#page=412');
+  assert.equal(resolve('/8889/math', m).to, 'http://www.ucalendar.uwaterloo.ca/6394/1988-89.pdf');
 });
 
 test('router: term codes go to acal', () => {
@@ -136,4 +155,79 @@ test('Open Data class → section', () => {
   assert.equal(s.sec, '001');
   assert.deepEqual(s.meets[0], { days: 'MWF', start: '10:30', end: '11:20', date: null });
   assert.equal(s.meets[1].date, '2026-10-14');
+});
+
+test('setup: DNS records for a GitHub Pages apex domain', () => {
+  const want = desiredRecords({ domain: 'uwloo.ca', owner: 'UmarPatel77', code: 'abc123' });
+  assert.deepEqual(want.map((r) => [r.type, r.name, r.content]), [
+    ['CNAME', 'uwloo.ca', 'umarpatel77.github.io'],
+    ['CNAME', 'www.uwloo.ca', 'umarpatel77.github.io'],
+    ['TXT', '_github-pages-challenge-umarpatel77.uwloo.ca', '"abc123"'],
+  ]);
+});
+
+test('setup: fixes the records you had (proxied apex, www → uwloo.ca)', () => {
+  const [apex, www, txt] = desiredRecords({ domain: 'uwloo.ca', owner: 'UmarPatel77', code: 'abc123' });
+  assert.deepEqual(planRecord(apex, [{ id: 1, type: 'CNAME', content: 'umarpatel77.github.io', proxied: true }]).map((x) => x.op), ['update']);
+  const w = planRecord(www, [{ id: 2, type: 'CNAME', content: 'uwloo.ca', proxied: true }]);
+  assert.equal(w[0].op, 'update');
+  assert.equal(w[0].body.content, 'umarpatel77.github.io');
+  assert.equal(w[0].body.proxied, false);
+  // Cloudflare may return TXT content with or without quotes; both count as correct.
+  assert.deepEqual(planRecord(txt, [{ id: 3, type: 'TXT', content: 'abc123' }]).map((x) => x.op), ['ok']);
+  assert.deepEqual(planRecord(txt, []).map((x) => x.op), ['create']);
+});
+
+test('setup: a CNAME replaces clashing A/AAAA records', () => {
+  const [apex] = desiredRecords({ domain: 'uwloo.ca', owner: 'u' });
+  const ops = planRecord(apex, [
+    { id: 1, type: 'A', content: '185.199.108.153' },
+    { id: 2, type: 'AAAA', content: '2606:50c0:8000::153' },
+    { id: 3, type: 'TXT', content: 'keep me' },
+  ]);
+  assert.deepEqual(ops.map((x) => `${x.op}:${x.record?.id ?? 'new'}`), ['delete:1', 'delete:2', 'create:new']);
+});
+
+test('setup: Pages settings', () => {
+  assert.deepEqual(planPages(null, 'uwloo.ca'), { create: true, update: { build_type: 'workflow', cname: 'uwloo.ca' } });
+  assert.deepEqual(planPages({ build_type: 'legacy', cname: null }, 'uwloo.ca').update, { build_type: 'workflow', cname: 'uwloo.ca' });
+  assert.deepEqual(planPages({ build_type: 'workflow', cname: 'uwloo.ca' }, 'uwloo.ca').update, {});
+});
+
+test('router: grad term pages', () => {
+  assert.equal(to('/1249/CS'), '/1249/cs/');
+  assert.equal(to('/1245/STAT'), '/1245/stat/');
+  assert.equal(resolve('/1249/cs/', meta).type, 'notfound'); // exists-check: same path means no such page
+  assert.match(resolve('/1241/cs', meta).message, /before Spring 2024 aren’t on uwloo yet/);
+  assert.match(resolve('/1239', meta).message, /before Spring 2024/);
+  assert.match(resolve('/1275/cs', meta).message, /no Spring 2027 Graduate Calendar yet/);
+  assert.equal(to('/1249/cs686'), 'https://acal.fast.uwaterloo.ca/course/1249/CS/686');
+  assert.equal(to('/2627/cs686'), '/2627/cs/#CS686');
+});
+
+test('catalogs: undergrad years and grad terms from Kuali titles', () => {
+  const raw = [
+    { id: 'u5', title: '2025-2026 Undergraduate Studies Academic Calendar', startDate: '2025-05-01', endDate: '2026-04-30' },
+    { id: 'u6', title: '2026-2027 Undergraduate Studies Academic Calendar', startDate: '2026-05-01', endDate: '2027-04-30' },
+    { id: 'u3', title: '2023-2024 Undergraduate Studies Academic Calendar', startDate: '2023-05-01' },
+    { id: 'g0', title: 'Graduate Studies Academic Calendar Winter 2024', startDate: '2024-01-01' },
+    { id: 'g1', title: 'Spring 2024 Graduate Studies Academic Calendar', startDate: '2024-05-01', endDate: '2024-08-31' },
+    { id: 'g2', title: 'Graduate Studies Academic Calendar - Fall 2024', startDate: '2024-09-01', endDate: '2024-12-31' },
+    { id: 'g3', title: 'Graduate Studies Academic Calendar', startDate: '2025-01-01', endDate: '2025-04-30' },
+    { id: 'g4', title: 'Graduate Studies Academic Calendar 2026 Fall', startDate: '2026-09-01', endDate: '2026-12-31' },
+    { id: 'g5', title: 'Graduate Studies Academic Calendar Winter 2027', startDate: '2027-01-01', endDate: '2027-04-30' },
+    { id: 'gx', title: 'Graduate Studies Academic Calendar Fall 2026 (draft copy)', startDate: '2026-09-01' },
+  ];
+  const { ug, grad } = classifyCatalogs(raw, new Date('2026-10-06T12:00:00Z'));
+  assert.deepEqual(ug.map((c) => [c.yearCode, c.status]), [['2526', 'past'], ['2627', 'current']]);
+  assert.equal(ug[0].pageUrl, 'https://uwaterloo.ca/academic-calendar/undergraduate-studies/catalog/archive/2025-2026');
+  assert.deepEqual(grad.map((c) => [c.term, c.label, c.yearCode, c.status]), [
+    ['1245', 'Spring 2024', '2324', 'past'],
+    ['1249', 'Fall 2024', '2425', 'past'],
+    ['1251', 'Winter 2025', '2425', 'past'],
+    ['1269', 'Fall 2026', '2627', 'current'],
+    ['1271', 'Winter 2027', '2627', 'future'],
+  ]);
+  assert.equal(grad[0].pageUrl, 'https://uwaterloo.ca/academic-calendar/graduate-studies/catalog/archive/spring-2024');
+  assert.equal(grad[3].pageUrl, 'https://uwaterloo.ca/academic-calendar/graduate-studies/catalog');
 });

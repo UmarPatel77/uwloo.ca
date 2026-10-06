@@ -1,5 +1,5 @@
 import { esc, fmtCode, linkCodes, renderTree, sanitize, slug } from './requisites.mjs';
-import { CALENDAR_PAGE, calendarCourseUrl } from './kuali.mjs';
+import { CALENDAR_PAGE, GRAD_CALENDAR_PAGE, calendarCourseUrl } from './kuali.mjs';
 import { FACULTY_NAMES } from './opendata.mjs';
 import { termName, termShort } from './terms.mjs';
 
@@ -7,6 +7,7 @@ export const SITE = 'https://uwloo.ca';
 const FONTS = 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap';
 const UCAL = 'https://ucalendar.uwaterloo.ca';
 const QUEST = 'https://quest.pecs.uwaterloo.ca/psc/PB/ACADEMIC/SA/c/NUI_FRAMEWORK.PT_LANDINGPAGE.GBL';
+const ARCHIVES = 'https://uwaterloo.ca/academic-calendar/archives';
 
 const fmtUnits = (u) => (u == null ? null : u.toFixed(2));
 const fmtDate = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', timeZone: 'UTC' });
@@ -42,7 +43,7 @@ ${head}
 ${body}
 </main>
 <footer>
-  <p>Unofficial. The <a href="${CALENDAR_PAGE}">Undergraduate Calendar</a> is the authority on requirements.</p>
+  <p>Unofficial. The <a href="${CALENDAR_PAGE}">Undergraduate</a> and <a href="${GRAD_CALENDAR_PAGE}">Graduate</a> Calendars are the authority on requirements.</p>
   <p>Course data from Waterloo’s Academic Calendar; offerings and seats from <a href="https://openapi.data.uwaterloo.ca/api-docs">UW Open Data</a>. Rebuilt ${esc(fmtStamp(builtAt).replace(/\.?$/, '.'))}</p>
 </footer>
 <script type="module" src="/app.js?v=${version}"></script>
@@ -113,54 +114,71 @@ function sectionsHtml(term, list, course) {
 }
 
 export function coursePage(ctx) {
-  const { course: c, cat, known, leadsTo, history, faculty, strip, hint, sectionsByTerm, curTerm, calendarBase } = ctx;
+  const { course: c, cat, known, leadsTo, history, faculty, strip, hint, sectionsByTerm, curTerm, subjectHref } = ctx;
   const S = c.subject;
   const N = c.number;
-  const level = Number.parseInt(N, 10) >= 600 ? 'grad' : 'under';
+  const isGrad = cat.level === 'grad';
+  const calendarName = isGrad ? 'Graduate Calendar' : 'Undergraduate Calendar';
+  const socLevel = isGrad || Number.parseInt(N, 10) >= 600 ? 'grad' : 'under';
   const facts = [
     c.units != null && ['Units', fmtUnits(c.units)],
+    isGrad && ['Level', 'Graduate'],
     faculty && ['Faculty', FACULTY_NAMES[faculty]],
-    ['Subject', `<a href="/${cat.yearCode}/${slug(S)}/">${esc(c.subjectName)}</a>`],
+    ['Subject', `<a href="${esc(subjectHref)}">${esc(c.subjectName)}</a>`],
     c.crossListed.length && ['Cross-listed', c.crossListed.map((x) => linkCodes(fmtCode(x), known)).join(', ')],
   ].filter(Boolean);
 
   const block = (id, heading, tree) =>
-    `<section aria-labelledby="${id}"><h2 id="${id}">${heading}</h2>${tree ? renderTree(tree, known, calendarBase) : '<p class="none">None listed.</p>'}</section>`;
+    `<section aria-labelledby="${id}"><h2 id="${id}">${heading}</h2>${tree ? renderTree(tree, known, cat.pageUrl) : '<p class="none">None listed.</p>'}</section>`;
 
   const leads = leadsTo.length
     ? `<ul class="leads">${leadsTo.map((x) => `<li><a class="cc" href="/${slug(x.code)}/" title="${esc(x.title)}">${esc(fmtCode(x.code))}</a></li>`).join('')}</ul>`
     : '<p class="none">No course lists it as a requisite.</p>';
 
   const notes = sanitize(c.notesHtml, known);
-
   const sectionBlocks = sectionsByTerm.filter((s) => s.list.length).map((s) => sectionsHtml(s.term, s.list, c)).join('\n');
 
   const out = [
-    cat.status === 'current' && [`${calendarCourseUrl(c.pid)}`, `Undergraduate Calendar, ${cat.label}`, 'The official entry'],
+    [calendarCourseUrl(cat, c.pid), `${calendarName}, ${cat.label}`, cat.status === 'past' ? 'The archived entry' : 'The official entry'],
     [`https://acal.fast.uwaterloo.ca/course/${curTerm}/${S}/${N}`, `Requirements for ${termName(curTerm)}`, 'Waterloo’s requisite checker'],
     [
-      `https://classes.uwaterloo.ca/cgi-bin/cgiwrap/infocour/salook.pl?level=${level}&sess=${curTerm}&subject=${S}&cournum=${N}`,
+      `https://classes.uwaterloo.ca/cgi-bin/cgiwrap/infocour/salook.pl?level=${socLevel}&sess=${curTerm}&subject=${S}&cournum=${N}`,
       `Schedule of Classes, ${termName(curTerm)}`,
       'Instructors, rooms, live seats',
     ],
     [QUEST, 'Quest Class Search', 'Where you enrol'],
     [`https://uwflow.com/course/${slug(c.code)}`, 'UW Flow', 'Student ratings and reviews'],
-  ].filter(Boolean);
+  ];
 
-  const versions = history
-    .map(
-      (h) =>
-        `<li><a href="/${h.cat.yearCode}/${slug(S)}/#${c.code}">${esc(h.cat.label)}</a>${h.changed ? ' <span class="changed">requisites changed</span>' : ''}${h.cat === cat ? ' <span class="t">(shown here)</span>' : ''}</li>`,
-    )
+  const verItems = (items) =>
+    items
+      .map(
+        (h) =>
+          `<li><a href="${esc(h.href)}">${esc(h.cat.label)}</a>${h.changed ? ' <span class="changed">requisites changed</span>' : ''}${h.cat === cat ? ' <span class="t">(shown here)</span>' : ''}</li>`,
+      )
+      .join('');
+  const versions = [
+    history.ug.length &&
+      `<h3 class="ver-h">Undergraduate Calendar</h3><ul class="versions">${verItems(history.ug)}<li><a href="${UCAL}/2324/COURSE/course-${S}.html#${c.code}">2023–24 and earlier</a> <span class="t">on ucalendar</span></li></ul>`,
+    history.grad.length &&
+      `<h3 class="ver-h">Graduate Calendar</h3><ul class="versions">${verItems(history.grad)}<li><a href="${ARCHIVES}">Winter 2024 and earlier</a> <span class="t">in the calendar archives</span></li></ul>`,
+  ]
+    .filter(Boolean)
     .join('');
 
+  const note =
+    cat.status === 'past'
+      ? `Not in the current ${calendarName}. Shown as it appeared in ${cat.label}.`
+      : cat.status === 'future'
+        ? `New in the ${cat.label} ${calendarName}.`
+        : '';
   const desc = c.description || (c.detailMissing ? 'The calendar entry could not be loaded on the last rebuild.' : '');
 
   const body = `<article class="course">
 <header class="course-head">
   <h1><span class="code">${esc(fmtCode(c.code))}</span><span class="title">${esc(c.title)}</span></h1>
   <dl class="facts">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
-  ${cat.status !== 'current' ? `<p class="gone-note">${cat.status === 'past' ? `Not in the current calendar. Shown as it appeared in ${esc(cat.label)}.` : `New in the ${esc(cat.label)} calendar.`}</p>` : ''}
+  ${note ? `<p class="gone-note">${esc(note)}</p>` : ''}
 </header>
 ${stripHtml(strip, hint, sectionsByTerm)}
 ${desc ? `<p class="desc">${linkCodes(desc, known)}</p>` : ''}
@@ -176,11 +194,11 @@ ${desc ? `<p class="desc">${linkCodes(desc, known)}</p>` : ''}
 ${sectionBlocks}
 <section aria-labelledby="out-h">
   <h2 id="out-h">Check it elsewhere</h2>
-  <ul class="out">${out.map(([href, label, note]) => `<li><a href="${esc(href)}">${esc(label)}</a><small>${esc(note)}</small></li>`).join('')}</ul>
+  <ul class="out">${out.map(([href, label, n]) => `<li><a href="${esc(href)}">${esc(label)}</a><small>${esc(n)}</small></li>`).join('')}</ul>
 </section>
 <section aria-labelledby="ver-h">
-  <h2 id="ver-h">Calendar years</h2>
-  <ul class="versions">${versions}<li><a href="${UCAL}/2324/COURSE/course-${S}.html#${c.code}">2023–24 and earlier</a> <span class="t">on ucalendar</span></li></ul>
+  <h2 id="ver-h">Calendar versions</h2>
+  ${versions}
 </section>
 </article>`;
 
@@ -195,14 +213,32 @@ ${sectionBlocks}
   });
 }
 
-// ---------------- calendar pages (ucalendar replica) ----------------
+// ---------------- calendar pages (ucalendar / gradcalendar replicas) ----------------
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 function yearNav(catalogs, active, subject) {
   const items = catalogs
     .map((k) => `<li><a href="/${k.yearCode}/${subject ? `${slug(subject)}/` : ''}"${k === active ? ' aria-current="page"' : ''}>${esc(k.label)}</a></li>`)
     .join('');
   const old = subject ? `${UCAL}/2324/COURSE/course-${subject}.html` : `${UCAL}/2324/`;
-  return `<nav aria-label="Calendar year"><ul class="years">${items}<li><a href="${old}">2023–24 and earlier</a></li></ul></nav>`;
+  return `<nav aria-label="Undergraduate calendar year"><ul class="years">${items}<li><a href="${old}">2023–24 and earlier</a></li></ul></nav>`;
+}
+
+/** Every grad term; links to this subject in that term when it's there, else to the term's subject list. */
+function termNav(gradCatalogs, active, subject) {
+  const items = gradCatalogs
+    .map((t) => {
+      const href = subject && t.subjects.has(subject) ? `/${t.term}/${slug(subject)}/` : `/${t.term}/`;
+      return `<li><a href="${href}"${t === active ? ' aria-current="page"' : ''}>${esc(t.label)}</a></li>`;
+    })
+    .join('');
+  return `<nav aria-label="Graduate calendar term"><ul class="years">${items}<li><a href="${ARCHIVES}">Winter 2024 and earlier</a></li></ul></nav>`;
+}
+
+function numsNav(label, courses) {
+  if (!courses.length) return '';
+  return `<nav class="nums" aria-label="${label || 'Course'} numbers">${label ? `<span class="nums-label">${label}</span>` : ''}${courses.map((c) => `<a href="#${c.code}">${esc(c.number)}</a>`).join('')}</nav>`;
 }
 
 function entryHtml(c, known, calendarBase) {
@@ -222,38 +258,82 @@ function entryHtml(c, known, calendarBase) {
 </section>`;
 }
 
-export function subjectPage({ cat, catalogs, subject, subjectName, courses, known, faculty, calendarBase, builtAt, version }) {
-  const nums = courses.map((c) => `<a href="#${c.code}">${esc(c.number)}</a>`).join('');
+/** /2627/cs: the year's undergrad courses, then grad courses from that year's latest grad calendar. */
+export function yearSubjectPage(p) {
+  const { cat, catalogs, gradCat, gradCatalogs, subject, subjectName, ugCourses, gradCourses, known, faculty } = p;
+  const both = ugCourses.length > 0 && gradCourses.length > 0;
+  const counts = [
+    ugCourses.length && `${plural(ugCourses.length, 'undergraduate course')} in the ${cat.label} Undergraduate Calendar`,
+    gradCourses.length && `${plural(gradCourses.length, 'graduate course')} in the ${gradCat.label} Graduate Calendar`,
+  ]
+    .filter(Boolean)
+    .join(', and ');
+  const otherTerms = gradCat
+    ? gradCatalogs.filter((t) => t.yearCode === cat.yearCode && t !== gradCat && t.subjects.has(subject))
+    : [];
+  const gradNote = gradCat
+    ? `From the ${esc(gradCat.label)} Graduate Calendar.${otherTerms.length ? ` Also this year: ${otherTerms.map((t) => `<a href="/${t.term}/${slug(subject)}/">${esc(t.label)}</a>`).join(', ')}.` : ''}`
+    : '';
   const body = `<header class="cal-head">
   <h1>${esc(subjectName)} (${esc(subject)})</h1>
-  <p>${courses.length} course${courses.length === 1 ? '' : 's'} in the ${esc(cat.label)} Undergraduate Calendar.</p>
+  <p>${counts}.</p>
   ${yearNav(catalogs, cat, subject)}
 </header>
-<nav class="nums" aria-label="Jump to course number">${nums}</nav>
-${courses.map((c) => entryHtml(c, known, calendarBase)).join('\n')}`;
+${both ? numsNav('Undergraduate', ugCourses) + numsNav('Graduate', gradCourses) : numsNav('', [...ugCourses, ...gradCourses])}
+${both ? '<h2 class="level" id="undergraduate">Undergraduate</h2>' : ''}
+${ugCourses.map((c) => entryHtml(c, known, cat.pageUrl)).join('\n')}
+${gradCourses.length ? `<h2 class="level" id="graduate">Graduate</h2><p class="level-note">${gradNote}</p>` : ''}
+${gradCourses.map((c) => entryHtml(c, known, gradCat.pageUrl)).join('\n')}`;
   return shell({
     title: `${subject} courses, ${cat.label} | uwloo`,
-    description: `Every ${subjectName} (${subject}) course in Waterloo’s ${cat.label} Undergraduate Calendar, with descriptions and requisites on one page.`,
+    description: `Every ${subjectName} (${subject}) course in Waterloo’s ${cat.label} calendars, undergraduate and graduate, with descriptions and requisites on one page.`,
     path: `/${cat.yearCode}/${slug(subject)}/`,
     body,
     faculty,
-    builtAt,
-    version,
+    builtAt: p.builtAt,
+    version: p.version,
   });
 }
 
-export function yearPage({ cat, catalogs, subjects, builtAt, version }) {
+/** /1249/cs: one subject exactly as one term's Graduate Calendar has it. */
+export function termSubjectPage(p) {
+  const { cat, gradCatalogs, subject, subjectName, courses, known, faculty } = p;
+  const body = `<header class="cal-head">
+  <h1>${esc(subjectName)} (${esc(subject)})</h1>
+  <p>${plural(courses.length, 'graduate course')} in the ${esc(cat.label)} Graduate Calendar.</p>
+  ${termNav(gradCatalogs, cat, subject)}
+</header>
+${numsNav('', courses)}
+${courses.map((c) => entryHtml(c, known, cat.pageUrl)).join('\n')}`;
+  return shell({
+    title: `${subject} graduate courses, ${cat.label} | uwloo`,
+    description: `Every ${subjectName} (${subject}) course in Waterloo’s ${cat.label} Graduate Calendar.`,
+    path: `/${cat.term}/${slug(subject)}/`,
+    body,
+    faculty,
+    builtAt: p.builtAt,
+    version: p.version,
+  });
+}
+
+const subjectList = (base, subjects) =>
+  `<ul class="cols">${subjects
+    .map((s) => {
+      const counts = [s.ug && `${s.ug} undergrad`, s.grad && `${s.grad} grad`].filter(Boolean).join(', ');
+      return `<li><a class="cc" href="${base}${slug(s.subject)}/">${esc(s.subject)}</a> <span>${esc(s.name)}</span> <span class="count">${counts}</span></li>`;
+    })
+    .join('')}</ul>`;
+
+export function yearPage({ cat, catalogs, gradCat, subjects, builtAt, version }) {
   const body = `<header class="cal-head">
   <h1>${esc(cat.label)} calendar</h1>
-  <p>Undergraduate courses by subject. Each subject is one page, like the old ucalendar.</p>
+  <p>Courses by subject: the ${esc(cat.label)} Undergraduate Calendar${gradCat ? ` and the ${esc(gradCat.label)} Graduate Calendar` : ''}. Each subject is one page, like the old ucalendar.</p>
   ${yearNav(catalogs, cat)}
 </header>
-<ul class="cols">${subjects
-    .map((s) => `<li><a class="cc" href="/${cat.yearCode}/${slug(s.subject)}/">${esc(s.subject)}</a> ${esc(s.name)} <span class="count">${s.count}</span></li>`)
-    .join('')}</ul>`;
+${subjectList(`/${cat.yearCode}/`, subjects)}`;
   return shell({
-    title: `${cat.label} Undergraduate Calendar by subject | uwloo`,
-    description: `All subjects in Waterloo’s ${cat.label} Undergraduate Calendar.`,
+    title: `${cat.label} calendar by subject | uwloo`,
+    description: `All subjects in Waterloo’s ${cat.label} undergraduate and graduate calendars.`,
     path: `/${cat.yearCode}/`,
     body,
     builtAt,
@@ -261,22 +341,40 @@ export function yearPage({ cat, catalogs, subjects, builtAt, version }) {
   });
 }
 
-export function homePage({ current, catalogs, groups, courseCount, builtAt, version }) {
+export function termIndexPage({ cat, gradCatalogs, subjects, builtAt, version }) {
+  const body = `<header class="cal-head">
+  <h1>${esc(cat.label)} Graduate Calendar</h1>
+  <p>Graduate courses by subject, as this term’s calendar has them.</p>
+  ${termNav(gradCatalogs, cat)}
+</header>
+${subjectList(`/${cat.term}/`, subjects)}`;
+  return shell({
+    title: `${cat.label} Graduate Calendar by subject | uwloo`,
+    description: `All subjects in Waterloo’s ${cat.label} Graduate Calendar.`,
+    path: `/${cat.term}/`,
+    body,
+    builtAt,
+    version,
+  });
+}
+
+export function homePage({ current, catalogs, gradCatalogs, groups, courseCount, builtAt, version }) {
   const body = `<form class="go" action="/" role="search">
   <label for="home-q">Type a course code or title</label>
   <div class="url"><span aria-hidden="true">uwloo.ca/</span><input id="home-q" name="q" placeholder="cs135" autocomplete="off" autocapitalize="none" spellcheck="false" role="combobox" aria-controls="results" aria-expanded="true" autofocus></div>
 </form>
-<p class="lede">Prerequisites, what a course leads to, and when it actually runs, for ${courseCount.toLocaleString('en-CA')} Waterloo undergraduate courses.</p>
+<p class="lede">Prerequisites, what a course leads to, and when it actually runs, for ${courseCount.toLocaleString('en-CA')} Waterloo undergraduate and graduate courses.</p>
 <ol id="results" class="results" role="listbox" aria-label="Matching courses"></ol>
 <div class="home-grid">
 ${groups
   .map(
     (g) => `<section aria-labelledby="g-${g.key}"><h2 id="g-${g.key}">${esc(g.name)}</h2><ul class="cols">${g.subjects
-      .map((s) => `<li><a class="cc" href="/${current.yearCode}/${slug(s.subject)}/">${esc(s.subject)}</a> ${esc(s.name)}</li>`)
+      .map((s) => `<li><a class="cc" href="/${current.yearCode}/${slug(s.subject)}/">${esc(s.subject)}</a> <span>${esc(s.name)}</span></li>`)
       .join('')}</ul></section>`,
   )
   .join('\n')}
-<section aria-labelledby="cal-h"><h2 id="cal-h">Calendars</h2>${yearNav(catalogs, current)}</section>
+<section aria-labelledby="cal-h"><h2 id="cal-h">Undergraduate Calendar</h2>${yearNav(catalogs, current)}</section>
+${gradCatalogs.length ? `<section aria-labelledby="gcal-h"><h2 id="gcal-h">Graduate Calendar</h2>${termNav(gradCatalogs, gradCatalogs.find((t) => t.status === 'current'))}</section>` : ''}
 </div>`;
   return shell({
     title: 'uwloo: Waterloo courses at a short URL',

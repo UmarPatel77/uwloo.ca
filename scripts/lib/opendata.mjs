@@ -102,9 +102,15 @@ export function toSection(c) {
 const COMP_ORDER = ['LEC', 'SEM', 'STU', 'LAB', 'TUT', 'TST', 'PRA', 'CLN', 'RDG', 'ESS', 'PRJ', 'WRK', 'FLD', 'DIS', 'OLN'];
 const compRank = (c) => (COMP_ORDER.indexOf(c) + 1 || 99);
 
-/** Sections for undergrad courses that are scheduled in `term` and exist on the site. Cached ~20 h. */
+/** Sections for every undergrad and grad course that's scheduled in `term` and has a page on the site. Cached ~20 h. */
 export async function loadSections(term, offerings, known) {
-  const rows = (offerings.rows[term] ?? []).filter((r) => (!r.career || r.career === 'UG') && known.has(codeOf({ subjectCode: r.subject, catalogNumber: r.number })));
+  const seen = new Set();
+  const rows = (offerings.rows[term] ?? []).filter((r) => {
+    const code = codeOf({ subjectCode: r.subject, catalogNumber: r.number });
+    if (!known.has(code) || seen.has(code)) return false;
+    seen.add(code);
+    return true;
+  });
   const path = `${CACHE}/sections-${term}.json`;
   const hit = await readCache(path);
   if (hit && ageDays(hit.fetchedAt) < 0.8) {
