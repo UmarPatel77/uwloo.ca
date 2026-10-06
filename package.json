@@ -1,0 +1,12 @@
+{
+  "name": "uwloo.ca",
+  "private": true,
+  "type": "module",
+  "description": "Waterloo course pages at short URLs: uwloo.ca/cs135, uwloo.ca/2627/cs",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test scripts/test.mjs",
+    "serve": "npx --yes serve dist -l 8080"
+  }
+}

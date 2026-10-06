@@ -1,0 +1,61 @@
+name: Build and deploy uwloo.ca
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 9 * * *" # daily, ~5 a.m. in Waterloo
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      # Kuali and Open Data responses are cached between runs, so a normal
+      # day only refetches the live calendar's changed courses and this term's seats.
+      - name: Restore data cache
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: uwloo-data-${{ github.run_id }}
+          restore-keys: uwloo-data-
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: node scripts/build.mjs
+        env:
+          UW_API_KEY: ${{ secrets.UW_API_KEY }}
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
