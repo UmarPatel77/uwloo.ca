@@ -251,6 +251,12 @@ export function treeSignature(tree) {
 
 // ---------- rendering ----------
 
+/**
+ * Where a course code links to. `known` is either a Set of codes with pages (link to /code/), or a linker
+ * {has(code), href(code)} so a term's pages can keep you in that term (/1249/math631/).
+ */
+export const hrefFor = (known, code) => (typeof known.href === 'function' ? known.href(code) : known.has(code) ? `/${slug(code)}/` : null);
+
 /** Escape text and link any course code that exists on the site. */
 export function linkCodes(text, known) {
   let out = '';
@@ -258,15 +264,17 @@ export function linkCodes(text, known) {
   for (const m of String(text).matchAll(CODE_RE)) {
     const code = m[1] + m[2];
     out += esc(text.slice(last, m.index));
-    out += known.has(code) ? `<a class="cc" href="/${slug(code)}/">${esc(fmtCode(code))}</a>` : esc(m[0]);
+    const href = hrefFor(known, code);
+    out += href ? `<a class="cc" href="${href}">${esc(fmtCode(code))}</a>` : esc(m[0]);
     last = m.index + m[0].length;
   }
   return out + esc(text.slice(last));
 }
 
 function courseItem(c, known) {
-  const link = known.has(c.code)
-    ? `<a class="cc" href="/${slug(c.code)}/">${esc(c.code)}</a>`
+  const href = hrefFor(known, c.code);
+  const link = href
+    ? `<a class="cc" href="${href}">${esc(c.code)}</a>`
     : `<span class="cc gone" title="Not in the undergraduate calendar">${esc(c.code)}</span>`;
   const rest = [c.title && ` - ${esc(c.title)}`, c.units && ` (${esc(c.units)})`].filter(Boolean).join('');
   return `<li>${link}${rest ? `<span class="t">${rest}</span>` : ''}</li>`;

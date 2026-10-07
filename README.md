@@ -11,12 +11,16 @@ Waterloo course pages at short URLs. A GitHub Action pulls the university's own 
 | `uwloo.ca/2627/cs135` | Same page, scrolled to CS 135 |
 | `uwloo.ca/1249/cs` | Graduate CS courses exactly as the Fall 2024 Graduate Calendar has them, for every term from Spring 2024 on |
 | `uwloo.ca/1249` | All subjects in the Fall 2024 Graduate Calendar |
+| `uwloo.ca/1249/math631` | MATH 631 exactly as the Fall 2024 Graduate Calendar lists it, with links for that term (archived entry, acal for 1249). Clicking a course on `/1249/math` lands here |
 | `uwloo.ca/cs` | The current calendar year's CS page |
 | `uwloo.ca/2627` | All subjects in the 2026–27 calendar |
 | `uwloo.ca/2324/cs`, any year from `9596` to `2324` | Redirects to `ucalendar.uwaterloo.ca/2324/COURSE/course-CS.html` |
 | `uwloo.ca/8889/cs`, any year from `6364` to `9495` | Redirects to that year's scanned calendar, `ucalendar.uwaterloo.ca/6394/1988-89.pdf`, at the CS page if `data/archive/8889.json` has it |
 | `uwloo.ca/6263/…` and earlier | Not online; says the archive starts at 1963–64 |
-| `uwloo.ca/1269/cs135` | Redirects to `acal.fast.uwaterloo.ca/course/1269/CS/135` |
+| `uwloo.ca/courses.csv` | Every course: title, level, whether it's in the current calendars, the last term it ran (looking back 7 years), and its outline.uwaterloo.ca search link. Opens in Excel |
+| `uwloo.ca/1269/cs135` | Redirects to `acal.fast.uwaterloo.ca/course/1269/CS/135` whenever uwloo has no page for it (undergrad codes, and terms before Spring 2024) |
+
+Every entry on a calendar page also links to its official entry and to acal for that year or term (the fall term for an undergrad year). Term codes and year codes can't be confused until Spring 2041 (`1415`, which is also 2014–15).
 
 Undergraduate calendars from 2024–25 and graduate calendars from Spring 2024 come from Kuali and are rebuilt here. New years and terms appear automatically when Waterloo publishes them. Graduate calendars before Spring 2024 aren't included yet.
 
@@ -30,7 +34,7 @@ uwloo./[2627≥YYyy≥5758]/[subj] uses new course index uwaterloo.ca/academic-c
 | Kuali catalog API (`uwaterloocm.kuali.co/api/v1/catalog`), the JSON behind `uwaterloo.ca/academic-calendar/undergraduate-studies/catalog` | Every undergraduate and graduate course, description, requisite, note, and cross-listing, for each calendar year (undergrad) and term (grad) | None |
 | UW Open Data API v3 (`openapi.data.uwaterloo.ca/v3`) | Which terms a course ran in, faculty, sections and seats for the current and next term | Free, optional |
 
-Pages link out to the Schedule of Classes, Quest Class Search, acal, the official calendar entry, and UW Flow reviews. Those sites are linked, not scraped: the Schedule of Classes disallows automated access and is being retired, and Quest needs a session.
+Pages link out to the Schedule of Classes, Quest Class Search, acal, the official calendar entry, course outlines on outline.uwaterloo.ca, and UW Flow reviews. Those sites are linked, not scraped: the Schedule of Classes disallows automated access and is being retired, Quest needs a session, and outline.uwaterloo.ca needs a UW login and disallows automated access.
 
 Open Data withholds instructor names and rooms and can trail Quest by up to two days, so the sections table says so and links to the Schedule of Classes for the live view.
 
@@ -116,6 +120,7 @@ Environment variables for `scripts/build.mjs`:
 | `UW_API_KEY` | unset | Enables Open Data |
 | `TERMS_BACK` / `TERMS_AHEAD` | 6 / 2 | Terms shown in the strip around the current one |
 | `SECTION_TERMS` | 2 | How many terms (from the current one) get a sections table |
+| `HISTORY_TERMS_BACK` | 21 | How far back `courses.csv` looks for the last term a course ran |
 | `KUALI_MAX_AGE_DAYS` | 7 | How often the live calendar's course details are refetched |
 | `KUALI_CONCURRENCY` / `OPENDATA_CONCURRENCY` | 6 / 3 | Parallel requests; keep these low |
 

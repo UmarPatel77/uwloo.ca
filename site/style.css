@@ -204,6 +204,9 @@ h2 { font-size: 1.05rem; font-weight: 700; font-stretch: 87.5%; margin: 2.25rem 
 .entry dt { font-weight: 700; font-stretch: 87.5%; margin-top: 0.6rem; }
 .entry dd { margin: 0.1rem 0 0; }
 .entry .req > li { margin-top: 0.2rem; }
+.entry-links { display: flex; flex-wrap: wrap; gap: 0.2rem 1.25rem; margin: 0.8rem 0 0; font-size: 0.9rem; }
+.entry-links a { color: var(--muted); }
+.entry-links a:hover { color: var(--ink); }
 .cols { list-style: none; margin: 1.25rem 0 0; padding: 0; columns: 3 14rem; column-gap: 2rem; }
 .cols li { break-inside: avoid; margin: 0 0 0.35rem; display: grid; grid-template-columns: 5rem minmax(0, 1fr) auto; gap: 0 0.5rem; align-items: baseline; }
 .count { color: var(--muted); }

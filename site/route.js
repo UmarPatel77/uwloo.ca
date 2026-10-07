@@ -9,7 +9,8 @@
 //   /8889/cs   (6364 to 9495)         → ucalendar.uwaterloo.ca/6394/1988-89.pdf, at the CS page if indexed
 //   /8889/cs134                       → same PDF, at CS 134's page if indexed
 //   /1249, /1249/cs   (grad terms)    → /1249/cs/  Graduate Calendar for that term (Spring 2024 on)
-//   /1269/cs135, /1269/cs/135         → acal.fast.uwaterloo.ca/course/1269/CS/135
+//   /1249/math631, /1249/math/631     → /1249/math631/  MATH 631 as the Fall 2024 Graduate Calendar lists it
+//   …and when uwloo has no such page  → acal.fast.uwaterloo.ca/course/1249/MATH/631
 
 const UCAL = 'https://ucalendar.uwaterloo.ca';
 const PDF_ARCHIVE = 'http://www.ucalendar.uwaterloo.ca/6394';
@@ -115,7 +116,13 @@ export function resolve(pathname, meta) {
 
   if (isTerm(a)) {
     const parts = splitCode(segs.length === 2 ? b : `${b}${c ?? ''}`);
-    if (parts && segs.length <= 3) return { type: 'redirect', to: `${ACAL}/${a}/${parts.subject}/${parts.number}` };
+    if (parts && segs.length <= 3) {
+      // uwloo has a page for grad courses in its grad terms; send any other spelling there first.
+      // Reaching the router at that exact address means no such page, so acal takes it.
+      const page = `/${a}/${(parts.subject + parts.number).toLowerCase()}/`;
+      if ((meta.gradTerms ?? []).includes(a) && bare(page) !== bare(original)) return { type: 'redirect', to: page };
+      return { type: 'redirect', to: `${ACAL}/${a}/${parts.subject}/${parts.number}` };
+    }
   }
 
   if (segs.length === 2) {

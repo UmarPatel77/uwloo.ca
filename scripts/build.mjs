@@ -10,6 +10,7 @@ import {
   coursePage,
   homePage,
   notFoundPage,
+  outlineUrl,
   redirectPage,
   SITE,
   termIndexPage,
@@ -18,12 +19,13 @@ import {
   yearSubjectPage,
 } from './lib/render.mjs';
 import { offeredHint, slug, treeCodes } from './lib/requisites.mjs';
-import { shiftTerm, termCode, termRange } from './lib/terms.mjs';
+import { shiftTerm, termCode, termName, termRange } from './lib/terms.mjs';
 
 const OUT = 'dist';
 const TERMS_BACK = Number(process.env.TERMS_BACK ?? 6);
 const TERMS_AHEAD = Number(process.env.TERMS_AHEAD ?? 2);
 const SECTION_TERMS = Number(process.env.SECTION_TERMS ?? 2); // current + next
+const HISTORY_BACK = Number(process.env.HISTORY_TERMS_BACK ?? 21); // how far back courses.csv looks for "last ran" (7 years)
 const byNumber = (a, b) => a.number.localeCompare(b.number, 'en', { numeric: true });
 const byCode = (a, b) => a.localeCompare(b, 'en', { numeric: true });
 
@@ -100,12 +102,13 @@ async function main() {
   // 2. Offerings and sections (Open Data, optional)
   const curTerm = termCode(builtAt);
   const termWindow = termRange(shiftTerm(curTerm, -TERMS_BACK), shiftTerm(curTerm, TERMS_AHEAD));
+  const historyWindow = termRange(shiftTerm(curTerm, -Math.max(HISTORY_BACK, TERMS_BACK)), shiftTerm(curTerm, TERMS_AHEAD));
   let offerings = null;
   const sections = {};
   if (opendata.enabled()) {
     try {
-      offerings = await opendata.loadOfferings(termWindow, curTerm);
-      for (const term of termWindow.slice(TERMS_BACK, TERMS_BACK + SECTION_TERMS)) {
+      offerings = await opendata.loadOfferings(historyWindow, curTerm);
+      for (const term of termRange(curTerm, shiftTerm(curTerm, SECTION_TERMS - 1))) {
         if (offerings.terms[term]?.published) sections[term] = await opendata.loadSections(term, offerings, known);
       }
     } catch (err) {
@@ -159,11 +162,15 @@ async function main() {
     return out;
   };
 
+  // Every calendar a course appears in: undergrad years link to that year's subject page, grad terms to their version page.
+  const historyFor = (code) => ({
+    ug: historyIn(ug, code, (k, v) => `/${k.yearCode}/${slug(v.subject)}/#${code}`),
+    grad: historyIn(grad, code, (k) => `/${k.term}/${slug(code)}/`),
+  });
+  const leadsList = (codes, titleOf) => [...(codes ?? [])].map((c) => ({ code: c, title: titleOf(c) })).sort((a, b) => byCode(a.code, b.code));
+
   for (const [code, { cat, course }] of primary) {
-    const history = {
-      ug: historyIn(ug, code, (k, v) => `/${k.yearCode}/${slug(v.subject)}/#${code}`),
-      grad: historyIn(grad, code, (k, v) => `/${k.term}/${slug(v.subject)}/#${code}`),
-    };
+    const history = historyFor(code);
     const strip = offerings
       ? termWindow.map((term) => {
           const t = offerings.terms[term];
@@ -173,9 +180,7 @@ async function main() {
         })
       : null;
     const sectionsByTerm = Object.entries(sections).map(([term, data]) => ({ term, list: data[code] ?? [] }));
-    const leads = [...(leadsTo.get(code) ?? [])]
-      .map((c) => ({ code: c, title: primary.get(c).course.title }))
-      .sort((a, b) => byCode(a.code, b.code));
+    const leads = leadsList(leadsTo.get(code), (c) => primary.get(c).course.title);
     pages.push([
       `${slug(code)}/index.html`,
       coursePage({
@@ -194,6 +199,45 @@ async function main() {
       }),
     ]);
     sitemap.push(`/${slug(code)}/`);
+  }
+
+  // Grad version pages (/1249/math631): each course exactly as one term's Graduate Calendar lists it.
+  // Links on them stay in that term when the other course is in the same calendar.
+  let versionPages = 0;
+  for (const cat of grad) {
+    const linker = {
+      has: (c) => known.has(c),
+      href: (c) => (cat.courses.has(c) ? `/${cat.term}/${slug(c)}/` : known.has(c) ? `/${slug(c)}/` : null),
+    };
+    const termLeads = new Map();
+    for (const [code, course] of cat.courses) {
+      for (const ref of treeCodes([...(course.prereq ?? []), ...(course.coreq ?? [])])) {
+        if (ref === code || !cat.courses.has(ref)) continue;
+        if (!termLeads.has(ref)) termLeads.set(ref, new Set());
+        termLeads.get(ref).add(code);
+      }
+    }
+    for (const [code, course] of cat.courses) {
+      pages.push([
+        `${cat.term}/${slug(code)}/index.html`,
+        coursePage({
+          ...ctxBase,
+          course,
+          cat,
+          known: linker,
+          leadsTo: leadsList(termLeads.get(code), (c) => cat.courses.get(c).title),
+          history: historyFor(code),
+          faculty: faculty(code, course.subject),
+          strip: null,
+          hint: null,
+          sectionsByTerm: [],
+          curTerm,
+          subjectHref: `/${cat.term}/${slug(course.subject)}/`,
+          versionTerm: cat.term,
+        }),
+      ]);
+      versionPages++;
+    }
   }
 
   // Year pages (/2627/cs): undergrad, then that year's grad calendar.
@@ -277,6 +321,30 @@ async function main() {
 
   const search = [...primary.entries()].map(([code, { course }]) => [code, course.title]).sort((a, b) => byCode(a[0], b[0]));
   pages.push(['search.json', JSON.stringify(search)]);
+
+  // courses.csv: every course, whether it's in the current calendars, and the last term it ran.
+  // Courses that haven't run in years are the likeliest to have no outline on outline.uwaterloo.ca.
+  const pastTerms = historyWindow.filter((t) => Number(t) <= Number(curTerm));
+  const csvCell = (v) => (/[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
+  const csvRows = [
+    ['code', 'title', 'level', 'in_current_calendar', 'last_ran_term', 'last_ran', `terms_run_since_${termName(pastTerms[0]).replace(' ', '_')}`, 'outline_search', 'uwloo'],
+  ];
+  for (const [code, { cat, course }] of [...primary.entries()].sort((a, b) => byCode(a[0], b[0]))) {
+    const ran = offerings ? pastTerms.filter((t) => offerings.terms[t]?.offered.has(code)) : [];
+    const last = ran.at(-1) ?? '';
+    csvRows.push([
+      code,
+      course.title,
+      cat.level === 'grad' ? 'graduate' : 'undergraduate',
+      cat.status === 'past' ? 'no' : 'yes',
+      last,
+      last ? termName(last) : offerings ? 'not since ' + termName(pastTerms[0]) : 'unknown (no UW_API_KEY)',
+      offerings ? ran.length : '',
+      outlineUrl(course.subject, course.number),
+      `${SITE}/${slug(code)}/`,
+    ]);
+  }
+  pages.push(['courses.csv', `${csvRows.map((r) => r.map(csvCell).join(',')).join('\n')}\n`]);
   pages.push(['sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemap.map((p) => `<url><loc>${SITE}${p}</loc></url>`).join('\n')}\n</urlset>\n`]);
   pages.push(['robots.txt', `User-agent: *\nAllow: /\nSitemap: ${SITE}/sitemap.xml\n`]);
   pages.push(['CNAME', 'uwloo.ca\n']);
@@ -291,7 +359,7 @@ async function main() {
   });
   await writeAll(pages);
   const gradOnly = [...primary.values()].filter((p) => p.cat.level === 'grad').length;
-  console.log(`Wrote ${pages.length} files to ${OUT}/ (${primary.size} course pages, ${gradOnly} from the Graduate Calendar)`);
+  console.log(`Wrote ${pages.length} files to ${OUT}/ (${primary.size} course pages, ${gradOnly} from the Graduate Calendar, ${versionPages} grad term versions)`);
 }
 
 main().catch((err) => {

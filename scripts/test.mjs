@@ -87,8 +87,9 @@ test('archive indexes: 1963-64 and 1994-95', async () => {
   for (const idx of [a, b]) for (const [k, v] of Object.entries(idx)) assert.ok(/^(_courses|[A-Z]{2,8}(\d{3}[A-Z]{0,2})?)$/.test(k) && Number.isInteger(v), k);
 });
 
-test('router: term codes go to acal', () => {
-  assert.equal(to('/1269/cs135'), 'https://acal.fast.uwaterloo.ca/course/1269/CS/135');
+test('router: term codes go to acal when uwloo has no page', () => {
+  assert.equal(to('/1269/cs135/'), 'https://acal.fast.uwaterloo.ca/course/1269/CS/135');
+  assert.equal(to('/1071/cs135'), 'https://acal.fast.uwaterloo.ca/course/1071/CS/135');
   assert.equal(to('/1271/math/239'), 'https://acal.fast.uwaterloo.ca/course/1271/MATH/239');
 });
 
@@ -216,7 +217,11 @@ test('router: grad term pages', () => {
   assert.match(resolve('/1241/cs', meta).message, /before Spring 2024 aren’t on uwloo yet/);
   assert.match(resolve('/1239', meta).message, /before Spring 2024/);
   assert.match(resolve('/1275/cs', meta).message, /no Spring 2027 Graduate Calendar yet/);
-  assert.equal(to('/1249/cs686'), 'https://acal.fast.uwaterloo.ca/course/1249/CS/686');
+  // Grad terms: uwloo's version page first, acal when there isn't one.
+  assert.equal(to('/1249/CS686'), '/1249/cs686/');
+  assert.equal(to('/1249/CS/686'), '/1249/cs686/');
+  assert.equal(to('/1249/cs686/'), 'https://acal.fast.uwaterloo.ca/course/1249/CS/686');
+  assert.equal(to('/1241/cs686'), 'https://acal.fast.uwaterloo.ca/course/1241/CS/686');
   assert.equal(to('/2627/cs686'), '/2627/cs/#CS686');
 });
 
@@ -253,4 +258,10 @@ test('404 page script survives templating (regexes, archive fetch)', async () =>
   assert.ok(html.includes('/^[0-9]{4}$/.test(year'), 'year check intact');
   assert.ok(html.includes('fetch(`/archive/${year}.json`)'), 'archive fetch intact');
   assert.ok(!/[^\\]\/\^d\{/.test(html), 'no regex lost its backslash');
+});
+
+test('outline link uses the outline site\'s own encoding', async () => {
+  const { outlineUrl } = await import('./lib/render.mjs');
+  assert.equal(outlineUrl('ECON', '221'), 'https://outline.uwaterloo.ca/viewer/?q=econ%2520221');
+  assert.equal(outlineUrl('CS', '136L'), 'https://outline.uwaterloo.ca/viewer/?q=cs%2520136l');
 });

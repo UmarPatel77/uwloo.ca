@@ -1,7 +1,7 @@
-import { esc, fmtCode, linkCodes, renderTree, sanitize, slug } from './requisites.mjs';
+import { esc, fmtCode, hrefFor, linkCodes, renderTree, sanitize, slug } from './requisites.mjs';
 import { CALENDAR_PAGE, GRAD_CALENDAR_PAGE, calendarCourseUrl } from './kuali.mjs';
 import { FACULTY_NAMES } from './opendata.mjs';
-import { termName, termShort } from './terms.mjs';
+import { shiftTerm, termFrom, termName, termShort } from './terms.mjs';
 
 export const SITE = 'https://uwloo.ca';
 const FONTS = 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap';
@@ -113,13 +113,39 @@ function sectionsHtml(term, list, course) {
 </section>`;
 }
 
+const acalUrl = (term, S, N) => `https://acal.fast.uwaterloo.ca/course/${term}/${S}/${N}`;
+/** outline.uwaterloo.ca search, in the form the site itself uses: ?q=econ%2520221 (login required). */
+export const outlineUrl = (S, N) => `https://outline.uwaterloo.ca/viewer/?q=${String(S).toLowerCase()}%2520${String(N).toLowerCase()}`;
+const socUrl = (term, S, N, grad) =>
+  `https://classes.uwaterloo.ca/cgi-bin/cgiwrap/infocour/salook.pl?level=${grad ? 'grad' : 'under'}&sess=${term}&subject=${S}&cournum=${N}`;
+
+/**
+ * External links for one course in one calendar and term. The Schedule of Classes and Quest only
+ * cover recent and upcoming terms, so they're left off for older ones.
+ */
+function elsewhereLinks(c, cat, term, curTerm) {
+  const grad = cat.level === 'grad' || Number.parseInt(c.number, 10) >= 600;
+  const calendarName = cat.level === 'grad' ? 'Graduate Calendar' : 'Undergraduate Calendar';
+  const recent = Number(term) >= Number(shiftTerm(curTerm, -1));
+  return [
+    [calendarCourseUrl(cat, c.pid), `${calendarName}, ${cat.label}`, cat.status === 'past' ? 'The archived entry' : 'The official entry'],
+    [acalUrl(term, c.subject, c.number), `Requirements for ${termName(term)}`, 'Waterloo’s requisite checker'],
+    recent && [socUrl(term, c.subject, c.number, grad), `Schedule of Classes, ${termName(term)}`, 'Instructors, rooms, live seats'],
+    recent && [QUEST, 'Quest Class Search', 'Where you enrol'],
+    [outlineUrl(c.subject, c.number), 'Course outlines', 'Syllabi from past terms (UW login)'],
+    [`https://uwflow.com/course/${slug(c.code)}`, 'UW Flow', 'Student ratings and reviews'],
+  ].filter(Boolean);
+}
+
 export function coursePage(ctx) {
   const { course: c, cat, known, leadsTo, history, faculty, strip, hint, sectionsByTerm, curTerm, subjectHref } = ctx;
+  // Version pages (/1249/math631) show one calendar's entry; links and "Check it elsewhere" follow its term.
+  const version = Boolean(ctx.versionTerm);
+  const linkTerm = ctx.versionTerm ?? curTerm;
   const S = c.subject;
   const N = c.number;
   const isGrad = cat.level === 'grad';
   const calendarName = isGrad ? 'Graduate Calendar' : 'Undergraduate Calendar';
-  const socLevel = isGrad || Number.parseInt(N, 10) >= 600 ? 'grad' : 'under';
   const facts = [
     c.units != null && ['Units', fmtUnits(c.units)],
     isGrad && ['Level', 'Graduate'],
@@ -132,23 +158,12 @@ export function coursePage(ctx) {
     `<section aria-labelledby="${id}"><h2 id="${id}">${heading}</h2>${tree ? renderTree(tree, known, cat.pageUrl) : '<p class="none">None listed.</p>'}</section>`;
 
   const leads = leadsTo.length
-    ? `<ul class="leads">${leadsTo.map((x) => `<li><a class="cc" href="/${slug(x.code)}/" title="${esc(x.title)}">${esc(fmtCode(x.code))}</a></li>`).join('')}</ul>`
+    ? `<ul class="leads">${leadsTo.map((x) => `<li><a class="cc" href="${hrefFor(known, x.code)}" title="${esc(x.title)}">${esc(fmtCode(x.code))}</a></li>`).join('')}</ul>`
     : '<p class="none">No course lists it as a requisite.</p>';
 
   const notes = sanitize(c.notesHtml, known);
-  const sectionBlocks = sectionsByTerm.filter((s) => s.list.length).map((s) => sectionsHtml(s.term, s.list, c)).join('\n');
-
-  const out = [
-    [calendarCourseUrl(cat, c.pid), `${calendarName}, ${cat.label}`, cat.status === 'past' ? 'The archived entry' : 'The official entry'],
-    [`https://acal.fast.uwaterloo.ca/course/${curTerm}/${S}/${N}`, `Requirements for ${termName(curTerm)}`, 'Waterloo’s requisite checker'],
-    [
-      `https://classes.uwaterloo.ca/cgi-bin/cgiwrap/infocour/salook.pl?level=${socLevel}&sess=${curTerm}&subject=${S}&cournum=${N}`,
-      `Schedule of Classes, ${termName(curTerm)}`,
-      'Instructors, rooms, live seats',
-    ],
-    [QUEST, 'Quest Class Search', 'Where you enrol'],
-    [`https://uwflow.com/course/${slug(c.code)}`, 'UW Flow', 'Student ratings and reviews'],
-  ];
+  const sectionBlocks = version ? '' : sectionsByTerm.filter((s) => s.list.length).map((s) => sectionsHtml(s.term, s.list, c)).join('\n');
+  const out = elsewhereLinks(c, cat, linkTerm, curTerm);
 
   const verItems = (items) =>
     items
@@ -166,21 +181,24 @@ export function coursePage(ctx) {
     .filter(Boolean)
     .join('');
 
-  const note =
-    cat.status === 'past'
-      ? `Not in the current ${calendarName}. Shown as it appeared in ${cat.label}.`
-      : cat.status === 'future'
-        ? `New in the ${cat.label} ${calendarName}.`
-        : '';
+  const note = version
+    ? `${esc(fmtCode(c.code))} as listed in the ${esc(cat.label)} ${calendarName}. <a href="/${slug(c.code)}/">The main page</a> has the current version, when it runs, and seats.`
+    : esc(
+        cat.status === 'past'
+          ? `Not in the current ${calendarName}. Shown as it appeared in ${cat.label}.`
+          : cat.status === 'future'
+            ? `New in the ${cat.label} ${calendarName}.`
+            : '',
+      );
   const desc = c.description || (c.detailMissing ? 'The calendar entry could not be loaded on the last rebuild.' : '');
 
   const body = `<article class="course">
 <header class="course-head">
   <h1><span class="code">${esc(fmtCode(c.code))}</span><span class="title">${esc(c.title)}</span></h1>
   <dl class="facts">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
-  ${note ? `<p class="gone-note">${esc(note)}</p>` : ''}
+  ${note ? `<p class="gone-note">${note}</p>` : ''}
 </header>
-${stripHtml(strip, hint, sectionsByTerm)}
+${version ? '' : stripHtml(strip, hint, sectionsByTerm)}
 ${desc ? `<p class="desc">${linkCodes(desc, known)}</p>` : ''}
 <div class="reqs">
   <div>
@@ -193,7 +211,7 @@ ${desc ? `<p class="desc">${linkCodes(desc, known)}</p>` : ''}
 </div>
 ${sectionBlocks}
 <section aria-labelledby="out-h">
-  <h2 id="out-h">Check it elsewhere</h2>
+  <h2 id="out-h">Check it elsewhere for ${esc(termName(linkTerm))}</h2>
   <ul class="out">${out.map(([href, label, n]) => `<li><a href="${esc(href)}">${esc(label)}</a><small>${esc(n)}</small></li>`).join('')}</ul>
 </section>
 <section aria-labelledby="ver-h">
@@ -203,9 +221,11 @@ ${sectionBlocks}
 </article>`;
 
   return shell({
-    title: `${fmtCode(c.code)}: ${c.title} | uwloo`,
-    description: `${fmtCode(c.code)} ${c.title} at the University of Waterloo: prerequisites, antirequisites, what it leads to, and when it runs.`,
-    path: `/${slug(c.code)}/`,
+    title: version ? `${fmtCode(c.code)}: ${c.title}, ${cat.label} | uwloo` : `${fmtCode(c.code)}: ${c.title} | uwloo`,
+    description: version
+      ? `${fmtCode(c.code)} ${c.title} as listed in Waterloo’s ${cat.label} ${calendarName}.`
+      : `${fmtCode(c.code)} ${c.title} at the University of Waterloo: prerequisites, antirequisites, what it leads to, and when it runs.`,
+    path: version ? `/${ctx.versionTerm}/${slug(c.code)}/` : `/${slug(c.code)}/`,
     body,
     faculty,
     builtAt: ctx.builtAt,
@@ -241,7 +261,9 @@ function numsNav(label, courses) {
   return `<nav class="nums" aria-label="${label || 'Course'} numbers">${label ? `<span class="nums-label">${label}</span>` : ''}${courses.map((c) => `<a href="#${c.code}">${esc(c.number)}</a>`).join('')}</nav>`;
 }
 
-function entryHtml(c, known, calendarBase) {
+/** One course on a calendar page. `opts.term` picks the term its links are for; `opts.codeHref` where the code links. */
+function entryHtml(c, known, cat, opts) {
+  const calendarBase = cat.pageUrl;
   const notes = sanitize(c.notesHtml, known);
   const dl = [
     c.prereq && ['Prerequisites', renderTree(c.prereq, known, calendarBase)],
@@ -249,12 +271,18 @@ function entryHtml(c, known, calendarBase) {
     c.antireq && ['Antirequisites', renderTree(c.antireq, known, calendarBase)],
     c.crossListed.length && ['Cross-listed', c.crossListed.map((x) => linkCodes(fmtCode(x), known)).join(', ')],
   ].filter(Boolean);
-  const onSite = known.has(c.code);
+  const href = opts.codeHref(c.code);
+  const links = [
+    [calendarCourseUrl(cat, c.pid), cat.status === 'past' ? 'Archived calendar entry' : 'Calendar entry'],
+    [acalUrl(opts.term, c.subject, c.number), `Requirements, ${termName(opts.term)}`],
+    [outlineUrl(c.subject, c.number), 'Course outlines'],
+  ];
   return `<section class="entry" id="${c.code}">
-  <h2>${onSite ? `<a class="cc" href="/${slug(c.code)}/">${esc(fmtCode(c.code))}</a>` : `<span class="cc">${esc(fmtCode(c.code))}</span>`} <span>${esc(c.title)}</span>${c.units != null ? `<span class="u">${fmtUnits(c.units)} units</span>` : ''}</h2>
+  <h2>${href ? `<a class="cc" href="${href}">${esc(fmtCode(c.code))}</a>` : `<span class="cc">${esc(fmtCode(c.code))}</span>`} <span>${esc(c.title)}</span>${c.units != null ? `<span class="u">${fmtUnits(c.units)} units</span>` : ''}</h2>
   ${c.description ? `<p>${linkCodes(c.description, known)}</p>` : ''}
   ${notes ? `<div class="notes">${notes}</div>` : ''}
   ${dl.length ? `<dl>${dl.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>` : ''}
+  <p class="entry-links">${links.map(([u, label]) => `<a href="${esc(u)}">${esc(label)}</a>`).join('')}</p>
 </section>`;
 }
 
@@ -281,9 +309,9 @@ export function yearSubjectPage(p) {
 </header>
 ${both ? numsNav('Undergraduate', ugCourses) + numsNav('Graduate', gradCourses) : numsNav('', [...ugCourses, ...gradCourses])}
 ${both ? '<h2 class="level" id="undergraduate">Undergraduate</h2>' : ''}
-${ugCourses.map((c) => entryHtml(c, known, cat.pageUrl)).join('\n')}
+${ugCourses.map((c) => entryHtml(c, known, cat, { term: termFrom(cat.start, 9), codeHref: (code) => hrefFor(known, code) })).join('\n')}
 ${gradCourses.length ? `<h2 class="level" id="graduate">Graduate</h2><p class="level-note">${gradNote}</p>` : ''}
-${gradCourses.map((c) => entryHtml(c, known, gradCat.pageUrl)).join('\n')}`;
+${gradCourses.map((c) => entryHtml(c, known, gradCat, { term: gradCat.term, codeHref: (code) => `/${gradCat.term}/${slug(code)}/` })).join('\n')}`;
   return shell({
     title: `${subject} courses, ${cat.label} | uwloo`,
     description: `Every ${subjectName} (${subject}) course in Waterloo’s ${cat.label} calendars, undergraduate and graduate, with descriptions and requisites on one page.`,
@@ -304,7 +332,7 @@ export function termSubjectPage(p) {
   ${termNav(gradCatalogs, cat, subject)}
 </header>
 ${numsNav('', courses)}
-${courses.map((c) => entryHtml(c, known, cat.pageUrl)).join('\n')}`;
+${courses.map((c) => entryHtml(c, known, cat, { term: cat.term, codeHref: (code) => `/${cat.term}/${slug(code)}/` })).join('\n')}`;
   return shell({
     title: `${subject} graduate courses, ${cat.label} | uwloo`,
     description: `Every ${subjectName} (${subject}) course in Waterloo’s ${cat.label} Graduate Calendar.`,
