@@ -267,19 +267,11 @@ async function main() {
   pages.push(['index.html', homePage({ ...ctxBase, current, catalogs: ug, gradCatalogs: grad, groups, courseCount: liveCount })]);
   sitemap.push('/');
 
-  // Optional page numbers inside the 1963–64 to 1994–95 PDFs: { "8889": { "CS": 412, "CS134": 415 } }
-  let pdfPages = {};
-  try {
-    pdfPages = JSON.parse(await readFile('data/archive-pages.json', 'utf8'));
-  } catch (err) {
-    if (err.code !== 'ENOENT') throw new Error(`data/archive-pages.json: ${err.message}`);
-  }
   const meta = {
     years: ug.map((c) => c.yearCode),
     current: current.yearCode,
     gradTerms: grad.map((c) => c.term),
     subjects: [...allSubjects].map(slug).sort(),
-    pdfPages,
   };
   pages.push(['404.html', notFoundPage({ ...ctxBase, meta })]);
 
@@ -293,6 +285,10 @@ async function main() {
   await rm(OUT, { recursive: true, force: true });
   await mkdir(OUT, { recursive: true });
   await cp('site', OUT, { recursive: true });
+  // Page numbers inside the 1963–64 to 1994–95 PDFs, one file per year; 404.html fetches only the year asked for.
+  await cp('data/archive', join(OUT, 'archive'), { recursive: true }).catch((err) => {
+    if (err.code !== 'ENOENT') throw err;
+  });
   await writeAll(pages);
   const gradOnly = [...primary.values()].filter((p) => p.cat.level === 'grad').length;
   console.log(`Wrote ${pages.length} files to ${OUT}/ (${primary.size} course pages, ${gradOnly} from the Graduate Calendar)`);

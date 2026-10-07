@@ -395,6 +395,14 @@ export function notFoundPage({ meta, builtAt, version }) {
 <script type="module">
 import { resolve } from '/route.js';
 const meta = ${JSON.stringify(meta)};
+// For the scanned-PDF years (6364 to 9495), load that year's page index before resolving.
+const year = location.pathname.split('/').filter(Boolean)[0];
+if (/^[0-9]{4}$/.test(year ?? '')) {
+  try {
+    const res = await fetch(\`/archive/\${year}.json\`);
+    if (res.ok) meta.pdfPages = { [year]: await res.json() };
+  } catch {}
+}
 const r = resolve(location.pathname, meta);
 if (r.type === 'redirect') {
   location.replace(r.to.includes('#') ? r.to : r.to + location.hash);

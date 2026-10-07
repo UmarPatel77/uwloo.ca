@@ -14,7 +14,7 @@ Waterloo course pages at short URLs. A GitHub Action pulls the university's own 
 | `uwloo.ca/cs` | The current calendar year's CS page |
 | `uwloo.ca/2627` | All subjects in the 2026–27 calendar |
 | `uwloo.ca/2324/cs`, any year from `9596` to `2324` | Redirects to `ucalendar.uwaterloo.ca/2324/COURSE/course-CS.html` |
-| `uwloo.ca/8889/cs`, any year from `6364` to `9495` | Redirects to that year's scanned calendar, `ucalendar.uwaterloo.ca/6394/1988-89.pdf`, at the CS page if `data/archive-pages.json` has it |
+| `uwloo.ca/8889/cs`, any year from `6364` to `9495` | Redirects to that year's scanned calendar, `ucalendar.uwaterloo.ca/6394/1988-89.pdf`, at the CS page if `data/archive/8889.json` has it |
 | `uwloo.ca/6263/…` and earlier | Not online; says the archive starts at 1963–64 |
 | `uwloo.ca/1269/cs135` | Redirects to `acal.fast.uwaterloo.ca/course/1269/CS/135` |
 
@@ -78,13 +78,22 @@ Setup still checks things and says what's missing. Set Settings → Pages → So
 
 ## Page numbers for the PDF years
 
-`data/archive-pages.json` maps a year to the PDF page where each subject (and optionally each course) starts:
+`data/archive/{year}.json` holds page numbers inside that year's scanned calendar, keyed by subject and course:
 
 ```json
-{ "8889": { "CS": 412, "CS134": 415, "MATH": 389 } }
+{ "_courses": 323, "CS": 354, "CS241": 354, "CO": 351, "AMATH": 327 }
 ```
 
-`/8889/cs` then opens the 1988–89 PDF at page 412; `/8889/cs134` at 415. Anything not listed opens the PDF at the start. Use the page number your PDF viewer shows (the PDF's own page count, not the number printed on the page). The ucalendar host disallows automated access, so the build never downloads these PDFs; the index is filled in by hand or from copies you've downloaded.
+`/9495/cs241` opens the 1994–95 PDF at page 354. A course that isn't listed falls back to its subject, and a subject that isn't listed falls back to `_courses` (where course descriptions begin). Years without a file open at page 1. Page numbers are the PDF's own page count, not the numbers printed on the pages. The build copies these files to `/archive/`, and `404.html` fetches only the year being visited.
+
+Indexed so far:
+
+| Year | Subjects | Courses | Notes |
+| --- | --- | --- | --- |
+| 1963–64 | 25 departments | 349 | No letter codes yet; departments are mapped to today's codes (`/6364/math` → Mathematics, `/6364/russ` → Russian). Course numbers come from single-subject departments. |
+| 1994–95 | 74 | 1,746 | Codes as printed, with `&` dropped (`C&O` → `co`, `E&CE` → `ece`), plus today's codes for renamed subjects (`amath`, `afm`, `sds`, `gsj`). |
+
+The ucalendar host disallows automated access, so the build never downloads these PDFs; the indexes were made from copies downloaded by hand.
 
 ## Local development
 
@@ -122,7 +131,7 @@ scripts/lib/requisites.mjs     Kuali requisite HTML → plain-language tree
 scripts/lib/render.mjs         page templates
 scripts/lib/terms.mjs          term codes (1269) and year codes (2627)
 scripts/test.mjs               unit tests, run before every build
-data/archive-pages.json        optional page numbers inside the 1963–64 to 1994–95 PDFs
+data/archive/{year}.json       page numbers inside the 1963–64 to 1994–95 PDFs
 site/                          CSS, client JS, the URL router used by 404.html
 ```
 

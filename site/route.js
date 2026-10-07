@@ -64,9 +64,10 @@ function yearTarget(y, meta, subject, number) {
     return { type: 'redirect', to: `${UCAL}/${y.code}/COURSE/course-${S}.html${code ? `#${code}` : ''}` };
   }
   if (y.start >= FIRST_ONLINE && y.start < FIRST_HTML) {
-    // Page numbers come from data/archive-pages.json when someone has indexed that year.
+    // Page numbers come from data/archive/{year}.json when that year has been indexed:
+    // the course's page, else its subject's, else the start of the course descriptions.
     const pages = meta.pdfPages?.[y.code] ?? {};
-    const page = (code && pages[code]) || (S && pages[S]);
+    const page = (code && pages[code]) || (S && pages[S]) || pages._courses;
     return { type: 'redirect', to: `${pdfUrl(y.start)}${page ? `#page=${page}` : ''}` };
   }
   const why =

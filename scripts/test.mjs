@@ -65,11 +65,26 @@ test('router: 6364 to 9495 go to that year’s PDF', () => {
 });
 
 test('router: indexed PDF pages', () => {
-  const m = { ...meta, pdfPages: { 8889: { CS: 412, CS134: 415 } } };
+  const m = { ...meta, pdfPages: { 8889: { _courses: 300, CS: 412, CS134: 415 } } };
   assert.equal(resolve('/8889/cs', m).to, 'http://www.ucalendar.uwaterloo.ca/6394/1988-89.pdf#page=412');
   assert.equal(resolve('/8889/cs134', m).to, 'http://www.ucalendar.uwaterloo.ca/6394/1988-89.pdf#page=415');
   assert.equal(resolve('/8889/cs/999', m).to, 'http://www.ucalendar.uwaterloo.ca/6394/1988-89.pdf#page=412');
-  assert.equal(resolve('/8889/math', m).to, 'http://www.ucalendar.uwaterloo.ca/6394/1988-89.pdf');
+  assert.equal(resolve('/8889/math', m).to, 'http://www.ucalendar.uwaterloo.ca/6394/1988-89.pdf#page=300');
+  assert.equal(resolve('/8889', m).to, 'http://www.ucalendar.uwaterloo.ca/6394/1988-89.pdf#page=300');
+});
+
+test('archive indexes: 1963-64 and 1994-95', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const load = async (y) => JSON.parse(await readFile(new URL(`../data/archive/${y}.json`, import.meta.url), 'utf8'));
+  const [a, b] = [await load('6364'), await load('9495')];
+  const go = (y, idx, p) => resolve(p, { ...meta, pdfPages: { [y]: idx } }).to;
+  assert.equal(go('6364', a, '/6364/math'), 'http://www.ucalendar.uwaterloo.ca/6394/1963-64.pdf#page=143');
+  assert.equal(go('6364', a, '/6364/math330'), 'http://www.ucalendar.uwaterloo.ca/6394/1963-64.pdf#page=147');
+  assert.equal(go('6364', a, '/6364/cs'), 'http://www.ucalendar.uwaterloo.ca/6394/1963-64.pdf#page=100');
+  assert.equal(go('9495', b, '/9495/cs'), 'http://www.ucalendar.uwaterloo.ca/6394/1994-95.pdf#page=354');
+  assert.equal(go('9495', b, '/9495/co350'), 'http://www.ucalendar.uwaterloo.ca/6394/1994-95.pdf#page=351');
+  assert.equal(go('9495', b, '/9495/amath'), 'http://www.ucalendar.uwaterloo.ca/6394/1994-95.pdf#page=327');
+  for (const idx of [a, b]) for (const [k, v] of Object.entries(idx)) assert.ok(/^(_courses|[A-Z]{2,8}(\d{3}[A-Z]{0,2})?)$/.test(k) && Number.isInteger(v), k);
 });
 
 test('router: term codes go to acal', () => {
@@ -230,4 +245,12 @@ test('catalogs: undergrad years and grad terms from Kuali titles', () => {
   ]);
   assert.equal(grad[0].pageUrl, 'https://uwaterloo.ca/academic-calendar/graduate-studies/catalog/archive/spring-2024');
   assert.equal(grad[3].pageUrl, 'https://uwaterloo.ca/academic-calendar/graduate-studies/catalog');
+});
+
+test('404 page script survives templating (regexes, archive fetch)', async () => {
+  const { notFoundPage } = await import('./lib/render.mjs');
+  const html = notFoundPage({ meta: { years: [], current: '2627', gradTerms: [], subjects: [] }, builtAt: new Date(), version: 'x' });
+  assert.ok(html.includes('/^[0-9]{4}$/.test(year'), 'year check intact');
+  assert.ok(html.includes('fetch(`/archive/${year}.json`)'), 'archive fetch intact');
+  assert.ok(!/[^\\]\/\^d\{/.test(html), 'no regex lost its backslash');
 });
