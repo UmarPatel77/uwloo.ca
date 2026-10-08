@@ -6,8 +6,8 @@
 //   /2627/cs135, /2627/cs/135         → /2627/cs/#CS135
 //   /2223/cs   (9596 to 2324)         → ucalendar.uwaterloo.ca/2223/COURSE/course-CS.html
 //   /2223/cs135                       → …/course-CS.html#CS135
-//   /8889/cs   (6364 to 9495)         → ucalendar.uwaterloo.ca/6394/1988-89.pdf, at the CS page if indexed
-//   /8889/cs134                       → same PDF, at CS 134's page if indexed
+//   /8889/cs   (6364 to 9495)         → /8889/cs/, the OCR text of the scanned calendar, when that year has it;
+//   /8889/cs134                         else ucalendar.uwaterloo.ca/6394/1988-89.pdf at the CS (or CS 134) page
 //   /1249, /1249/cs   (grad terms)    → /1249/cs/  Graduate Calendar for that term (Spring 2024 on)
 //   /1249/math631, /1249/math/631     → /1249/math631/  MATH 631 as the Fall 2024 Graduate Calendar lists it
 //   …and when uwloo has no such page  → acal.fast.uwaterloo.ca/course/1249/MATH/631
@@ -68,6 +68,9 @@ function yearTarget(y, meta, subject, number) {
     // Page numbers come from data/archive/{year}.json when that year has been indexed:
     // the course's page, else its subject's, else the start of the course descriptions.
     const pages = meta.pdfPages?.[y.code] ?? {};
+    // Years with OCR text have real subject pages: /9495/cs241 → /9495/cs/#CS241 (aliases: amath → am).
+    const lead = S && pages._text?.[S.toLowerCase()];
+    if (lead) return { type: 'redirect', to: `/${y.code}/${lead}/${code ? `#${lead.toUpperCase()}${number.toUpperCase()}` : ''}` };
     const page = (code && pages[code]) || (S && pages[S]) || pages._courses;
     return { type: 'redirect', to: `${pdfUrl(y.start)}${page ? `#page=${page}` : ''}` };
   }

@@ -15,7 +15,7 @@ Waterloo course pages at short URLs. A GitHub Action pulls the university's own 
 | `uwloo.ca/cs` | The current calendar year's CS page |
 | `uwloo.ca/2627` | All subjects in the 2026–27 calendar |
 | `uwloo.ca/2324/cs`, any year from `9596` to `2324` | Redirects to `ucalendar.uwaterloo.ca/2324/COURSE/course-CS.html` |
-| `uwloo.ca/8889/cs`, any year from `6364` to `9495` | Redirects to that year's scanned calendar, `ucalendar.uwaterloo.ca/6394/1988-89.pdf`, at the CS page if `data/archive/8889.json` has it |
+| `uwloo.ca/9495/cs`, any year from `6364` to `9495` | That year's CS courses read from the scanned calendar (`/9495/cs241` jumps to CS 241), each linking to its scanned page. Years without text yet redirect to the PDF, at the CS page if `data/archive/9495.json` has it |
 | `uwloo.ca/6263/…` and earlier | Not online; says the archive starts at 1963–64 |
 | `uwloo.ca/courses.csv` | Every course: title, level, whether it's in the current calendars, the last term it ran (looking back 7 years), and its outline.uwaterloo.ca search link. Opens in Excel |
 | `uwloo.ca/1269/cs135` | Redirects to `acal.fast.uwaterloo.ca/course/1269/CS/135` whenever uwloo has no page for it (undergrad codes, and terms before Spring 2024) |
@@ -80,6 +80,18 @@ Records stay **DNS only** because GitHub can't issue its certificate through Clo
 
 Setup still checks things and says what's missing. Set Settings → Pages → Source to **GitHub Actions**, enter `uwloo.ca` under Custom domain, add the DNS records above, and tick Enforce HTTPS when GitHub offers it.
 
+## Text for the scanned years
+
+Opening a PDF often means a download, so years with OCR text get real pages instead: `/9495/cs` lists every CS entry from the 1994–95 calendar, with its terms and units, prerequisites linked within that year, a link to its scanned page, and a link to the course today if it still exists. Courses listed under "not offered this year" get an anchor too, and a course the text missed shows a note pointing to its scanned page.
+
+`tools/archive/extract_text.py` makes `data/archive-text/{YYyy}.json`. The PDFs' own text layer is 1990s OCR and too garbled to show, so it re-OCRs the course pages with Tesseract at 300 dpi, which reads these scans almost perfectly, then splits them using `index_pdf.py`'s header detection and the page index. Needs poppler and Tesseract 5; about 3.5 seconds per page per worker, cached in `.cache/ocr/`.
+
+```sh
+python tools/archive/extract_text.py path/to/1994-95.pdf    # writes data/archive-text/9495.json
+```
+
+Done so far: 1963–64 (28 subjects, 638 entries) and 1994–95 (71 subjects, 2,680 entries, 328 of them "not offered" listings).
+
 ## Page numbers for the PDF years
 
 `data/archive/{year}.json` holds page numbers inside that year's scanned calendar, keyed by subject and course:
@@ -88,7 +100,7 @@ Setup still checks things and says what's missing. Set Settings → Pages → So
 { "_courses": 323, "CS": 354, "CS241": 354, "CO": 351, "AMATH": 327 }
 ```
 
-`/9495/cs241` opens the 1994–95 PDF at page 354. A course that isn't listed falls back to its subject, and a subject that isn't listed falls back to `_courses` (where course descriptions begin). Years without a file open at page 1. Page numbers are the PDF's own page count, not the numbers printed on the pages. The build copies these files to `/archive/`, and `404.html` fetches only the year being visited.
+For a year without text pages, `/8889/cs241` opens the 1988–89 PDF at CS 241's page. A course that isn't listed falls back to its subject, and a subject that isn't listed falls back to `_courses` (where course descriptions begin). Years without a file open at page 1. Page numbers are the PDF's own page count, not the numbers printed on the pages. The build copies these files to `/archive/`, and `404.html` fetches only the year being visited.
 
 All 32 years from 1963–64 to 1994–95 are indexed: about 60,000 subject and course entries in total. `tools/archive/index_pdf.py` builds them, and `tools/archive/README.md` has the per-year counts and notes (layout eras, OCR quality, manual fixes). Letter codes first appear on every course header in 1977–78; earlier years map departments to today's codes (`/6364/math`, `/6364/russ`). `&` is dropped from codes (`C&O` → `co`, `E&CE` → `ece`), and today's codes work for renamed subjects (`amath`, `afm`, `sds`, `gsj`). A test checks every file is present and well-formed before each deploy.
 

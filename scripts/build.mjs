@@ -2,8 +2,9 @@
 //   node scripts/build.mjs                 (Kuali only)
 //   UW_API_KEY=… node scripts/build.mjs    (adds offering history and section seats)
 import { createHash } from 'node:crypto';
-import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import { archiveSubjectPage, archiveYearPage, loadArchiveText, textMap } from './lib/archive.mjs';
 import * as kuali from './lib/kuali.mjs';
 import * as opendata from './lib/opendata.mjs';
 import {
@@ -290,6 +291,32 @@ async function main() {
     sitemap.push(`/${cat.term}/`);
   }
 
+  // Scanned-calendar years (6364 to 9495) with OCR text: real subject pages instead of the PDF.
+  const archiveText = await loadArchiveText();
+  const archiveIndex = {};
+  for (const f of await readdir('data/archive').catch(() => [])) {
+    if (/^\d{4}\.json$/.test(f)) archiveIndex[f.slice(0, 4)] = JSON.parse(await readFile(`data/archive/${f}`, 'utf8'));
+  }
+  let archivePages = 0;
+  for (const doc of archiveText.values()) {
+    for (const subj of doc.subjects) {
+      pages.push([
+        `${doc.year}/${subj.slug}/index.html`,
+        archiveSubjectPage({ ...ctxBase, doc, s: subj, index: archiveIndex[doc.year], today: known, faculty: subjectFaculty(subj.code) }),
+      ]);
+      for (const a of subj.aliases) pages.push([`${doc.year}/${slug(a)}/index.html`, redirectPage(`/${doc.year}/${subj.slug}/`)]);
+      sitemap.push(`/${doc.year}/${subj.slug}/`);
+      archivePages++;
+    }
+    pages.push([`${doc.year}/index.html`, archiveYearPage({ ...ctxBase, doc })]);
+    sitemap.push(`/${doc.year}/`);
+  }
+  // 404.html fetches /archive/{year}.json for these years: the page index, plus _text listing subjects with pages.
+  for (const [year, idx] of Object.entries(archiveIndex)) {
+    const doc = archiveText.get(year);
+    pages.push([`archive/${year}.json`, JSON.stringify(doc ? { ...idx, _text: textMap(doc) } : idx)]);
+  }
+
   // /cs → the current year's CS page (or the newest page that has the subject), as a real file so it isn't a 404.
   const allSubjects = new Set();
   for (const cat of [...ug, ...grad]) for (const s of cat.subjects) allSubjects.add(s);
@@ -353,13 +380,9 @@ async function main() {
   await rm(OUT, { recursive: true, force: true });
   await mkdir(OUT, { recursive: true });
   await cp('site', OUT, { recursive: true });
-  // Page numbers inside the 1963–64 to 1994–95 PDFs, one file per year; 404.html fetches only the year asked for.
-  await cp('data/archive', join(OUT, 'archive'), { recursive: true }).catch((err) => {
-    if (err.code !== 'ENOENT') throw err;
-  });
   await writeAll(pages);
   const gradOnly = [...primary.values()].filter((p) => p.cat.level === 'grad').length;
-  console.log(`Wrote ${pages.length} files to ${OUT}/ (${primary.size} course pages, ${gradOnly} from the Graduate Calendar, ${versionPages} grad term versions)`);
+  console.log(`Wrote ${pages.length} files to ${OUT}/ (${primary.size} course pages, ${gradOnly} from the Graduate Calendar, ${versionPages} grad term versions, ${archivePages} scanned-calendar subject pages)`);
 }
 
 main().catch((err) => {

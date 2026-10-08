@@ -281,3 +281,46 @@ test('outline link uses the outline site\'s own encoding', async () => {
   assert.equal(outlineUrl('ECON', '221'), 'https://outline.uwaterloo.ca/viewer/?q=econ%2520221');
   assert.equal(outlineUrl('CS', '136L'), 'https://outline.uwaterloo.ca/viewer/?q=cs%2520136l');
 });
+
+test('router: scanned years with OCR text go to their uwloo pages', () => {
+  const m = { ...meta, pdfPages: { 9495: { _courses: 323, CS: 353, CS241: 354, _text: { cs: 'cs', am: 'am', amath: 'am' } } } };
+  assert.equal(resolve('/9495/CS', m).to, '/9495/cs/');
+  assert.equal(resolve('/9495/cs241', m).to, '/9495/cs/#CS241');
+  assert.equal(resolve('/9495/cs/241', m).to, '/9495/cs/#CS241');
+  assert.equal(resolve('/9495/amath231', m).to, '/9495/am/#AM231');
+  // subjects without a text page still open the PDF
+  assert.equal(resolve('/9495/xyz', m).to, 'http://www.ucalendar.uwaterloo.ca/6394/1994-95.pdf#page=323');
+});
+
+test('archive text: files are well-formed and pages render', async () => {
+  const { loadArchiveText, archiveSubjectPage, textMap } = await import('./lib/archive.mjs');
+  const docs = await loadArchiveText(new URL('../data/archive-text', import.meta.url).pathname);
+  for (const doc of docs.values()) {
+    assert.match(doc.year, /^\d{4}$/);
+    assert.ok(doc.pdf.endsWith('.pdf'), `${doc.year}: pdf`);
+    const ids = new Set();
+    for (const s of doc.subjects) {
+      assert.match(s.code, /^[A-Z]{2,8}$/, `${doc.year}: subject ${s.code}`);
+      assert.ok(Number.isInteger(s.page), `${doc.year} ${s.code}: page`);
+      for (const c of s.courses) {
+        assert.ok(Number.isInteger(c.page) && Array.isArray(c.paras), `${doc.year} ${c.label}`);
+        if (c.id) {
+          assert.ok(c.id.startsWith(s.code), `${doc.year}: ${c.id} under ${s.code}`);
+          assert.ok(!ids.has(c.id), `${doc.year}: duplicate anchor ${c.id}`);
+          ids.add(c.id);
+        }
+      }
+    }
+    assert.ok(Object.keys(textMap(doc)).length >= doc.subjects.length);
+  }
+  const doc = docs.get('9495');
+  if (doc) {
+    const cs = doc.subjects.find((s) => s.code === 'CS');
+    const html = archiveSubjectPage({ doc, s: cs, index: { CS999: 360 }, today: new Set(['CS241']), builtAt: new Date(), version: 'x' });
+    assert.match(html, /<section class="entry" id="CS241">/);
+    assert.match(html, /href="\/cs241\/">CS 241 today</);
+    assert.match(html, /1994-95\.pdf#page=\d+">Scanned page/);
+    assert.ok(html.includes("id.replace(/^([A-Z]+)(\\d)/, '$1 $2')"), 'missing-course script intact');
+    assert.ok(html.includes('"CS999":360'), 'fallback page for a course the text missed');
+  }
+});
