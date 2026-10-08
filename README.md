@@ -90,12 +90,7 @@ Setup still checks things and says what's missing. Set Settings → Pages → So
 
 `/9495/cs241` opens the 1994–95 PDF at page 354. A course that isn't listed falls back to its subject, and a subject that isn't listed falls back to `_courses` (where course descriptions begin). Years without a file open at page 1. Page numbers are the PDF's own page count, not the numbers printed on the pages. The build copies these files to `/archive/`, and `404.html` fetches only the year being visited.
 
-Indexed so far:
-
-| Year | Subjects | Courses | Notes |
-| --- | --- | --- | --- |
-| 1963–64 | 25 departments | 349 | No letter codes yet; departments are mapped to today's codes (`/6364/math` → Mathematics, `/6364/russ` → Russian). Course numbers come from single-subject departments. |
-| 1994–95 | 74 | 1,746 | Codes as printed, with `&` dropped (`C&O` → `co`, `E&CE` → `ece`), plus today's codes for renamed subjects (`amath`, `afm`, `sds`, `gsj`). |
+All 32 years from 1963–64 to 1994–95 are indexed: about 60,000 subject and course entries in total. `tools/archive/index_pdf.py` builds them, and `tools/archive/README.md` has the per-year counts and notes (layout eras, OCR quality, manual fixes). Letter codes first appear on every course header in 1977–78; earlier years map departments to today's codes (`/6364/math`, `/6364/russ`). `&` is dropped from codes (`C&O` → `co`, `E&CE` → `ece`), and today's codes work for renamed subjects (`amath`, `afm`, `sds`, `gsj`). A test checks every file is present and well-formed before each deploy.
 
 The ucalendar host disallows automated access, so the build never downloads these PDFs; the indexes were made from copies downloaded by hand.
 
