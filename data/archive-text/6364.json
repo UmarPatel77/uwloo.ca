@@ -1724,7 +1724,7 @@
 ]
 },
 {
-"id":"LAT260",
+"id":null,
 "label":"LAT 260",
 "page":118,
 "spec":"",
@@ -1734,7 +1734,7 @@
 ]
 },
 {
-"id":"LAT350",
+"id":null,
 "label":"LAT 350",
 "page":118,
 "spec":"",
@@ -1754,7 +1754,7 @@
 ]
 },
 {
-"id":"LAT370",
+"id":null,
 "label":"LAT 370",
 "page":118,
 "spec":"",
@@ -1795,7 +1795,7 @@
 ]
 },
 {
-"id":null,
+"id":"LAT260",
 "label":"LAT 260",
 "page":118,
 "spec":"",
@@ -1807,7 +1807,7 @@
 ]
 },
 {
-"id":null,
+"id":"LAT350",
 "label":"LAT 350",
 "page":118,
 "spec":"",
@@ -1817,7 +1817,7 @@
 ]
 },
 {
-"id":null,
+"id":"LAT370",
 "label":"LAT 370",
 "page":118,
 "spec":"",
@@ -3705,9 +3705,8 @@
 "page":141,
 "spec":"",
 "title":"History of France",
-"paras":[
-"(Not offered in 1963-64). 3 hours seminar."
-]
+"paras":[],
+"listed":"Not offered in 1963-64). 3 hours seminar."
 },
 {
 "id":"HIST280",
@@ -5852,8 +5851,17 @@
 "An elementary course in geometrical and physical optics. Refraction and reflection at plane and curved surfaces; thin and thick lenses; optical instruments. The wave nature of light: interference; diffraction; slits and gratings; resolution. Polarization; optical activity; photometry.",
 "2 lectures, 3 hours laboratory.",
 "Note: Students enrolled in the Chemistry and the Chemistry and Physics courses",
-"take laboratory work in alternate weeks.",
-"927 Aateonomy I, A survey course in astronomy. Asnects of the skye: motions of aoie aStrOmomy «a. “4 survey course in astronomy. “Aspects or the sky; motions of",
+"take laboratory work in alternate weeks."
+]
+},
+{
+"id":"PHYS927",
+"label":"PHYS 927",
+"page":163,
+"spec":"",
+"title":"Aateonomy I, A survey course in astronomy. Asnects of the skye: motions of",
+"paras":[
+"aoie aStrOmomy «a. “4 survey course in astronomy. “Aspects or the sky; motions of",
 "the earth; the earth and the moon; the solar system; gravitational astronomy; the sun; the stars; stellar motions; comets; meteors; meteorites; interstellar matter; the structure of the galaxy; exterior systems; cosmogony; radio astronomy.",
 "3 lectures."
 ]

@@ -346,7 +346,7 @@
 "id":"ACC491",
 "label":"ACC 491",
 "page":324,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"Financial Accounting 3",
 "paras":[
 "An advanced accounting course considering specific problems of accounting for the corporate entity, such as business combinations, intercorporate investments, consolidated financial statements, accounting for foreign operations and foreign currency transactions, segment reporting.",
@@ -563,7 +563,7 @@
 "id":"ACTSC451",
 "label":"ACTSC 451",
 "page":325,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"Selection of Risks 1",
 "paras":[
 "The effects of medical and non-medical risk factors on bodily systems are explored to determine the amount and incidence of additional morbidity and mortality. Techniques for expressing the increased risk in premiums are investigated.",
@@ -848,7 +848,7 @@
 "id":"ANTH311",
 "label":"ANTH 311",
 "page":326,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"Magic, Witchcraft and Religion",
 "paras":[
 "An introduction to the way in which anthropologists study the system of behaviour and belief known as religion."
@@ -1201,7 +1201,7 @@
 "title":"Calculus 4",
 "paras":[
 "Vector integral calculus, including line integrals, Green’s theorem, the",
-"‘Divergence theorem, and Stokes’ theo-",
+"Divergence theorem, and Stokes’ theo-",
 "rem, with applications to physical problems. Sequences and series of functions and their applications, including the role of uniform convergence.",
 "Prereq: MATH 237",
 "Antireq: MATH 210, 212, 213B, 227P"
@@ -1389,9 +1389,9 @@
 "label":"AM 441",
 "page":328,
 "spec":"F 3C 0.5",
-"title":"Numerical Solution of Differential and",
+"title":"Numerical Solution of Differential and integral Equations",
 "paras":[
-"integral Equations Initial-value problems: existence and uniqueness of solutions, one step methods, multistep methods, stability, error analysis. Boundary-value problems: shooting and discretization methods, implementation problems especially for non-linear equations. Integral equations: correspondence to ordinary differential equations, initial-value and boundary-value problems, solution techniques. Prereq: CS 374, or CS 337 and consent of instructor. CS 372 is recommended Crosslisted as CS 476"
+"Initial-value problems: existence and uniqueness of solutions, one step methods, multistep methods, stability, error analysis. Boundary-value problems: shooting and discretization methods, implementation problems especially for non-linear equations. Integral equations: correspondence to ordinary differential equations, initial-value and boundary-value problems, solution techniques. Prereq: CS 374, or CS 337 and consent of instructor. CS 372 is recommended Crosslisted as CS 476"
 ]
 },
 {
@@ -1399,7 +1399,7 @@
 "label":"AM 451",
 "page":328,
 "spec":"W 3C 0.5",
-"title":"introduction to Dynamical Systems",
+"title":"Introduction to Dynamical Systems",
 "paras":[
 "A unified view of linear and nonlinear systems of ordinary differential equations in Re. Flow operators and their classification: contractions, expansions, hyperbolic flows. Stable and unstable manifolds. Phase-space analysis. Nonlinear systems, stability of equilibria and Lyapunov functions. The special case of flows in the plane, Poincaré-Bendixon theorem and timit cycles. Applications to physical problems will be a motivating influence. Prereq: AM 251 and 351, or consent of instructor"
 ]
@@ -1504,7 +1504,7 @@
 "id":"AM496",
 "label":"AM 496",
 "page":329,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"Reading Course",
 "paras":[]
 },
@@ -1578,9 +1578,9 @@
 "label":"ARCH 142",
 "page":330,
 "spec":"F 4C,2L 1.0",
-"title":"",
+"title":"Iconography 1: Conventions",
 "paras":[
-"lconography 1: Conventions Selected schemes of order, such as fate, providence, natural law, the human will, as expressed in plays, poems and fiction from various ages; selected conventions in literature, cinema, and the visual arts; the development of one or two archetypal symbols in literature and the visual arts; directed to lead into more detailed studies of symbolic pattems in Ilconography 2. Prereq: Consent of instructor"
+"Selected schemes of order, such as fate, providence, natural law, the human will, as expressed in plays, poems and fiction from various ages; selected conventions in literature, cinema, and the visual arts; the development of one or two archetypal symbols in literature and the visual arts; directed to lead into more detailed studies of symbolic pattems in Ilconography 2. Prereq: Consent of instructor"
 ]
 },
 {
@@ -2097,7 +2097,7 @@
 "spec":"W,S 0.0",
 "title":"Fifth Year Thesis Proposal",
 "paras":[
-"Architecture students are responsible for developing a satisfactory thesis proposal prior to and as a pre-requisite of the 5A Design Studio. The completion of this requirement will be indicated as a mark of ‘CR’ for the course on the student's academic record. The thesis proposal will be developed independently by the student between the 4B and 5A terms and will be reviewed and assessed by the 5A studio instructor.",
+"Architecture students are responsible for developing a satisfactory thesis proposal prior to and as a pre-requisite of the 5A Design Studio. The completion of this requirement will be indicated as a mark of CR’ for the course on the student's academic record. The thesis proposal will be developed independently by the student between the 4B and 5A terms and will be reviewed and assessed by the 5A studio instructor.",
 "Prereq: ARCH 493"
 ]
 },
@@ -2244,9 +2244,8 @@
 "label":"BIOL 112",
 "page":334,
 "spec":"W 2C 0.5",
-"title":"",
+"title":"Introductory Biology 2",
 "paras":[
-"introductory Biology 2",
 "An introduction to the basic principles of the structure and function of plants and animals within an ecological and evolutionary framework. The biology of multicellular organisms will be emphasized.",
 "Open to students other than those intending to major in Biology or to enter the School of Optometry.",
 "BIOL 112 cannot be counted for credit toward a joint degree in Biology and the Faculty of Environmental Studies.",
@@ -2530,9 +2529,9 @@
 "label":"BIOL 424",
 "page":335,
 "spec":"F 3C 0.5",
-"title":"",
+"title":"Fems, Gymnosperms and Fern Allies",
 "paras":[
-"Fems, Gymnosperms and Fern Allies: an evolutionary survey A detailed survey of the non-flowering vascular plants with emphasis on the extant members of each major group in Ontario. The phylogeny of the plants will be explored through a study of fossil ancestors in each line of evolution. Prereq: BIOL 220 and 221 or permission of instructor Offered in even-numbered years."
+"an evolutionary survey A detailed survey of the non-flowering vascular plants with emphasis on the extant members of each major group in Ontario. The phylogeny of the plants will be explored through a study of fossil ancestors in each line of evolution. Prereq: BIOL 220 and 221 or permission of instructor Offered in even-numbered years."
 ]
 },
 {
@@ -3076,7 +3075,7 @@
 "id":"CDNST301",
 "label":"CDNST 301",
 "page":338,
-"spec":"F 3S 05",
+"spec":"F 3S 0.5",
 "title":"Regionalism: West",
 "paras":[
 "This course continues the exploration of Canadian regionalism by applying knowledge gained in CDN ST 201/202 to distinctive problems of the Canadian west and northwest. The focus of the seminar will vary according to the interests of the faculty and students.",
@@ -3103,7 +3102,7 @@
 "id":"CDNST311",
 "label":"CDNST 311",
 "page":338,
-"spec":"F 3S 05",
+"spec":"F 3S 0.5",
 "title":"Canadian Women and Religion",
 "paras":[
 "This course investigates Canadian women's experience in religion from pioneer times to the present day. It analyses the role of women in mainstream Protestant, Roman Catholic and Jewish traditions, in the jess structured sectarian and cultic groups, and in native religion."
@@ -3182,11 +3181,9 @@
 "id":"CHE100",
 "label":"CHE 100",
 "page":338,
-"spec":"F 3C,1T,6L for first 6 weeks",
-"title":"",
+"spec":"F 3C,1T,6L for first 6 weeks 0.75",
+"title":"Chemical Engineering Concepts 1",
 "paras":[
-"0.75",
-"Chemical Engineering Concepts 1",
 "An introduction to the basic methods and",
 "principles used by engineers in the analy-",
 "sis and design of physical processes.",
@@ -3257,7 +3254,7 @@
 "paras":[
 "Thermodynamics: work and heat as forms of energy. First law, internal energy and enthalpy. Heats of chemical and physical changes. Cycles and the second law, entropy. Spontaneity and equilibrium, free energies. Systems of variable composition, chemical equilibrium. Phase equilibrium and the phase rule. Ideai solution, colligative properties.",
 "Prereq: CH E 101,102",
-"‘Alternate weeks"
+"Alternate weeks"
 ]
 },
 {
@@ -3285,7 +3282,7 @@
 "paras":[
 "Thermodynamics: ideal dilute solutions; equilibria in condensed phases and in non-ideal systems; fugacities and activities. Surface phenomena: surface tension; capillarity; adsorption; electrical double layers; colloids. Transport properties: thermal conductivity, viscosity and diffusion coefficients. Chemical kinetics: rate laws; mechanisms; catalysis; reaction rates; heterogeneous reactions; photochemistry. Polymers: types; thermodynamics of solutions.",
 "Course Descriptions Chemica! Engineering",
-"Prereq: CH E 023 ‘Altemate weeks"
+"Prereq: CH E 023 Altemate weeks"
 ]
 },
 {
@@ -3417,7 +3414,7 @@
 "label":"CHE 041",
 "page":340,
 "spec":"S,F 30,1T,2L 0.5",
-"title":"introduction to Process Control",
+"title":"Introduction to Process Control",
 "paras":[
 "Laplace transform techniques. Proportional-integral-derivative control. Frequency response methods. Stability analysis. Controller tuning. Process contro! simulation and computer control systems. Process identification.",
 "Prereq: CH E 037, 101, 102, GEN E 121"
@@ -3485,7 +3482,7 @@
 "id":"CHE512",
 "label":"CHE 512",
 "page":340,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"Separation Processes",
 "paras":[
 "Computational approaches in the design of muttiple component separation processes. Energy requirements. Capacity and efficiency of contacting devices: distillation; absorption; liquid-liquid extraction; filtration; molecular sieves; membranes; ion exchange.",
@@ -3595,7 +3592,7 @@
 "id":"CHE574",
 "label":"CHE 574",
 "page":341,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"Treatment of Aqueous Inorganic Wastes",
 "paras":[
 "Introduction to separation/treatment of aqueous inorganic wastes from chemical and metallurgical processes. Separation/",
@@ -3803,9 +3800,9 @@
 "label":"CHEM 212",
 "page":342,
 "spec":"F,W 3C 0.5",
-"title":"Structure and Bonding Structure and symmetry of Main Group and Transition Metal compounds. Valence",
+"title":"Structure and Bonding Structure and symmetry of Main Group",
 "paras":[
-"bond, molecular orbital and ligand field theories applied to polyatomic molecules. Descriptive chemistry of selected elements and compounds. Prereq: CHEM 120 or 121, 129 Antireq: CHEM 218 For Honours students only"
+"and Transition Metal compounds. Valence bond, molecular orbital and ligand field theories applied to polyatomic molecules. Descriptive chemistry of selected elements and compounds. Prereq: CHEM 120 or 121, 129 Antireq: CHEM 218 For Honours students only"
 ]
 },
 {
@@ -4053,9 +4050,9 @@
 "label":"CHEM 303",
 "page":343,
 "spec":"W 2C,1L 0.5",
-"title":"",
+"title":"Fonic Equilibria",
 "paras":[
-"fonic Equilibria Algebraic, geometric and computational methods of analysing the interactions in systems of equilibria. Applications to aqueous solutions, physiological fluids, and mineral systems may be studied. Labs will require selected calculations by various manual and machine methods on typical systems.",
+"Algebraic, geometric and computational methods of analysing the interactions in systems of equilibria. Applications to aqueous solutions, physiological fluids, and mineral systems may be studied. Labs will require selected calculations by various manual and machine methods on typical systems.",
 "Prereq: CHEM 123 or 125, basic computer skills"
 ]
 },
@@ -4084,7 +4081,7 @@
 "id":"CHEM312L",
 "label":"CHEM 312L",
 "page":343,
-"spec":"F,W 6L 05",
+"spec":"F,W 6L 0.5",
 "title":"Inorganic Chemistry Laboratory",
 "paras":[
 "Experiments appropriate to the inorganic chemistry program.",
@@ -4325,7 +4322,7 @@
 "id":"CHEM421",
 "label":"CHEM 421",
 "page":344,
-"spec":"W 2C 05",
+"spec":"W 2C 0.5",
 "title":"Mass Spectrometry",
 "paras":[
 "Principles involved in the use of electric",
@@ -4901,7 +4898,7 @@
 "id":"CIVE407",
 "label":"CIVE 407",
 "page":347,
-"spec":"W 2C,2T 05",
+"spec":"W 2C,2T 0.5",
 "title":"Building Science and Technology",
 "paras":[
 "The building process. Loadings: gravity, wind, thermal, moisture, fire. Enclosure design: walls, windows, roof. Subgrade construction. Energy related considerations.",
@@ -4956,7 +4953,7 @@
 "id":"CIVE430",
 "label":"CIVE 430",
 "page":347,
-"spec":"W 2C2L 05",
+"spec":"W 2C2L 0.5",
 "title":"Experimental Mechanics",
 "paras":[
 "Experimental evaluation of responses of engineering structures to various loads. Foundations of modelling, observations and measurements. Mode! development. Selected experimental techniques. Transfer functions."
@@ -5154,9 +5151,9 @@
 "label":"CLAS 201",
 "page":348,
 "spec":"F,W 3C 0.5",
-"title":"",
+"title":"Ancient Greek Society",
 "paras":[
-"Ancient Greek Society . A survey of the civilization of Classical Greece, featuring such topics as the individual (male and female), political institutions, art, religion, philosophy, literature, social life and leisure activities.",
+"A survey of the civilization of Classical Greece, featuring such topics as the individual (male and female), political institutions, art, religion, philosophy, literature, social life and leisure activities.",
 "Students are advised to preregister early for this course as enrolment is limited.",
 "16:29"
 ]
@@ -5272,7 +5269,7 @@
 "id":"CLAS352",
 "label":"CLAS 352",
 "page":349,
-"spec":"30 05",
+"spec":"30 0.5",
 "title":"Roman Art and Architecture",
 "paras":[
 "A survey of the art and architecture of the",
@@ -5525,7 +5522,7 @@
 "id":"GRK473",
 "label":"GRK 473",
 "page":350,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"Greek Comedy Selected plays of Aristophanes and",
 "paras":[
 "Menander. Prereq: Senior standing in Greek (Formerly GRK 462)"
@@ -5827,7 +5824,7 @@
 "spec":"W 3C 0.5",
 "title":"Introductory Combinatorics",
 "paras":[
-"Elementary principles of enumeration. Principle of inclusion-exclusion, generating functions, recurrence equations. Elementary graph theory and graphical algorithms. Introduction to design theory. Antireg: C&O 230 C&O 220 cannot be counted for credit toward a BMath Honours degree."
+"Elementary principles of enumeration. Principle of inclusion-exclusion, generating functions, recurrence equations. Elementary graph theory and graphical algorithms. Introduction to design theory. Antireg: C&O 230 C&O  220 cannot be counted for credit toward a BMath Honours degree."
 ]
 },
 {
@@ -5837,7 +5834,7 @@
 "spec":"F 3C 0.5",
 "title":"Introduction to Optimization Models",
 "paras":[
-"Structure and classification of optimization problems. The concepts of algorithm and heuristic. Continuous models. Linear models. Branch-and-bound, dynamic programming, impiicit enumeration and approximation. Applications of optimization models. Prereq: MATH 108, 125 or equivalent Antireg: C&O 350 C&O 227 cannot be counted for credit toward a BMath Honours degree."
+"Structure and classification of optimization problems. The concepts of algorithm and heuristic. Continuous models. Linear models. Branch-and-bound, dynamic programming, impiicit enumeration and approximation. Applications of optimization models. Prereq: MATH 108, 125 or equivalent Antireg: C&O 350 C&O  227 cannot be counted for credit toward a BMath Honours degree."
 ]
 },
 {
@@ -5895,7 +5892,7 @@
 "A first course in problem formulation and solution techniques in linear programming. The simplex and revised simplex methods. Active set formulation of the simplex method. Theory and applications of duality theory. Sensitivity Analysis.",
 "Prereq: MATH 225 or 235",
 "Antireq: C&O 227, 355, ACTSC 335",
-"C&O 355 may be substituted for C&O 350 in any degree program, or for prerequisite purposes.",
+"C&O  355 may be substituted for C&O  350 in any degree program, or for prerequisite purposes.",
 "Also offered at St. Jerome's College in the Fall term"
 ]
 },
@@ -5919,7 +5916,7 @@
 "Linear optimization: feasibility theorems, duality, the simplex algorithm. Discrete optimization: integer linear programming, cutting planes, network flows. Continuous optimization: local and global optima, feasible directions, convexity, necessary optimality conditions.",
 "Prereq: MATH 235, 237",
 "Antireq: C&O 350, ACTSC 335",
-"C&O 355 may be substituted for C&O 350 in any degree program, or for prerequisite purposes."
+"C&O  355 may be substituted for C&O  350 in any degree program, or for prerequisite purposes."
 ]
 },
 {
@@ -6098,7 +6095,7 @@
 "id":"CO454",
 "label":"CO 454",
 "page":352,
-"spec":"S 3C 05",
+"spec":"S 3C 0.5",
 "title":"Scheduling",
 "paras":[
 "Sequencing algorithms for scheduling tasks on single machines, parallel machines, and flow shops. Applications to scheduling computers and manufacturing facilities. Combinatorial techniques used in algorithm development and convergence proofs.",
@@ -6455,7 +6452,7 @@
 "id":"CS430",
 "label":"CS 430",
 "page":355,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"Applications Software Engineering",
 "paras":[
 "An investigation into the role and function of software engineering practice in the construction of computer based systems. Topics include: requirements and specification; documentation techniques; analysis and design; implementation; testing and maintenance; management issues. Prereq: CS 330 or permission of instructor and third-year standing Antireq: CS 446 CS 430 cannot be counted for credit in a Computer Science Major program."
@@ -6465,7 +6462,7 @@
 "id":"CS432",
 "label":"CS 432",
 "page":356,
-"spec":"F,W,S 3C 05",
+"spec":"F,W,S 3C 0.5",
 "title":"Business Systems Analysis",
 "paras":[
 "Survey of organization and management theory. Systems theory and the systems approach. Systems design. Database concepts. Implementation and evatuation of computer based information systems. Prereq: CS 330 and third-year standing Antireq: CS 482 CS 432 cannot be counted for credit in a Computer Science Major program."
@@ -6508,9 +6505,9 @@
 "label":"CS 446",
 "page":356,
 "spec":"F,S 3C 0.5",
-"title":"Software System Design and",
+"title":"Software System Design and implementation",
 "paras":[
-"implementation An investigation into the role and function of software engineering practice in the design and implementation of computer based systems. Topics include: structural design; procedural design; testing and reliability; management topics; programming languages and coding; portability techniques; maintenance; performance measurement and analysis. Prereq: CS 342, and registration in a Computer Science Major program. Antireg: CS 430"
+"An investigation into the role and function of software engineering practice in the design and implementation of computer based systems. Topics include: structural design; procedural design; testing and reliability; management topics; programming languages and coding; portability techniques; maintenance; performance measurement and analysis. Prereq: CS 342, and registration in a Computer Science Major program. Antireg: CS 430"
 ]
 },
 {
@@ -6538,7 +6535,7 @@
 "id":"CS452",
 "label":"CS 452",
 "page":356,
-"spec":"F,S 3C 05",
+"spec":"F,S 3C 0.5",
 "title":"Real-time Programming",
 "paras":[
 "Intended to give students experience with tools and techniques of real-time programming, this course includes not only issues of microcomputer architecture and a realtime programming language and operating system, but also hands-on experience programming a microcomputer for applications such as process control, data acquisition and communication.",
@@ -6624,7 +6621,7 @@
 "id":"CS476",
 "label":"CS 476",
 "page":357,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"Numerical Solution of Differential and Integral Equations",
 "paras":[
 "Initial value problems: existence and uniqueness of solutions, one step methods, multistep methods, stability, error analysis. Boundary value problems: shooting and discretization methods, implementation problems especially for nontinear equations. Integral equations: correspondence to ordinary differential equations, initial value and boundary value problems, solution techniques.",
@@ -6664,7 +6661,7 @@
 "label":"CS 486",
 "page":357,
 "spec":"F,W,S 3C 0.5",
-"title":"introduction to Artificial Intelligence",
+"title":"Introduction to Artificial Intelligence",
 "paras":[
 "Goals and methods of artificial intelligence. Methods of general problem solving. Introduction to mathematical logic. Mechanical theorem proving. Game playing. Natural language processing. Prereq: CS 340 and registration ina Computer Science Major program"
 ]
@@ -6673,8 +6670,8 @@
 "id":"CS487",
 "label":"CS 487",
 "page":357,
-"spec":"W 3C 05",
-"title":"introduction to Symbolic Computation",
+"spec":"W 3C 0.5",
+"title":"Introduction to Symbolic Computation",
 "paras":[
 "An introduction to the use of computers for symbolic mathematical computation, involving traditional mathematical computations such as solving linear equations (exactly), analytic differentiation and integration of functions, and analytic solution of differential equations.",
 "Prereq: CS 241, PMATH 334 or consent of instructor"
@@ -7228,9 +7225,8 @@
 "label":"DRAMA 222",
 "page":359,
 "spec":"W 6L 0.5",
-"title":"",
+"title":"Intermediate Acting 2",
 "paras":[
-"intermediate Acting 2",
 "An extension of DRAMA 221. Prereq: DRAMA 221 Auditon required"
 ]
 },
@@ -7264,9 +7260,8 @@
 "label":"DRAMA 225",
 "page":360,
 "spec":"F 3L 0.5",
-"title":"",
+"title":"Interviewing",
 "paras":[
-"Interviewing.",
 "Theory and practice of interviewing.",
 "A workshop course which teaches theory.",
 "design, and presentation of interviews.",
@@ -7884,7 +7879,7 @@
 "label":"EARTH 122L",
 "page":362,
 "spec":"W 3L 0.25",
-"title":"introductory Earth Sciences Laboratory 2",
+"title":"Introductory Earth Sciences Laboratory 2",
 "paras":[
 "For students taking EARTH 122. Laboratory exercises on selected topics form EARTH 122 Sectures."
 ]
@@ -7939,9 +7934,9 @@
 "label":"EARTH 231",
 "page":362,
 "spec":"F 2C,3L 0.5",
-"title":"Mineralogy Systematic mineralogy. Classification and",
+"title":"Mineralogy",
 "paras":[
-"interrelationships of chemical, structural and physical properties of the major rockforming minerals. Elementary petrology of igneous, metamorphic and sedimentary rocks in outcrop and hand specimen. Prereq: EARTH 121/121L, 122/1221, 126 (= GEO E 126), or permission of instructor"
+"Systematic mineralogy. Classification and interrelationships of chemical, structural and physical properties of the major rockforming minerals. Elementary petrology of igneous, metamorphic and sedimentary rocks in outcrop and hand specimen. Prereq: EARTH 121/121L, 122/1221, 126 (= GEO E 126), or permission of instructor"
 ]
 },
 {
@@ -8027,9 +8022,8 @@
 "label":"EARTH 333",
 "page":363,
 "spec":"W 2C,3L 0.5",
-"title":"",
+"title":"Introductory Sedimentology",
 "paras":[
-"introductory Sedimentology",
 "The origin, transport and deposition of",
 "sediments. Size analysis and sedimentary",
 "structures. Recent sedimentary environ-",
@@ -8258,7 +8252,7 @@
 "label":"EARTH 441",
 "page":364,
 "spec":"W 2C,3L 0.5",
-"title":"introductory Quaternary Ecology",
+"title":"Introductory Quaternary Ecology",
 "paras":[
 "An introduction to Quaternary ecology. The morphology, biostratigraphy, distribution and palececological significance of major plant and animal groups in the Quatemary sciences. Relationships of fossil assemblages to modern ecosystems. Students will be expected to arrange with the instructors a field trip in the preceding term.",
 "Prereq: EARTH 440 or consent of instructors"
@@ -8364,7 +8358,7 @@
 "4. Students seeking enrolment in any Chinese language course must complete a ballot (available from Renison College Registrar) to confirm placement in the appropriate level of instruction.",
 "5. Students are not permitted to enrol in more than one level of a specific language course in one term.",
 "6. We reserve the right to refuse admission to, and/or credit for, any of the language courses listed to a student who has, in our view, a level of competence unsuited to the course(s).",
-"EASIA 201R FW 3C 0.5 East Asian Culture An introductory survey of the cultures of East Asia with particular reference to China, Japan and Korea.",
+"EASIA 201R F,W 3C 0.5 East Asian Culture An introductory survey of the cultures of East Asia with particular reference to China, Japan and Korea.",
 "Open to all students above first year"
 ]
 }
@@ -8619,9 +8613,9 @@
 "label":"ECON 231",
 "page":367,
 "spec":"F,W 3C 0.5",
-"title":"",
+"title":"Introduction to International Economics",
 "paras":[
-"introduction to International Economics Theory of comparative advantage and the gains from trade; tariff theory; concepts and measurement of balance of payments; exchange rate systems; reform of international monetary system.",
+"Theory of comparative advantage and the gains from trade; tariff theory; concepts and measurement of balance of payments; exchange rate systems; reform of international monetary system.",
 "Prereq: ECON 101, 102"
 ]
 },
@@ -9281,7 +9275,7 @@
 "paras":[
 "Review of band theory and doped semiconductors in thermal equilibrium, charge neutrality, mass action law, recombination and transport mechanisms, Boltzmann relations, derivation of p-n junction de and ac characteristics, charge storage effects. The bipolar transistor; derivation of de and ac terminal characteristics, equivalent circuits. The junction field effect transistor (JFET) and metal oxide semiconductor FET, derivation of de characteristics.",
 "Prereq: PHYS 128 or equivalent, E&CE 100, 209",
-"‘Alternate weeks",
+"Alternate weeks",
 "Course Descriptions Electrical and Computer Engineering"
 ]
 },
@@ -9294,7 +9288,7 @@
 "paras":[
 "An introductory level course on circuit analysis techniques for use in circuit design. The course covers linear circuit analysis and design in detail and touches on extensions for circuits with simple nonlinearities such as opamps, diodes and transistors.",
 "Prereq: MATH 114, 117, 118, 211, E&CE 100",
-"‘Alternate weeks"
+"Alternate weeks"
 ]
 },
 {
@@ -9306,7 +9300,7 @@
 "paras":[
 "sizes the following topics: data structures, abstract data types, recursive algorithms, algorithm analysis, sorting and searching, and problem-solving strategies.",
 "Prereq: GEN E 121",
-"‘Alternate weeks"
+"Alternate weeks"
 ]
 },
 {
@@ -9448,7 +9442,7 @@
 "paras":[
 "Principles of electromechanical energy conversion. Rotating machines. DC motors. Induction motors. Synchronous machines.",
 "Prereq: E&CE 100, 241, 261, MATH 211",
-"‘Alternate weeks"
+"Alternate weeks"
 ]
 },
 {
@@ -9471,7 +9465,7 @@
 "paras":[
 "Transmission lines: transmission line equations, steady state (sinusoidal) solution, terminated lines, matching and the Smith Chart. Basic field theory: vector calculus, electrostatic and magnetostatic fields, time-varying fields and Maxwell's equations, plane wave propagation, polarization, reflection, refraction, applied boundary value problems.",
 "Prereq: MATH 212",
-"‘Alternate weeks"
+"Alternate weeks"
 ]
 },
 {
@@ -9596,7 +9590,7 @@
 "paras":[
 "Design and process details of bipolar, JFET and MOSFET devices. Design and implementation of digital and analog integrated circuits. Process, device and circuit CAD.",
 "Prereq: E&CE 209 (231 or 435)",
-"' Project"
+"Project"
 ]
 },
 {
@@ -9633,7 +9627,7 @@
 "paras":[
 "Analog applications of bipolar and fieldeffect transistors. Analysis of operational amplifiers. IC temperature compensation and biasing. Differential, low noise and power amplifiers, receiver front end design, noise analysis. Modulators, mixers, detectors. Power supplies, A to D and D to A converters.",
 "Prereq: E&CE 231, 333",
-"‘Project",
+"Project",
 "Course Descriptions Electrical and Computer Engineering"
 ]
 },
@@ -9715,7 +9709,7 @@
 "title":"Sound, Noise and Electroacoustics",
 "paras":[
 "An interdisciplinary study of acoustical physics, human response to sound and audio engineering. Main topics include the physics of sound, acoustical measurements, human hearing, environmental noise, electroacoustical systems and transducers.",
-"‘Every third week",
+"Every third week",
 "Not offered Winter 1995"
 ]
 },
@@ -9736,7 +9730,7 @@
 "label":"ECE 464",
 "page":372,
 "spec":"W 2C,1T,3L! 0.5",
-"title":"insulation and High Voltage Engineering",
+"title":"Insulation and High Voltage Engineering",
 "paras":[
 "Behaviour of insulating materials under high electric stress. Insulation failure, corona. Origins of high electric stresses. Electric field calculations. Insulation coordination. Generation of test voltages and methods of measurement. Prereq: E&CE 100, MATH 211 Alternate weeks"
 ]
@@ -9772,7 +9766,7 @@
 "spec":"W 2C,1T,3L' 0.5",
 "title":"Microwave Engineering",
 "paras":[
-"The theory and practice of microwave engineering, transmission line theory and scattering matrices; waveguides and cavities; microstrip lines, directional couplers and other microstrip components; computer aided design of microwave integrated circuits; Butterworth and Chebyshev filters, frequency transformations, side coupled _ Microstrip filters and coupled waveguide",
+"The theory and practice of microwave engineering, transmission line theory and scattering matrices; waveguides and cavities; microstrip lines, directional couplers and other microstrip components; computer aided design of microwave integrated circuits; Butterworth and Chebyshev filters, frequency transformations, side coupled Microstrip filters and coupled waveguide",
 "cavity fitters; microwave system considerations for communications.",
 "Prereq: E&CE 371 or 471",
 "JEvery third week"
@@ -9785,7 +9779,7 @@
 "spec":"S,F 2C,1T,3L' 0.5",
 "title":"Antenna Engineering",
 "paras":[
-"An introduction to the theory of radiation and of antenna and propagation engineering; linear antennas, linear arrays, aperture antennas, frequency independent antennas, measurement theory. Prereq/Coreq: E&CE 371 or 471 ‘Every third week",
+"An introduction to the theory of radiation and of antenna and propagation engineering; linear antennas, linear arrays, aperture antennas, frequency independent antennas, measurement theory. Prereq/Coreq: E&CE 371 or 471 Every third week",
 "Course Descriptions Electrical and Computer Engineering"
 ]
 },
@@ -9877,7 +9871,7 @@
 "5. Enrolment in certain English courses which are in heavy demand and which are program requirements for English",
 "Students may be subject to priority enrolment restrictions. While all English courses may be affected, those most likely to be subject to enrolment resirictions will include ENGL 200A/B, 209, 210C, 210E, 210F, 219, 251A/B, 306A-F, 309A-E, 343, and 344, Because of its place in the Applied Studies requirements, ENGL 109 may also on occasion be subject to registration restrictions.",
 "Most courses are also taught at St. Jerome’s College.",
-"‘R’ courses are administered by Renison College.",
+"R’ courses are administered by Renison College.",
 "GROUP ONE",
 "Courses in this group count towards a degree as electives in any program in the University. Normally, none of them qualifies as a major credit for a General or Honours program in English. These courses are primarily designed to make Students aware of the different functions of language in various contexts and to assist them to improve their writing."
 ]
@@ -10074,7 +10068,7 @@
 "label":"ENGL 105A",
 "page":374,
 "spec":"F,W,S 0.5",
-"title":"20th-Century Literature in English,",
+"title":"20th-Century Literature in English",
 "paras":[
 "1900-45",
 "A close examination of a representative selection of works by major authors writing in English such as Yeats, Woolf, Lawrence, Eliot, Hemingway, and Faulkner."
@@ -10488,7 +10482,7 @@
 "id":"ENGL309E",
 "label":"ENGL 309E",
 "page":376,
-"spec":"F 05",
+"spec":"F 0.5",
 "title":"Speech Writing",
 "paras":[
 "The analysis, writing, and performance of speeches. Analysis will focus on the theory of communication and speech models for imitation; writing, on in-class workshops; and performance, on videotaping and student evaluation of speeches. Cross-listed as DRAMA 323 May be subject to priority enrolment"
@@ -11246,7 +11240,7 @@
 "id":"ERS241",
 "label":"ERS 241",
 "page":379,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"Introduction to Environmental Assessment",
 "paras":[
 "A theoretical and practical introduction to Processes and techniques for incorporating environmental considerations in planning and evaluating proposals for future undertakings that may have significant social and biophysical effects. The course provides an overview of methodologies for, and controversies surrounding, the design and conduct of biophysical and socioeconomic impact studies, and the testing of reported findings. The main focus is on the purposes and design of environmental assessment processes, with particular reference to the Canadian federal and Ontario provincial regimes. Consideration of case examples is emphasized.",
@@ -11343,7 +11337,7 @@
 "id":"ERS360",
 "label":"ERS 360",
 "page":380,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"Nature: Art, Myth and Folklore",
 "paras":[
 "This course explores the symbolic representation of nature in art, architecture, myth and literature from a multi-cultural perspective. The ideas about sacred spaces and environments will also be discussed.",
@@ -11719,9 +11713,9 @@
 "label":"ENVS 178",
 "page":381,
 "spec":"F,W 3C,1L 0.5",
-"title":"",
+"title":"Introduction to Environmental Research Methods",
 "paras":[
-"introduction to Environmental Research Methods Introduction to methods of developing, evaluating and using evidence in Environmental Studies. Methods for summarizing and critical appreciation of data describing environmental systems. Skill development in applying statistical techniques and in using microcomputers as a research tool.",
+"Introduction to methods of developing, evaluating and using evidence in Environmental Studies. Methods for summarizing and critical appreciation of data describing environmental systems. Skill development in applying statistical techniques and in using microcomputers as a research tool.",
 "While not a prerequisite for this course, CS 100 or a high school computing course is helpful."
 ]
 },
@@ -11730,7 +11724,7 @@
 "label":"ENVS 195",
 "page":381,
 "spec":"F 2C,1S 0.5",
-"title":"introduction to Environmental Studies",
+"title":"Introduction to Environmental Studies",
 "paras":[
 "Provides an overview of human ecological aspects of environmental studies from an intercultural and global perspective."
 ]
@@ -11745,8 +11739,16 @@
 "Introduces the main concepts and principles of ecology; the cycling of elements;. energetics and structural organization of major ecological systems; population dynamics; impact of natural resource management practices and urban and industrial development on the environment; incorporating environmental quality considerations into development activities. The laboratory sessions include field trips to study natural and disturbed ecosystems, urban and applied ecology.",
 "Prereq: Second, third and fourth year students only",
 "Lab fee of $10",
-"Antireq: BIOL 250",
-"ENV S$ 201 F 3C,1.5S 0.5 introduction to Environmental and Planning Law",
+"Antireq: BIOL 250"
+]
+},
+{
+"id":"ENVS201",
+"label":"ENVS 201",
+"page":382,
+"spec":"F 3C,1.5S 0.5",
+"title":"Introduction to Environmental and Planning Law",
+"paras":[
 "Introduction to legal concepts generally and to environmental and planning law concepts in particular. Designed both for students who do not plan to take further in depth legal courses and as a prerequisite for senior legal courses — ENV S 401 and PLAN 402. Topics to be covered include Sources of Law, Nature of Legal Remedies, Common Law, Administrative Agencies, Planning Act, Environmental Protection and Assessment Acts, and Federal Environmental Protection Act."
 ]
 },
@@ -11902,8 +11904,17 @@
 "spec":"W 2.5",
 "title":"Waterloo in Australia — Griffith",
 "paras":[
-"AS 395Z",
-"ENV S$ 397Z S 2.5 Watertoo in Australia — Griffith As 3952"
+"AS 395Z"
+]
+},
+{
+"id":"ENVS397Z",
+"label":"ENVS 397Z",
+"page":382,
+"spec":"S 2.5",
+"title":"Watertoo in Australia — Griffith",
+"paras":[
+"As 3952"
 ]
 },
 {
@@ -12036,7 +12047,7 @@
 "label":"FINE 212",
 "page":383,
 "spec":"F 3C 0.5",
-"title":"italian and Norther Renaissance Art 1",
+"title":"Italian and Norther Renaissance Art 1",
 "paras":[
 "A survey of the innovations in European painting, sculpture, and architecture between 1260 and 1500.",
 "Prereq: FINE 111 or consent of instructor"
@@ -12137,9 +12148,9 @@
 "label":"FINE 319A",
 "page":383,
 "spec":"3C 0.5",
-"title":"",
+"title":"Special Topics in 20th-Century Art",
 "paras":[
-"Special Topics in 20th-Century Art: 1900-1940 A study of the major innovations in early 20th-century painting, sculpture and architecture. Honours Art History majors interested in the modern period are encouraged to use this course as preparation for the fourth-year Honours presentation. Prereq: FINE 211 or consent of instructor"
+"1900-1940 A study of the major innovations in early 20th-century painting, sculpture and architecture. Honours Art History majors interested in the modern period are encouraged to use this course as preparation for the fourth-year Honours presentation. Prereq: FINE 211 or consent of instructor"
 ]
 },
 {
@@ -12478,7 +12489,7 @@
 "id":"FINE471",
 "label":"FINE 471",
 "page":385,
-"spec":"W 05",
+"spec":"W 0.5",
 "title":"Senior Seminar In Film Concepts 2",
 "paras":[
 "Film screenings.",
@@ -12638,9 +12649,17 @@
 "spec":"0.5",
 "title":"Special Topics in Printmaking",
 "paras":[
-"An investigation into a variety of experimental, non-traditional printmaking techniques.",
-"‘FINE 228D 6std 0.5",
-"Applied Graphics An introduction to graphic design. Fundamental design concepts as they relate to typography and page design will be explored using several PC Windows graphics packages and “desktop publishing” techniques.",
+"An investigation into a variety of experimental, non-traditional printmaking techniques."
+]
+},
+{
+"id":"FINE228D",
+"label":"FINE 228D",
+"page":386,
+"spec":"6std 0.5",
+"title":"Applied Graphics",
+"paras":[
+"An introduction to graphic design. Fundamental design concepts as they relate to typography and page design will be explored using several PC Windows graphics packages and “desktop publishing” techniques.",
 "Prereq: FINE 120 or consent of instructor",
 "Course Descriptions Fine Arts"
 ]
@@ -12964,7 +12983,7 @@
 "label":"FR 155",
 "page":387,
 "spec":"F,W,S 4C,1L 0.5",
-"title":"intermediate French Language 1",
+"title":"Intermediate French Language 1",
 "paras":[
 "A comprehensive study of French grammar and vocabulary. Involves reading, writing and speaking French.",
 "Prereq: FR 12 or Ontario Grade 12 French or equivalent",
@@ -13024,7 +13043,7 @@
 "id":"FR261",
 "label":"FR 261",
 "page":387,
-"spec":"3C 05",
+"spec":"3C 0.5",
 "title":"French Language 2: Module 14",
 "paras":[
 "Continued intensive study of written French, with emphasis on more difficult problems of the language. Taught in French. Prereq: Two of FR 155, 192A/B, 195A, 196A, 201 or the consent of Department Antireq: FR 250"
@@ -13142,9 +13161,9 @@
 "label":"FR 303",
 "page":388,
 "spec":"3C,1L 0.5",
-"title":"",
+"title":"Introduction to Linguistics",
 "paras":[
-"introduction to Linguistics This course will introduce students to a basic theoretic reflection on language. Various important schools of modern linguistic thought ranging from Saussure to Chomsky, etc. will be discussed. Taught in French.",
+"This course will introduce students to a basic theoretic reflection on language. Various important schools of modern linguistic thought ranging from Saussure to Chomsky, etc. will be discussed. Taught in French.",
 "Prereq: FR 251 or 252 or consent of Department"
 ]
 },
@@ -13272,7 +13291,7 @@
 "label":"FR 200B",
 "page":389,
 "spec":"3C 0.5",
-"title":"introduction to French Literature 2",
+"title":"Introduction to French Literature 2",
 "paras":[
 "An overview of the major trends in the lit-",
 "erature of the French-speaking world",
@@ -13532,7 +13551,7 @@
 "paras":[
 "Introduction to electric and magnetic fields; basic de circuits; amplifiers and operational amplifiers; ac circuit components; basic ac circuits; power circuits.",
 "For Year One Chemical, Civil, Geological and Mechanical Engineering students.",
-"‘Alternate Weeks"
+"Alternate Weeks"
 ]
 },
 {
@@ -13593,9 +13612,9 @@
 "label":"GENE 303",
 "page":390,
 "spec":"W,S,F 3D 0.5",
-"title":"",
+"title":"Internationa! Studies in Engineering",
 "paras":[
-"Internationa! Studies in Engineering . Engineering students register for this course for credit towards the Designated Faculty Option in International Studies in Engineering, upon return from study or work terms abroad. Credit will be assessed on the basis of a written report and individual interviews. The report may include technical, non-technical, and professional aspects of the foreign residence period. The instructor for this course is the Option Co-ordinator.",
+"Engineering students register for this course for credit towards the Designated Faculty Option in International Studies in Engineering, upon return from study or work terms abroad. Credit will be assessed on the basis of a written report and individual interviews. The report may include technical, non-technical, and professional aspects of the foreign residence period. The instructor for this course is the Option Co-ordinator.",
 "Restricted to students who are registered in the Option in Intemational Studies in Engineering"
 ]
 },
@@ -13633,7 +13652,7 @@
 "id":"GENE397A",
 "label":"GENE 397A",
 "page":391,
-"spec":"-Z S$ 1.5",
+"spec":"-Z S 1.5",
 "title":"Engineering Study Abroad Program",
 "paras":[
 "Students studying abroad for academic transfer credits under an Engineering Exchange Program during a Spring term register at Waterloo under GEN E 397A-Z. The suffix is a letter indicating the country (and where necessary the fee status) of the exchange in a particular case."
@@ -13848,7 +13867,7 @@
 "id":"GEOG225",
 "label":"GEOG 225",
 "page":392,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"Urbanization in the Third World",
 "paras":[
 "An analysis of the factors behind the rapid urbanization of selected areas in Asia, Africa and Latin America, with an examination of related problems of urban planning and development control policies.",
@@ -14235,7 +14254,7 @@
 "id":"GEOG411",
 "label":"GEOG 411",
 "page":394,
-"spec":"W 2S 05",
+"spec":"W 2S 0.5",
 "title":"Geography of Industrial Restructuring",
 "paras":[
 "Emphasis on multinational corporations, institutions, technological change, and analysis of the restructuring of specific industries.",
@@ -14281,7 +14300,7 @@
 "id":"GEOG450",
 "label":"GEOG 450",
 "page":394,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"City and Regional Systems",
 "paras":[
 "A continuation of GEOG 349 and 350 with an emphasis on student projects.",
@@ -14562,7 +14581,7 @@
 "GEO E 400 and GEO E 401 serve the role of an undergraduate thesis. Specifically, the student is expected to work with a Staff member in Civil Engineering, Earth Sciences, or other appropriate department in identifying and carrying out a suitable short design or research project. The final product will be presented in thesis form and carefully scrutinized by two independent referees chosen for their familiarity with the topic. The subject may be laboratory based, analytic, numerical, or field oriented, The thesis format must follow accepted engineering practice and be of professional quality.",
 "All other courses in the Geological Engineering program are listed under the course descriptions in Earth Sciences or Civil Engineering.",
 "A detailed booklet describing Geological Engineering is available in Room 2304, Engineering 2.",
-"Undergraduate Officer |. Szarycz, ML 217, ext. 3393"
+"Undergraduate Officer Szarycz, ML 217, ext. 3393"
 ]
 }
 ]
@@ -14585,7 +14604,7 @@
 "id":"GER101",
 "label":"GER 101",
 "page":395,
-"spec":"F,W,S 4C 05",
+"spec":"F,W,S 4C 0.5",
 "title":"First Year German",
 "paras":[
 "For students with little or no knowledge of German. The basic elements of German grammar with emphasis on group and individual oral practice. Development of skills in listening/comprehension, speaking, reading and writing. Introduction to aspects of German culture and everyday life. Tapes and computer exercises accompany each chapter of the textbook. Students are encouraged to use them in the language laboratory and at home. GER 101 is for students with little or no knowledge of German. There are no prerequisites.",
@@ -14729,7 +14748,7 @@
 "id":"GER251A",
 "label":"GER 251A",
 "page":396,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"Intermediate Conversation and Composition",
 "paras":[
 "Conversation on modern topics. Exercises in advanced grammar, stylistics, and composition. Prereg: GER 152A or equivalent (Formerly GER 351)"
@@ -14777,7 +14796,7 @@
 "id":"GER271",
 "label":"GER 271",
 "page":396,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"German Thought and Culture",
 "paras":[
 "A survey of cultural currents to the 18th century. Lectures will focus on major developments in literature, philosophy, religion, art, architecture, and music as seen against the historical background of the German speaking peoples.",
@@ -14844,7 +14863,7 @@
 "id":"GER292",
 "label":"GER 292",
 "page":396,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"Survey of German Literature",
 "paras":[]
 },
@@ -15078,7 +15097,7 @@
 "id":"GER441",
 "label":"GER 441",
 "page":397,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"Humanism, Reformation and Baroque",
 "paras":[
 "Reading, interpretation and critical analysis of prescribed texts (Erasmus, Luther, Sachs, Opitz, Gryphius, Grimmelshausen, etc.).",
@@ -15132,7 +15151,7 @@
 "id":"GER472",
 "label":"GER 472",
 "page":397,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"German Poetry",
 "paras":[
 "A study of the main thoughts, themes, forms and schools in German poetry from German Romanticism to the present."
@@ -15305,7 +15324,7 @@
 "label":"RUSS 201",
 "page":398,
 "spec":"F 3C 0.5",
-"title":"intermediate Scientific Russian",
+"title":"Intermediate Scientific Russian",
 "paras":[
 "A review of the fundamentals of grammar is followed by a more advanced study of the language structure and idiom. Readings and translation from contemporary scientific writing with the aim of helping the student to acquire a greater vocabulary and to master the stylistic difficulties peculiar to technical writing.",
 "Prereq: RUSS 102, 112 or equivalent"
@@ -15367,7 +15386,7 @@
 "label":"RUSS 261",
 "page":398,
 "spec":"F 3C 0.5",
-"title":"introduction to Russian Literary Movements",
+"title":"Introduction to Russian Literary Movements",
 "paras":[
 "Reading of representative works from Russian Classicism, Romanticism, 19th Century Realism, and various periods of 20th century Russian literature.",
 "Prereq: RUSS 102 or equivalent",
@@ -15481,9 +15500,9 @@
 "label":"RUSS 351",
 "page":398,
 "spec":"F 3C 0.5",
-"title":"",
+"title":"Intermediate Conversation and Composition",
 "paras":[
-"intermediate Conversation and Composition In principle, this course is a continuation of RUSS 251/252. In terms of vocabulary building, apart from the spoken language, the comprehension of the literary language is especially stressed.",
+"In principle, this course is a continuation of RUSS 251/252. In terms of vocabulary building, apart from the spoken language, the comprehension of the literary language is especially stressed.",
 "Prereq: RUSS 252 or equivalent"
 ]
 },
@@ -15491,7 +15510,7 @@
 "id":"RUSS352",
 "label":"RUSS 352",
 "page":398,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"Intermediate Conversation and Composition",
 "paras":[]
 },
@@ -15673,7 +15692,7 @@
 "id":"RUSS462",
 "label":"RUSS 462",
 "page":399,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"Twentieth Century Russian Literature",
 "paras":[
 "Reading, interpretation, and critical analysis of selected fiction and drama (Arbusov, Bulgakov, Erenburg, Nabokov, Pastemak, Solzhenitsyn).",
@@ -15944,10 +15963,8 @@
 "label":"CROAT 102",
 "page":400,
 "spec":"W 3C 0.5",
-"title":"",
-"paras":[
-"introductory Croatian"
-]
+"title":"Introductory Croatian",
+"paras":[]
 },
 {
 "id":null,
@@ -16086,9 +16103,9 @@
 "label":"GERON 100",
 "page":400,
 "spec":"0.5",
-"title":"",
+"title":"Introduction to Gerontology",
 "paras":[
-"introduction to Gerontology This course represents a first introduction to the study of aging and as such will provide a survey of the major biological, psychological and social aspects of aging. It will be of interest to those who want to obtain some basic knowledge about growing old and being old, and it can also serve as the first step towards a more specialized study of these phenomena. Cross-listed as HLTH 150 Antireq: Students who have completed any of the following courses GERON 255/ SCI 255, GERON 352/HLTH 352/KIN 352/SOC 352, GERON 217/PSYCH 217/ HLTH 217, GERON 218/PSYCH 218/ HLTH 218, GERON 400/HLTH 400, require permission of instructor"
+"This course represents a first introduction to the study of aging and as such will provide a survey of the major biological, psychological and social aspects of aging. It will be of interest to those who want to obtain some basic knowledge about growing old and being old, and it can also serve as the first step towards a more specialized study of these phenomena. Cross-listed as HLTH 150 Antireq: Students who have completed any of the following courses GERON 255/ SCI 255, GERON 352/HLTH 352/KIN 352/SOC 352, GERON 217/PSYCH 217/ HLTH 217, GERON 218/PSYCH 218/ HLTH 218, GERON 400/HLTH 400, require permission of instructor"
 ]
 },
 {
@@ -16191,7 +16208,7 @@
 "id":"GERON402",
 "label":"GERON 402",
 "page":401,
-"spec":"W 2C 05",
+"spec":"W 2C 0.5",
 "title":"Epidemiology of Aging",
 "paras":[
 "Factors contributing to various disease processes, with special reference to quantitative evaluation of environmental factors relevant to human disease and aging.",
@@ -16433,7 +16450,7 @@
 "A seminar course on the environment sources and causes of disease and illness, the concepts of health, e.g. medical, scientific, economic, political, etc., the health services and facilities and related technologies and the role and responsibilities of (urban and regional) planners in the creation of a more “healthful” environment.",
 "Prereq: Third- and fourth-year students or consent of instructor",
 "Cross-listed as PLAN 432",
-"Estimated additional cost to student: $20"
+"Estimated additional cost to student: 20"
 ]
 },
 {
@@ -16566,10 +16583,10 @@
 "id":"HIST102M",
 "label":"HIST 102M",
 "page":403,
-"spec":"F 05",
-"title":"",
+"spec":"F 0.5",
+"title":"Law and Society in the Middle Ages",
 "paras":[
-"Law and Society in the Middle Ages: 500-1000 A study of the laws and legal procedures of the Early Middle Ages. Anglo-Saxon and Germanic law will be examined along with legal procedures and institutions of that era.",
+"500-1000 A study of the laws and legal procedures of the Early Middle Ages. Anglo-Saxon and Germanic law will be examined along with legal procedures and institutions of that era.",
 "Offered at St. Jerome's College"
 ]
 },
@@ -17115,10 +17132,8 @@
 "label":"HIST 407A",
 "page":406,
 "spec":"/B 1.0/1.0",
-"title":"",
-"paras":[
-"imperial"
-]
+"title":"Imperial",
+"paras":[]
 },
 {
 "id":"HIST409A",
@@ -17394,11 +17409,11 @@
 "label":"IS 101A",
 "page":406,
 "spec":"F,W,S 1S 0.5",
-"title":"",
+"title":"Introductory independent Research",
 "paras":[
-"introductory independent Research Each half credit will involve one seminar a week devoted to the philosophy, methodology and practicality of carrying out independent study. Emphasis will be placed upon such different forms of independent study as self-directed learning, problem posing, and critical thinking. In addition, each student enrolled in the course will spend at least seven hours a week of independent research supervised by an IS faculty member or by a consenting supervisor from any of the other academic units on campus.",
+"Each half credit will involve one seminar a week devoted to the philosophy, methodology and practicality of carrying out independent study. Emphasis will be placed upon such different forms of independent study as self-directed learning, problem posing, and critical thinking. In addition, each student enrolled in the course will spend at least seven hours a week of independent research supervised by an IS faculty member or by a consenting supervisor from any of the other academic units on campus.",
 "Prereq: IS students must be in good standing. Nor-!S students must be in good standing in an Honours program. Consent of instructor",
-"S$ 101B 1.0 Same as above",
+"S 101B 1.0 Same as above",
 "1S 101C 1.5 Same as above",
 "1S 101D 2.0 Same as above"
 ]
@@ -17460,7 +17475,7 @@
 "id":"ITAL191",
 "label":"ITAL 191",
 "page":406,
-"spec":"F 3C,1L 05",
+"spec":"F 3C,1L 0.5",
 "title":"Intermediate Italian 1",
 "paras":[
 "Advanced study of grammar. Conversation sessions will be based on intermediate level readings reflecting contemporary Italian life. Short works by modern writers will also be studied.",
@@ -17504,7 +17519,7 @@
 "label":"ITAL 291",
 "page":407,
 "spec":"F 3C 0.5",
-"title":"ttalian Culture and Civilization 1",
+"title":"Ttalian Culture and Civilization 1",
 "paras":[
 "A survey of developments in Italian culture ~ history, literature and the arts — up to and including the Renaissance.",
 "Prereq: Second-year standing",
@@ -17671,9 +17686,8 @@
 "label":"KIN 255",
 "page":407,
 "spec":"W 3C,2L 0.5",
-"title":"",
+"title":"Introduction to Psychomotor",
 "paras":[
-"introduction to Psychomotor",
 "Behaviour",
 "An information processing approach is",
 "used to introduce the principles of learning",
@@ -17772,9 +17786,9 @@
 "label":"KIN 341",
 "page":408,
 "spec":"W 3C,2L 0.5",
-"title":"Selected Topics in Sport and Work",
+"title":"Selected Topics in Sport and Work injuries",
 "paras":[
-"injuries This course covers the mechanisms, pathology, management and prevention of catastrophic injuries encountered in sport and work. Topics include trauma to the head, face, vertebral column, and knee, thermal injury, legai liability and others as requested by the students.",
+"This course covers the mechanisms, pathology, management and prevention of catastrophic injuries encountered in sport and work. Topics include trauma to the head, face, vertebral column, and knee, thermal injury, legai liability and others as requested by the students.",
 "Prereq: KIN 340"
 ]
 },
@@ -17896,7 +17910,7 @@
 "id":"KIN407",
 "label":"KIN 407",
 "page":409,
-"spec":"W 8C 05",
+"spec":"W 8C 0.5",
 "title":"The Physiotogy of Coronary Heart Disease",
 "paras":[
 "An examination of the pathology, risk factors and rehabilitation programs related to coronary heart disease. Major emphasis is placed on the cardiorespiratory implications of exercise In the rehabilitation process. Prereq: KIN 300 or equivalent Cross-listed as HLTH 407"
@@ -18663,7 +18677,16 @@
 "label":"MATH 116",
 "page":411,
 "spec":"",
-"title":"MATH 117 Calculus 1 for Engineering ’ MATH 115A MATH 127 Calculus 1 for Honours Physics/Chemistry",
+"title":"MATH 117 Calculus 1 for Engineering",
+"paras":[],
+"listed":"Listed without a description"
+},
+{
+"id":"MATH115A",
+"label":"MATH 115A",
+"page":411,
+"spec":"",
+"title":"MATH 127 Calculus 1 for Honours Physics/Chemistry",
 "paras":[],
 "listed":"Listed without a description"
 },
@@ -18880,7 +18903,7 @@
 "spec":"W,S 3C,2L 0.5",
 "title":"Calculus 2 For Engineering",
 "paras":[
-"Taylor's theorem and polynomial approximations. Indeterminate forms and 'Hopitals theorem. Convergence of series. Taylor series. Functions of two variables. Partial derivatives and the linear approximation, Directional derivatives. The Chain Rule.",
+"Taylor's theorem and polynomial approximations. Indeterminate forms and Hopitals theorem. Convergence of series. Taylor series. Functions of two variables. Partial derivatives and the linear approximation, Directional derivatives. The Chain Rule.",
 "Prereq: MATH 117 or equivalent",
 "Antireq: MATH 108, 128, 138, 148",
 "Not open to students in the Faculty of Mathematics."
@@ -19194,13 +19217,7 @@
 "aliases":[],
 "name":"Mechanical Engineering",
 "page":414,
-"intro":{
-"page":414,
-"paras":[
-"Department or permission of course instructor is required.",
-"2. The Department reserves the right to cancel any 400-500 level elective courses if teaching resources become unavailable."
-]
-},
+"intro":null,
 "courses":[
 {
 "id":"ME126",
@@ -19287,7 +19304,7 @@
 "paras":[
 "Concept of equitibrium, force analysis of structures and structural components, equilibrium of deformable bodies, stress and strain concepts, stress-strain relationships, stress analysis of prismatic members in axial, shearing, torsional and flexural deformations, shear force and bending moment diagrams.",
 "Prereq: PHYS 115",
-"Course Descriptions Mechanical Engineering"
+"Course Descriptions"
 ]
 },
 {
@@ -19669,7 +19686,7 @@
 "id":"ME542",
 "label":"ME 542",
 "page":417,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"Machine Tool Analysis",
 "paras":[
 "Design features of machine tools. Mechanics of metal cutting. Tool materials. Machinability. Main drive torque and power versus speed requirements. Characteristics of positional servomechanisms in NC machines. Adaptive control. Static and dynamic deformations of the structure of the machine tool and their effects on the accuracy of the workpiece. Chatter in machining.",
@@ -19833,7 +19850,7 @@
 "id":"ME571",
 "label":"ME 571",
 "page":419,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"Air Poliution 1",
 "paras":[
 "Nature and sources of air pollution, chemical and biological aspects, effects on heath and environment. Physical aspects of the atmosphere, thermodynamics, vertical variation of wind and temperature, stability, convection, atmospheric turbulence, diffusion equations, plumes, thermals, jets in stratified flow, radioactive plumes, particulate dispersion instrumentation (micrometeorological), air pollution control techniques and equipment monitoring instrumentation.",
@@ -19941,7 +19958,8 @@
 "Mechanical Engineering",
 "Undergraduate Officer M. Renksizbulut, E2-2330, ext. 3977",
 "Introductory Notes",
-"1. General prerequisite: Registration in"
+"1. General prerequisite: Registration in the Mechanical Engineering Department or permission of course instructor is required.",
+"2. The Department reserves the right to cancel any 400-500 level elective courses if teaching resources become unavailable."
 ]
 }
 ]
@@ -20211,12 +20229,11 @@
 "id":"MUSIC327",
 "label":"MUSIC 327",
 "page":420,
-"spec":"",
-"title":"F,WS std 0.5 Music Studio",
+"spec":"F,W,S std 0.5",
+"title":"Music Studio",
 "paras":[
 "See MUSIC 226 for course description. Prereq: MUSIC 326 and consent of Music Faculty Studio Fee . (Formerly MUSIC 367)"
-],
-"listed":"Listed without a description"
+]
 },
 {
 "id":"MUSIC332",
@@ -20331,12 +20348,11 @@
 "id":"MUSIC426",
 "label":"MUSIC 426",
 "page":421,
-"spec":"",
-"title":"F,WS std 0.5 Music Studio",
+"spec":"F,W,S std 0.5",
+"title":"Music Studio",
 "paras":[
 "See MUSIC 226 for course description. Prereq: MUSIC 327 and consent of Music Faculty Studio Fee (Formerly MUSIC 466)"
-],
-"listed":"Listed without a description"
+]
 },
 {
 "id":"MUSIC427",
@@ -20916,9 +20932,8 @@
 "label":"OPTOM 448A",
 "page":423,
 "spec":"/B/C S,F,W 36 Clinic 3.0",
-"title":"",
+"title":"Each",
 "paras":[
-"each",
 "Optometry Clinics",
 "Optometry students are taught how to provide full scope optometric care within a clinical environment. In addition to primary care, students are instructed in the provision of ocular health, electrodiagnostic, binocular vision, contact lens, aniseikonia, low vision and optical services to patients. Interns with superior performance in OPTOM 448A may assist in supervision of third year interns during OPTOM 448B and OPTOM 448C. Optometric services are provided to special populations including geriatric, preschool and mentally retarded groups. To provide suitable exposure to the required components of clinical training, students may be assigned to practicums in institutions and/or private practices. Students will be required to",
 "show successful performance, during their time in clinic, in each of the required components of clinical training to which they are assigned, and that evaluation may involve oral examination, assessment of performance with patients, record review, and/or demonstration of techniques. Prereq: All third year Optometry courses"
@@ -21299,7 +21314,7 @@
 "id":"PHIL200A",
 "label":"PHIL 200A",
 "page":426,
-"spec":"F,S 3C 05",
+"spec":"F,S 3C 0.5",
 "title":"",
 "paras":[
 "Great Works of Western Philosophy: Part 1",
@@ -21501,9 +21516,9 @@
 "label":"PHIL 241",
 "page":427,
 "spec":"3C 0.5",
-"title":"",
+"title":"Intermediate Logic",
 "paras":[
-"intermediate Logic Axiom systems of logic are developed and compared with natural deduction procedures. Then certain properties of these logical systems, such as consistency, completeness and compactness, will be investigated.",
+"Axiom systems of logic are developed and compared with natural deduction procedures. Then certain properties of these logical systems, such as consistency, completeness and compactness, will be investigated.",
 "Prereq: PHIL 140 or consent of instructor"
 ]
 },
@@ -21568,9 +21583,8 @@
 "label":"PHIL 258",
 "page":427,
 "spec":"3C 0.5",
-"title":"",
+"title":"Introduction to the Philosophy of Science",
 "paras":[
-"introduction to the Philosophy of Science",
 "A discussion of the fundamental concepts on which science is based. Consideration is given to such topics as scientific theories, the nature of law-likeness, the grounds for scientific confirmation, and the debate between rationalism and empiricism in science."
 ]
 },
@@ -21776,9 +21790,9 @@
 "label":"PHIL 383",
 "page":428,
 "spec":"3C 0.5 .",
-"title":"",
+"title":"Medieval Philosophy 2",
 "paras":[
-"Medieval Philosophy 2 . The later period from the 13th century. Among those considered will be: Bonaventure, Aquinas, Scotus, and Ockham.",
+"The later period from the 13th century. Among those considered will be: Bonaventure, Aquinas, Scotus, and Ockham.",
 "Prereq: One term course in Philosophy or consent of instructor"
 ]
 },
@@ -21797,7 +21811,7 @@
 "id":"PHIL385",
 "label":"PHIL 385",
 "page":428,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"History of Modern Philosophy 2",
 "paras":[
 "Later period including Hume and Kant. Prereq: One term course in Philosophy",
@@ -22361,7 +22375,7 @@
 "spec":"W 3C,1T 0.5",
 "title":"Physical Optics",
 "paras":[
-"‘Nature of light, wave motion, superposition of waves, interference of light, Fraunhofer diffraction and resolution limit of optical instruments; the diffraction grating and the analysis of light. Fresnel diffraction. Polarized light. Coherence of light, lasers, holography. Fibre Optics.",
+"Nature of light, wave motion, superposition of waves, interference of light, Fraunhofer diffraction and resolution limit of optical instruments; the diffraction grating and the analysis of light. Fresnel diffraction. Polarized light. Coherence of light, lasers, holography. Fibre Optics.",
 "Prereq: First year physics and calculus"
 ]
 },
@@ -22628,9 +22642,9 @@
 "label":"PHYS 365",
 "page":432,
 "spec":"W 3C 0.5",
-"title":"Mathematical Physics 2 Cartesian tensors. Invariance. Matrix aige- bra. Introduction to the use of Complex",
+"title":"Mathematical Physics 2",
 "paras":[
-"Variable theory. Fourier and other transforms. Prereq: MATH 213A/8 and 216 Primarily intended for Honours Physics students"
+"Cartesian tensors. Invariance. Matrix aigebra. Introduction to the use of Complex Variable theory. Fourier and other transforms. Prereq: MATH 213A/8 and 216 Primarily intended for Honours Physics students"
 ]
 },
 {
@@ -22638,9 +22652,9 @@
 "label":"PHYS 371A",
 "page":432,
 "spec":"F,S 3L 0.25",
-"title":"",
+"title":"Intermediate Laboratory",
 "paras":[
-"intermediate Laboratory Further experiments in mechanics, optics, electronics, atomic, molecular, nuclear and solid state physics.",
+"Further experiments in mechanics, optics, electronics, atomic, molecular, nuclear and solid state physics.",
 "18 hours of experiments"
 ]
 },
@@ -22649,9 +22663,8 @@
 "label":"PHYS 371B",
 "page":432,
 "spec":"W 3L 0.25",
-"title":"",
+"title":"Intermediate Laboratory",
 "paras":[
-"intermediate Laboratory",
 "Continuation of 371A. For honours",
 "students who are taking PHYS 360B. 18 hours of experiments"
 ]
@@ -22760,9 +22773,9 @@
 "label":"PHYS 441B",
 "page":433,
 "spec":"W 3C 0.5",
-"title":"Electromagnetic Theory Maxwell's Equations. Electromagnetic",
+"title":"Electromagnetic Theory",
 "paras":[
-"fietds and the Lorentz Transformation. Plane waves in insulators, conductors and plasmas. Reflection and refraction at plane boundaries. Guided waves. Dipole radiation.",
+"Maxwell's Equations. Electromagnetic fietds and the Lorentz Transformation. Plane waves in insulators, conductors and plasmas. Reflection and refraction at plane boundaries. Guided waves. Dipole radiation.",
 "Prereq: PHYS 441A"
 ]
 },
@@ -22947,7 +22960,7 @@
 "paras":[
 "Planning Concepts and Techniques. The development of contemporary planning concepts and principles; the nature, purpose and scope of urban planning; the planning process and decision-making in a democratic society. Methodological aspects of designing a planning program; identification of objectives and constraints, conduct of basic surveys and analysis, plans and policies preparation, evaluation and implementation.",
 "Prereq: Planning students only",
-"Estimated additional cost to student: $30",
+"Estimated additional cost to student: 30",
 "(Formerly PLAN 100A)"
 ]
 },
@@ -22970,7 +22983,7 @@
 "paras":[
 "Basic instruction in graphic techniques used in planning. Emphasis will be placed on the principles and techniques of graphics for effective visual communication of ideas.",
 "Planning students only",
-"Estimated additional cost to student: $100",
+"Estimated additional cost to student: 100",
 "Lab fee $15",
 "(Formerly PLAN 159)"
 ]
@@ -22990,7 +23003,7 @@
 "label":"PLAN 190",
 "page":434,
 "spec":"W 2C,1D 0.5",
-"title":"introduction to Urban and Regional",
+"title":"Introduction to Urban and Regional",
 "paras":[
 "Planning Concepts.",
 "An introduction to contemporary planning ideas for students whose subsequent work might bring them in contact with professional planners. Planning concepts and principles; the development of contemporary planning ideas; the nature, purpose and scope of urban and regiona! planning; the planning process and decision-making in a democratic society.",
@@ -23264,7 +23277,7 @@
 "paras":[
 "The influence of transportation, communications, and water and sewage systems on the form, function and development of cities and regions; the application of this knowledge in urban and regional planning.",
 "Prereq: Environmental Studies students only",
-"Estimated additional cost to student: $20",
+"Estimated additional cost to student: 20",
 "(Formerly PLAN 360)"
 ]
 },
@@ -23344,7 +23357,7 @@
 "paras":[
 "A design studio workshop involving site planning projects which integrate design and the natural processes of landscape and climate. Topics will vary.",
 "Prereq: PLAN 210",
-"Estimated additional cost to student: $60",
+"Estimated additional cost to student: 60",
 "(Formerly PLAN 435)"
 ]
 },
@@ -23356,7 +23369,7 @@
 "title":"Issues in Housing",
 "paras":[
 "The first part consists of an overview of housing in Canada considering federal, provincial and municipal policy as well as the housing industry. In the second part, special topics such as homelessness, affordability, environment and other issues are discussed.",
-"Estimated additional cost to student: $20",
+"Estimated additional cost to student: 20",
 "(Formerly PLAN 414)",
 "Course Descriptions Planning, Uroan and Regional Polish"
 ]
@@ -23370,7 +23383,7 @@
 "paras":[
 "A seminar course on the environmental sources and causes of disease and illness, the concepts of health, e.g. medical, scientific, economic, political, etc., the health services and facilities and related technologies and the role and responsibility of (urban and regional) planners in the creation of a more “healthful” environment. Prereq: Third and fourth year students or consent of instructor",
 "Cross-listed as HLTH 420",
-"Estimated additional cost to student: $20",
+"Estimated additional cost to student: 20",
 "(Formerly PLAN 420)"
 ]
 },
@@ -23393,8 +23406,8 @@
 "spec":"W 3C 0.5",
 "title":"Planning Law",
 "paras":[
-"An analysis of the legal basis for planning in Ontario and the practice of planning law as it affects planners, municipalities, local councils, property owners and residents. The roles of planning board, municipal councils, the Ontario Municipal Board the Ministry of Housing, provincial Cabinet and the Niagara Escarpment Commission in the planning process will be discussed. ’‘ Prereq: ENVS 201",
-"Estimated additional cost to student: $40",
+"An analysis of the legal basis for planning in Ontario and the practice of planning law as it affects planners, municipalities, local councils, property owners and residents. The roles of planning board, municipal councils, the Ontario Municipal Board the Ministry of Housing, provincial Cabinet and the Niagara Escarpment Commission in the planning process will be discussed. Prereq: ENVS 201",
+"Estimated additional cost to student: 40",
 "(Formerly PLAN 402)"
 ]
 },
@@ -23673,7 +23686,7 @@
 "title":"Canadian Government and Politics 2",
 "paras":[
 "An analysis of the decision-making machinery of the Canadian political system, including discussion of cabinet government, the role of the House of Commons, interest groups, the electoral system, the party system and voting behaviour.",
-".Prereq: PSCi 260A or consent of instructor",
+"Prereq: PSCi 260A or consent of instructor",
 "PSC! 264 F 2C 0.5 American Government and Politics The theory and practice of the American political system as revealed by the institutions and operations of American national government.",
 "Prereq: Second-year standing"
 ]
@@ -24738,7 +24751,7 @@
 "spec":"3C 0.5",
 "title":"Personnel Psychology",
 "paras":[
-".An examination of the following major topics in personnel psychology: employment planning, selection and recruitment, selection techniques, career development, performance appraisal, training programs, labour relations, compensations systems.",
+"An examination of the following major topics in personnel psychology: employment planning, selection and recruitment, selection techniques, career development, performance appraisal, training programs, labour relations, compensations systems.",
 "Prereq: PSYCH 101 and a statistics course (e.g., PSYCH 200 or 292)",
 "This course counts as an Advanced Psychology Course (Social Science) for Psychology majors",
 "Priority enrolment for Psychology majors"
@@ -24748,7 +24761,7 @@
 "id":"PSYCH344",
 "label":"PSYCH 344",
 "page":443,
-"spec":"F,W 3C 05",
+"spec":"F,W 3C 0.5",
 "title":"Theories of Group Counselling",
 "paras":[
 "Contemporary theories on the therapeutic application of group processes. Issues such as group development, leader skills and training, selection of members, problems encountered in both process and outcome research will be examined. Prereq: PSYCH 101 Offered at St. Jerome’s College"
@@ -24912,9 +24925,9 @@
 "label":"PSYCH 464",
 "page":443,
 "spec":"0.5",
-"title":"Research Apprenticeship For Honours Psychology students in the Thesis Program. This course involves an",
+"title":"Research Apprenticeship For Honours Psychology students in the",
 "paras":[
-"unpaid apprenticeship in a faculty research program combined with regular seminar meetings. The apprenticeship will require no more than eight hours per week. Students will be assigned duties that will enable them to acquire new skilis and understanding of the research process. Specific duties will be agreed to by the faculty member and the student and a document outlining this agreement must be submitted to the Psychology Undergraduate Office for approval. The course is offered on a credit/no credit basis.",
+"Thesis Program. This course involves an unpaid apprenticeship in a faculty research program combined with regular seminar meetings. The apprenticeship will require no more than eight hours per week. Students will be assigned duties that will enable them to acquire new skilis and understanding of the research process. Specific duties will be agreed to by the faculty member and the student and a document outlining this agreement must be submitted to the Psychology Undergraduate Office for approval. The course is offered on a credit/no credit basis.",
 "Prereq: PSYCH 391 and at least one Research Course",
 "This course cannot be used to meet the Advanced PSYCH Course Requirement"
 ]
@@ -25120,10 +25133,8 @@
 "label":"PSYCH 120R",
 "page":444,
 "spec":"F 3C 0.5",
-"title":"",
-"paras":[
-"introductory Psychology"
-]
+"title":"Introductory Psychology",
+"paras":[]
 },
 {
 "id":"PSYCH121R",
@@ -25205,7 +25216,7 @@
 "label":"PSYCH 121R",
 "page":456,
 "spec":"W 3C 0.5",
-"title":"introductory Psychology (Special",
+"title":"Introductory Psychology (Special",
 "paras":[
 "Topics)",
 "A continuation of PSYCH 120R with in-",
@@ -25582,9 +25593,9 @@
 "label":"PMATH 448",
 "page":446,
 "spec":"3C 0.5",
-"title":"",
+"title":"Commutative Algebra",
 "paras":[
-"Commutative Algebra . Prime ideals, Krull dimension, integral elements, localization, discrete valuations, Dedekind domains, Noetherian domains. Algebraic and transcendental field extensions, algebraic closure. Introduction to algebraic geometry.",
+"Prime ideals, Krull dimension, integral elements, localization, discrete valuations, Dedekind domains, Noetherian domains. Algebraic and transcendental field extensions, algebraic closure. Introduction to algebraic geometry.",
 "Prereq: PMATH 344",
 "Next offered in Winter 1995"
 ]
@@ -25780,7 +25791,7 @@
 "label":"REC 210",
 "page":447,
 "spec":"F 3C 0.5",
-"title":"introduction to Leisure Service Management",
+"title":"Introduction to Leisure Service Management",
 "paras":[
 "Using a wide variety of leisure service agencies as examples, this course focuses on the management functions of planning, organizing, influencing and controlling. Topics include marketing, budgeting, leadership, staffing, goal setting, motivation, communication and problem solving."
 ]
@@ -25820,7 +25831,7 @@
 "id":"REC251",
 "label":"REC 251",
 "page":447,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"Recreation and Disability",
 "paras":[
 "This course is designed to explore the etiology and issues relevant to the broad spectrum of people who are challenged or disabled. Study will focus on physical, intellectual and emotional or behavioural disabilities.",
@@ -25841,7 +25852,7 @@
 "id":"REC270",
 "label":"REC 270",
 "page":447,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"Research Design Applicable to Leisure Studies",
 "paras":[
 "An introduction to the methods and techniques of research as applied to leisure studies and services. General consideration will be given to the technical problems involved in various stages of research methodology with emphasis on the logic underlying the research process.",
@@ -25873,7 +25884,7 @@
 "id":"REC304",
 "label":"REC 304",
 "page":447,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"Community and Cultural Development",
 "paras":[
 "A study of major issues of Canadian cultural policy from a socio-historical, political and sociological perspective. Students will examine the role and organizational structure of the arts and major cultural agencies, and discuss social, economic and administrative aspects of professional, amateur, commercial and pubtic art organizations and services.",
@@ -25991,7 +26002,7 @@
 "id":"REC380",
 "label":"REC 380",
 "page":448,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"Recreation and Tourism Analysis",
 "paras":[
 "The course introduces the student to a variety of quantitative techniques used in the analysis of recreation and tourism, especially in the context of policy analysis, planning, and marketing. Techniques relevant to both (1) the perceptions and behaviour of recreationists and tourists and (2) the distribution of resources are examined. Specific topics may vary from term to term, but generally include operational definitions, measurement errors, scale developments, simple decisionmaking models, market segmentation, geostatistics and other regional-descriptive methods, and basic forecasting techniques.",
@@ -26115,7 +26126,7 @@
 "id":"REC434",
 "label":"REC 434",
 "page":449,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"Advanced Park Planning and",
 "paras":[
 "Management . A study of policies, procedures, and practices relative to the management of natural resources in parks. Emphasis is placed on an ecological systems approach to management as it relates to parks at all levels of government. Prereq: REC 334/ENV S 334 Cross-listed as ENV S 434"
@@ -26406,7 +26417,7 @@
 "id":"RS214",
 "label":"RS 214",
 "page":450,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"Buddhism",
 "paras":[
 "An introduction to the unifying beliefs and philosophical presuppositions of the Buddhist world-view, and an overview of the diverse forms of Buddhism in South and South-East Asia, Tibet, China and Japan.",
@@ -26418,9 +26429,9 @@
 "label":"RS 216",
 "page":450,
 "spec":"F 3C 0.5",
-"title":"",
+"title":"Islam",
 "paras":[
-"islam An introduction to the Islamic faith and practice, with a review of the development, achievements and impact of the Muslim community from Muhammad the Prophet to the present day.",
+"An introduction to the Islamic faith and practice, with a review of the development, achievements and impact of the Muslim community from Muhammad the Prophet to the present day.",
 "Areal"
 ]
 },
@@ -26520,7 +26531,7 @@
 "id":"RS270",
 "label":"RS 270",
 "page":451,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"Psychology of Religion",
 "paras":[
 "A study of theories of the psychological nature of religious experience, the sources of religious belief and the religious significance of psychological phenomena. Topics include faith, doubt, evangelism, conversion, faith healing, mysticism, drugs and religious experience, tonguesspeaking.",
@@ -26584,7 +26595,7 @@
 "id":"RS305A",
 "label":"RS 305A",
 "page":451,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"Intermediate New Testament Greek Readings in the New Testament, in the Septuagint, Papyri and the Apostolic",
 "paras":[
 "Fathers. Advanced grammar and syntax arising from the readings. Prereq: RS 106 or consent of instructor Area 3"
@@ -26605,7 +26616,7 @@
 "label":"RS 306A",
 "page":451,
 "spec":"F 3C 0.5",
-"title":"intermediate Biblical Hebrew",
+"title":"Intermediate Biblical Hebrew",
 "paras":[
 "Reading and grammatical analysis of selected prose and poetic portions of the Hebrew Bible.",
 "Taught at WLU as R&C 206"
@@ -26671,7 +26682,7 @@
 "id":"RS331",
 "label":"RS 331",
 "page":451,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"Vatican Il. Assessments and Perspectives",
 "paras":[
 "An analysis of the context and rich documentary tradition of the second Vatican Council, the course will expiore, in particular, the global dynamics of these teachings.",
@@ -26888,10 +26899,8 @@
 "label":"RS 313",
 "page":452,
 "spec":"",
-"title":"Tradition and Change in Modern",
-"paras":[
-"india"
-],
+"title":"Tradition and Change in Modern india",
+"paras":[],
 "listed":"COURSES NOT OFFERED 1994-95"
 },
 {
@@ -27227,7 +27236,7 @@
 "id":"SCI454",
 "label":"SCI 454",
 "page":454,
-"spec":"W 2C 05",
+"spec":"W 2C 0.5",
 "title":"Biology of Freshwater Pollution",
 "paras":[
 "Study of lakes, rivers and streams from a biological point of view, and consideration of the effects of pollution upon the animals and plants that inhabit them.",
@@ -27413,7 +27422,7 @@
 "label":"SMF 408",
 "page":455,
 "spec":"F,W,S 3C 0.5",
-"title":"independent Study: Special Topics In Marriage and Family Therapy",
+"title":"Independent Study: Special Topics In Marriage and Family Therapy",
 "paras":[
 "An independent, in-depth study, based on empirical research and/or extensive reading, of a topic in the area of marriage and family therapy. The project must be approved by the academic supervisor of the course prior to registration. Open to students in the SMF Honours option. Prereq: SMF 308 and 309 or consent of instructor",
 "Course Descriptions",
@@ -27443,7 +27452,7 @@
 "id":"ISS131R",
 "label":"ISS 131R",
 "page":455,
-"spec":"W 3C 05",
+"spec":"W 3C 0.5",
 "title":"Social Ideas, Social Policy and Political Practice 1",
 "paras":[
 "An introduction to some of the major social and political ideas of Western civilization. Attention is given to the influence and applicability of these ideas to social policy and political practice in contemporary Canada.",
@@ -27505,9 +27514,16 @@
 "title":"Critical Encounter with Human Nature",
 "paras":[
 "An attempt to increase students’ understanding of human nature and deepen their awareness of some fundamental issues in 20th-century life. The approach is interdisciplinary with emphasis on such themes as the meaning of self-knowledge, loneliness and anxiety, freedom and purpose in human life, and the nature of human happiness.",
-"Prereq: Courses in at least one of the Social Sciences or Philosophy, or consent of instructor",
-"ISS.350D W 3C 0.5",
-"Adult Life Crises and Events",
+"Prereq: Courses in at least one of the Social Sciences or Philosophy, or consent of instructor"
+]
+},
+{
+"id":"ISS350D",
+"label":"ISS 350D",
+"page":455,
+"spec":"W 3C 0.5",
+"title":"Adult Life Crises and Events",
+"paras":[
 "A study of normal events occurring during",
 "the adult years, why they happen and how",
 "we cope with them. Relying on research.",
@@ -28103,7 +28119,7 @@
 "spec":"2C 0.5",
 "title":"Victims and Society",
 "paras":[
-"The course will examine the substance of victimization: the scientific study of victims, the process, etiology and consequences of victimization. Topics will include victims and politics, the victims movement, ‘Victim-precipitation”, the victimization of women and family violence.",
+"The course will examine the substance of victimization: the scientific study of victims, the process, etiology and consequences of victimization. Topics will include victims and politics, the victims movement, Victim-precipitation”, the victimization of women and family violence.",
 "Prereq: SOC 101 or consent of instructor"
 ]
 },
@@ -28150,7 +28166,7 @@
 "In this course each student analyzes his or her own family history in light of social, cultural, and economic trends over the past century as a means of understanding the basis of his or her own identity. The analysis is reported in an essay of about 25 pages.",
 "Prereq: SOC 101 or consent of instructor",
 "Also offered at St. Jerome's College",
-"$0C 210 2C 0.5 Sociology of Sport This course examines sport in modern societies and the distinctive features of Canadian sport. Attention is directed to the relationship between sport and other institutions, including the economy and political system. Contemporary issues, including racial and gender inequality and controversies over violence and drugs are also considered.",
+"0C 210 2C 0.5 Sociology of Sport This course examines sport in modern societies and the distinctive features of Canadian sport. Attention is directed to the relationship between sport and other institutions, including the economy and political system. Contemporary issues, including racial and gender inequality and controversies over violence and drugs are also considered.",
 "Prereq: SOC 101 or consent of instructor"
 ]
 },
@@ -29067,11 +29083,9 @@
 "id":"SPAN111",
 "label":"SPAN 111",
 "page":464,
-"spec":"",
+"spec":"(WLU SP101/151-40)",
 "title":"",
-"paras":[
-"(WLU SP101/151-40)"
-]
+"paras":[]
 },
 {
 "id":"SPAN102",
@@ -29099,16 +29113,16 @@
 "label":"SPAN 201B",
 "page":464,
 "spec":". W 3C,iL 0.5",
-"title":"",
+"title":"Intermediate Spanish 2",
 "paras":[
-"intermediate Spanish 2 A continuation of SPAN 201A Prereq: SPAN 201A or consent of Department (WLU SP'122/172-03)"
+"A continuation of SPAN 201A Prereq: SPAN 201A or consent of Department (WLU SP'122/172-03)"
 ]
 },
 {
 "id":"SPAN205",
 "label":"SPAN 205",
 "page":464,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"Survey of Spanish Literature 1",
 "paras":[
 "Readings of major authors and study of the main literary trends from the middle ages to the 18th century.",
@@ -29132,7 +29146,7 @@
 "id":"SPAN217",
 "label":"SPAN 217",
 "page":464,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"Latin American Civilization 4",
 "paras":[
 "A survey of the geography, history and problems of Latin America from pre- Columbian times to the present. Taught in English (WLU SP223/273-30)"
@@ -29603,7 +29617,7 @@
 "label":"STAT 331",
 "page":466,
 "spec":"F,W,S 3C 0.5",
-"title":"Applied Linear Mody,",
+"title":"Applied Linear Mody",
 "paras":[
 "Review of normal thes, The multivariate normal distribution. N nal linear models.",
 "Variable selection. Extensions to weighted least squares and NO), - oral models.",
@@ -29706,10 +29720,9 @@
 "label":"STAT 440",
 "page":466,
 "spec":"F 3C 0.5",
-"title":"",
+"title":"Statistical Computing",
 "paras":[
-"Statistical Computing .",
-". Problems associated with the analysis of",
+"Problems associated with the analysis of",
 "stochastic systems and statistical data by",
 "computer; simulation techniques, numeri-",
 "cal algorithms, programming for statistical",
@@ -29866,9 +29879,9 @@
 "label":"SYDE 114",
 "page":467,
 "spec":"§ 3C,1T 95",
-"title":"",
+"title":"Linear Algebra “",
 "paras":[
-"Linear Algebra “ . Systems of linear equations and matrices, vector spaces. Computalonal aspects of linear algebra, theoretical ‘¥spects: linear transformations, determinan’s. eigenvalues and eigenvectors, inner preduct spaces."
+"Systems of linear equations and matrices, vector spaces. Computalonal aspects of linear algebra, theoretical ‘¥spects: linear transformations, determinan’s. eigenvalues and eigenvectors, inner preduct spaces."
 ]
 },
 {
@@ -30109,9 +30122,8 @@
 "label":"SYDE 342",
 "page":468,
 "spec":"W 3C,iL 0.5",
-"title":"",
+"title":"Industrial Ergonomics",
 "paras":[
-"industrial Ergonomics",
 "Ergonomics applications in industrial environments. Human performance and fatigue in industrial accident prevention. Human systems reliability in the industrial workplace. Human-machine function and human stress, adaptation and reliability. Industrial workstation design. Case studies of industrial ergonomics problems. Ergonomics in industrial systems design."
 ]
 },
@@ -30150,9 +30162,8 @@
 "label":"SYDE 361",
 "page":469,
 "spec":"S 3C,1T3L 0.5",
-"title":"",
+"title":"Introduction to Design",
 "paras":[
-"introduction to Design",
 "The methodology of design: defects, needs and the problem definition; criteria and generation of alternative solutions; feasibility analysis; optimization; selection, implementation and solution. The lecture material is supplemented by a term long design project done in small groups."
 ]
 },
@@ -30367,7 +30378,7 @@
 "id":"SYDE521",
 "label":"SYDE 521",
 "page":470,
-"spec":"F 3C 05",
+"spec":"F 3C 0.5",
 "title":"Computer Aided Design",
 "paras":[
 "Issues and directions in computer aided design and engineering (CAD/CAE); principles underlying the design of CAD systems. CAD systems architecture and data structures. Fundamentats of interactive computer graphics with application to engineering design and analysis software: graphical interfaces; geometrical transformations and projections; representation of lines, curves, surfaces and solids; graphical rendering techniques. Automated assembly and solution techniques for linear systems. The course usually involves a major project in which students develop a working CAD system."
@@ -30491,7 +30502,7 @@
 "id":"WS300",
 "label":"WS 300",
 "page":471,
-"spec":"W 3S 05",
+"spec":"W 3S 0.5",
 "title":"Developments in Canadian Feminism",
 "paras":[
 "An issues-oriented interdisciplinary seminar course which examines the conditions of Canadian women's existence from feminist perspectives. Topics covered in past courses include old and new feminisms, homemaking and motherhood, work, sexuality, violation of women and possibilities for political change",

@@ -273,11 +273,14 @@ YEARS = {
                  dept_starts={122: "biology", 158: "earth sciences"},
                  sub_starts={"ANTH": 268, "SOC": 269}),
     "6768": dict(era="named", section=(141, 331), extra_depts=EARLY_DEPTS,
-                 sub_starts={"ANTH": 321, "SOC": 322}),
+                 sub_starts={"ANTH": 321, "SOC": 322},
+                 # p. 245's running head "Management Science" is Management Sciences, not Science
+                 dept_starts={245: "management sciences"}, no_depts=["science"]),
     "6869": dict(era="named", section=(146, 366), extra_depts=EARLY_DEPTS,
                  sub_starts={"GRK": 186, "LAT": 187, "SPAN": 190, "ANTH": 358, "SOC": 360}),
     "6970": dict(era="named", section=(139, 347), extra_depts=EARLY_DEPTS,
-                 dept_starts={257: "mathematics"},
+                 dept_starts={257: "mathematics", 219: "geography and planning"},
+                 subject_pages={"PLAN": 224},  # Planning's own heading, inside the department
                  sub_starts={"GRK": 176, "LAT": 177, "SPAN": 181, "ANTH": 337, "SOC": 338}),
     "7071": dict(era="named", section=(177, 441),
                  sub_starts={"ANTH": 415, "SOC": 419, "RUSS": 289, "UKRAN": 292}),
