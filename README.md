@@ -15,7 +15,7 @@ Waterloo course pages at short URLs. A GitHub Action pulls the university's own 
 | `uwloo.ca/cs` | The current calendar year's CS page |
 | `uwloo.ca/2627` | All subjects in the 2026–27 calendar |
 | `uwloo.ca/2324/cs`, any year from `9596` to `2324` | Redirects to `ucalendar.uwaterloo.ca/2324/COURSE/course-CS.html` |
-| `uwloo.ca/9495/cs`, any year from `6364` to `9495` | That year's CS courses read from the scanned calendar (`/9495/cs241` jumps to CS 241), each linking to its scanned page. Years without text yet redirect to the PDF, at the CS page if `data/archive/9495.json` has it |
+| `uwloo.ca/9495/cs`, any year from `6364` to `9495` | That year's CS courses read from the scanned calendar (`/9495/cs241` jumps to CS 241), each linking to its scanned page. Each course links to its scanned page |
 | `uwloo.ca/6263/…` and earlier | Not online; says the archive starts at 1963–64 |
 | `uwloo.ca/courses.csv` | Every course: title, level, whether it's in the current calendars, the last term it ran (looking back 7 years), and its outline.uwaterloo.ca search link. Opens in Excel |
 | `uwloo.ca/1269/cs135` | Redirects to `acal.fast.uwaterloo.ca/course/1269/CS/135` whenever uwloo has no page for it (undergrad codes, and terms before Spring 2024) |
@@ -90,7 +90,9 @@ Opening a PDF often means a download, so years with OCR text get real pages inst
 python tools/archive/extract_text.py path/to/1994-95.pdf    # writes data/archive-text/9495.json
 ```
 
-Done so far: 1963–64 (28 subjects, 638 entries) and 1994–95 (71 subjects, 2,680 entries, 328 of them "not offered" listings).
+All 32 years from 1963–64 to 1994–95 are done: about 62,700 course entries across 1,634 subject pages (28 MB of text, about 50 MB of generated pages). 1969–75 print titles beside their descriptions, so those pages are rebuilt from Tesseract's word positions. About 2% of entries have a missing or run-on title, and descriptions are left blank where the calendar printed a title only (1960s grad courses, seminars, cross-listings).
+
+A link to a course that isn't on the page explains why: it was split into lettered parts that year (`/7778/hist204` → HIST 204A, 204B…), it didn't exist yet (`/8283/math135` → nearest MATH 134B and 140A), or the text missed it, with its scanned page.
 
 ## Page numbers for the PDF years
 

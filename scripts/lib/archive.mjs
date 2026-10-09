@@ -50,6 +50,29 @@ export function yearLinker(doc) {
 }
 
 const pdfPage = (doc, page) => `${doc.pdf}#page=${page}`;
+
+// Older calendars open each department with its faculty: "Professor A. Rudin, B.Sc. (Alberta), Ph.D. ..."
+const DEGREE = /\b(B\.?A|M\.?A|B\.?Sc|M\.?Sc|Ph\.?\s?D|D\.?Phil|M\.?B\.?A|LL\.?B|B\.?A\.?Sc|M\.?A\.?Sc|P\.?Eng)\b\.?/g;
+const isFaculty = (t) => (t.match(DEGREE) ?? []).length >= 2 || /^(Professor|Associate Professor|Assistant Professor|Lecturer)\b/.test(t);
+
+/** Notes paragraphs, with runs of faculty listings folded into one collapsed line. */
+function notesHtml(paras, linker, doc) {
+  const out = [];
+  let staff = [];
+  const flush = () => {
+    if (staff.length) out.push(`<details class="staff"><summary>Faculty listed in ${esc(doc.label)}</summary>${staff.map((t) => `<p>${esc(t)}</p>`).join('')}</details>`);
+    staff = [];
+  };
+  for (const t of paras) {
+    if (isFaculty(t)) staff.push(t);
+    else {
+      flush();
+      out.push(para(t, linker));
+    }
+  }
+  flush();
+  return out.join('');
+}
 const LABEL = /^(Prereq|Antireq|Coreq|Prerequisites?|Corequisites?|Antirequisites?|Note)\s?:/;
 
 function para(text, linker) {
@@ -105,19 +128,36 @@ export function archiveSubjectPage({ doc, s, index, today, faculty, builtAt, ver
 </header>
 <p class="gone-note" id="missing" hidden></p>
 ${described.length ? `<nav class="nums" aria-label="Course numbers">${described.map((c) => `<a href="#${c.id}">${esc(c.label.slice(c.label.indexOf(' ') + 1))}</a>`).join('')}</nav>` : ''}
-${s.intro ? `<section class="entry intro"><h2>Notes</h2>${s.intro.paras.map((t) => para(t, linker)).join('')}<p class="entry-links"><a href="${esc(pdfPage(doc, s.intro.page))}">Scanned page ${s.intro.page}</a></p></section>` : ''}
+${s.intro ? `<section class="entry intro"><h2>Notes</h2>${notesHtml(s.intro.paras, linker, doc)}<p class="entry-links"><a href="${esc(pdfPage(doc, s.intro.page))}">Scanned page ${s.intro.page}</a></p></section>` : ''}
 ${s.courses.map((c) => entryHtml(c, s, doc, linker, today)).join('\n')}
 <script>
 (() => {
   const pages = ${JSON.stringify(fallback)};
   const pdf = ${JSON.stringify(doc.pdf)};
+  const year = ${JSON.stringify(doc.label)};
+  const fmt = (id) => id.replace(/^([A-Z]+)([0-9])/, '$1 $2');
+  const link = (el) => '<a href="#' + el.id + '">' + fmt(el.id) + '</a>';
+  const list = (els) => els.length < 3 ? els.map(link).join(' and ') : els.slice(0, -1).map(link).join(', ') + ' and ' + link(els.at(-1));
   const show = () => {
     const id = decodeURIComponent(location.hash.slice(1)).toUpperCase();
     const box = document.getElementById('missing');
     if (!id || document.getElementById(id)) return (box.hidden = true);
-    const page = pages[id] ?? ${s.page};
-    const code = id.replace(/^([A-Z]+)(\\d)/, '$1 $2');
-    box.innerHTML = code + ' isn’t in this page’s text. <a href="' + pdf + '#page=' + page + '">See it on the scanned calendar, page ' + page + '</a>.';
+    const entries = [...document.querySelectorAll('section.entry[id]')];
+    const num = (el) => parseInt(el.id.replace(/^[A-Z]+/, ''), 10);
+    // HIST204 when the calendar has HIST204A, HIST204B…
+    const parts = entries.filter((el) => el.id.startsWith(id) && /^[A-Z]+$/.test(el.id.slice(id.length)));
+    let msg;
+    if (parts.length) msg = 'In ' + year + ', ' + fmt(id) + ' was listed as ' + list(parts) + '.';
+    else if (pages[id]) msg = fmt(id) + ' is in the ' + year + ' calendar, but not in this page’s text. <a href="' + pdf + '#page=' + pages[id] + '">See it on the scanned calendar, page ' + pages[id] + '</a>.';
+    else {
+      const n = parseInt(id.replace(/^[A-Z]+/, ''), 10);
+      const below = entries.filter((el) => num(el) < n).at(-1);
+      const above = entries.find((el) => num(el) > n);
+      const near = [below, above].filter(Boolean);
+      msg = fmt(id) + ' isn’t in the ' + year + ' calendar.' + (near.length ? ' Nearest: ' + list(near) + '.' : '') +
+        ' <a href="' + pdf + '#page=' + ${s.page} + '">Scanned pages</a>.';
+    }
+    box.innerHTML = msg;
     box.hidden = false;
   };
   addEventListener('hashchange', show);

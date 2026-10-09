@@ -320,7 +320,9 @@ test('archive text: files are well-formed and pages render', async () => {
     assert.match(html, /<section class="entry" id="CS241">/);
     assert.match(html, /href="\/cs241\/">CS 241 today</);
     assert.match(html, /1994-95\.pdf#page=\d+">Scanned page/);
-    assert.ok(html.includes("id.replace(/^([A-Z]+)(\\d)/, '$1 $2')"), 'missing-course script intact');
+    assert.ok(html.includes("id.replace(/^([A-Z]+)([0-9])/, '$1 $2')"), 'missing-course script intact');
+    assert.ok(!/<script>[\s\S]*[^\\]\(d\)[\s\S]*<\/script>/.test(html), 'no regex in the page script lost its backslash');
+    assert.ok(html.includes("/^[A-Z]+$/.test(el.id.slice(id.length))"), 'suffix-variant check intact');
     assert.ok(html.includes('"CS999":360'), 'fallback page for a course the text missed');
   }
 });
