@@ -326,3 +326,82 @@ test('archive text: files are well-formed and pages render', async () => {
     assert.ok(html.includes('"CS999":360'), 'fallback page for a course the text missed');
   }
 });
+
+test('reddit: removals drop comments, posts, starters and users', async () => {
+  const { parseRemovals, applyRemovals } = await import('./lib/reddit.mjs');
+  const entries = [
+    { in: 'comment', post: 'p1', comment: 'c1', author: 'alice', starter: 's1', starter_author: 'bob', starter_text: 'hi', t: 3 },
+    { in: 'comment', post: 'p2', comment: 'c2', author: 'carol', t: 2 },
+    { in: 'post', post: 'p3', post_author: 'Dave', post_text: 'x', t: 1 },
+  ];
+  const r = parseRemovals('# comment\nt1_c2\n\nu/dave\nbob\n');
+  assert.deepEqual([...r.ids].sort(), ['bob', 'c2']);
+  assert.deepEqual([...r.users], ['dave']);
+  const kept = applyRemovals(entries, parseRemovals('t1_c2\nu/dave\ns1'));
+  assert.deepEqual(kept.map((e) => e.comment ?? e.post), ['c1']);
+  assert.equal(kept[0].starter_text, '[deleted]');
+  assert.equal(applyRemovals(entries, parseRemovals('t3_p1')).length, 2);
+  assert.equal(entries[0].starter_text, 'hi', 'original entries untouched');
+});
+
+test('reddit: entries escape quoted text and link the whole thread branch', async () => {
+  const { entryHtml, listHtml, termOf, threadUrl } = await import('../site/reddit.js');
+  const e = { in: 'comment', post: 'abc', comment: 'c9', starter: 's7', t: 1735365524, title: 'CS 135 <b>help</b>', score: 3, n: 16,
+    text: '<script>alert(1)</script> CS 135 is fine', author: 'u_1', starter_text: 'start', starter_author: null, post_text: 'op words' };
+  const html = entryHtml(e, 'CS135', { repo: 'me/repo' });
+  assert.ok(!html.includes('<script>alert'), 'quoted text is escaped');
+  assert.match(html, /&lt;b&gt;help&lt;\/b&gt;/);
+  assert.equal(threadUrl(e), 'https://www.reddit.com/r/uwaterloo/comments/abc/_/s7/');
+  assert.match(html, /<span class="rd-user">\[deleted\]<\/span>: “start”/);
+  assert.match(html, /github\.com\/me\/repo\/issues\/new\?title=Remove%20Reddit%20quote%20c9/);
+  assert.equal(termOf(1735365524), 'Fall 2024');
+  assert.equal(termOf(Date.UTC(2025, 4, 1) / 1000), 'Spring 2025');
+  const list = listHtml([e, { ...e, post: 'old', t: Date.UTC(2024, 1, 1) / 1000 }], 'CS135');
+  assert.deepEqual([...list.matchAll(/<h3 class="rd-term">([^<]+)/g)].map((m) => m[1]), ['Fall 2024', 'Winter 2024']);
+});
+
+test('reddit: one card per thread, post first, replies under their thread starter', async () => {
+  const { groupThreads, threadHtml } = await import('../site/reddit.js');
+  const base = { post: 'p1', title: 'T', score: 5, n: 9, post_text: 'op' };
+  const entries = [
+    { ...base, in: 'comment', comment: 'c2', starter: 's1', starter_text: 'start', starter_author: 'b', author: 'x', text: 'second', t: 30 },
+    { ...base, in: 'post', post_author: 'op_user', t: 10 },
+    { ...base, in: 'comment', comment: 'c1', starter: 's1', starter_text: 'start', starter_author: 'b', author: 'y', text: 'first', t: 20 },
+    { ...base, in: 'comment', comment: 'c3', author: 'z', text: 'top-level', t: 25 },
+  ];
+  const [th, ...rest] = groupThreads(entries);
+  assert.equal(rest.length, 0);
+  assert.equal(th.t, 30);
+  assert.ok(th.hit);
+  assert.deepEqual(th.branches.map((b) => [b.root?.comment ?? null, b.replies.map((r) => r.comment)]), [[null, ['c1', 'c2']], ['c3', []]]);
+  const html = threadHtml(th, 'CS135');
+  assert.equal(html.match(/“start”/g).length, 1, 'shared thread starter shown once');
+  // a thread starter that names the course itself appears once, highlighted
+  const both = groupThreads([
+    { ...base, in: 'comment', comment: 's9', author: 'r', text: 'root says CS 135', t: 40 },
+    { ...base, in: 'comment', comment: 'c9', starter: 's9', starter_text: 'root says CS 135', starter_author: 'r', author: 'k', text: 'reply', t: 41 },
+  ])[0];
+  const h2 = threadHtml(both, 'CS135');
+  assert.equal(h2.match(/root says CS 135/g).length, 1);
+  assert.match(h2, /rd-q rd-hit">.*root says/);
+  assert.ok(html.indexOf('“op”') < html.indexOf('“start”') && html.indexOf('“first”') < html.indexOf('“second”'));
+  assert.match(html, /u\/op_user/);
+});
+
+test('reddit: data files are well-formed', async () => {
+  const { loadReddit } = await import('./lib/reddit.mjs');
+  const { map, meta } = await loadReddit(new URL('../data/reddit', import.meta.url).pathname);
+  if (!map.size) return;
+  assert.ok(meta?.through > 1.7e9, 'meta.through');
+  let checked = 0;
+  for (const [code, entries] of map) {
+    assert.match(code, /^[A-Z]{2,6}\d{3}[A-Z]?$/, code);
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      assert.ok(/^[a-z0-9]+$/.test(e.post) && Number.isInteger(e.t), `${code}: entry ${i}`);
+      assert.ok(e.in === 'post' || (e.in === 'comment' && e.comment && typeof e.text === 'string'), `${code}: ${e.post}`);
+      if (i) assert.ok(entries[i - 1].t >= e.t, `${code}: newest first`);
+    }
+    if (++checked > 400) break;
+  }
+});

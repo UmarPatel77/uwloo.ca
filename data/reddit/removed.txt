@@ -1,0 +1,3 @@
+# Quotes to keep off uwloo.ca. One per line: a Reddit id from a "Remove this" request
+# (comment, thread starter or post, with or without t1_/t3_), or u/username for everything by that person.
+# A removed post drops its whole thread. Changes apply on the next build.

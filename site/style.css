@@ -263,3 +263,17 @@ footer p { margin: 0.25rem 0; }
 .staff summary { cursor: pointer; font-weight: 600; }
 .staff p { margin: 0.3rem 0; font-size: 0.92rem; }
 .entry.listed h2 { margin-bottom: 0.1rem; }
+
+/* r/uwaterloo discussions */
+.reddit .rd-term { font-size: 0.95rem; font-weight: 700; font-stretch: 87.5%; color: var(--muted); margin: 1.4rem 0 0.2rem; }
+.rd { padding: 0.75rem 0 0.8rem; border-top: 1px solid var(--rule); }
+.rd-head { margin: 0 0 0.35rem; }
+.rd-head time { font-variant-numeric: tabular-nums; color: var(--muted); margin-right: 0.35rem; white-space: nowrap; }
+.rd-head a { font-weight: 650; }
+.rd-q { margin: 0.25rem 0; max-width: 68ch; padding-left: 0.8rem; border-left: 2px solid var(--rule); color: var(--muted); font-size: 0.97rem; }
+.rd-q.rd-deep { margin-left: 0.8rem; }
+.rd-q.rd-hit { color: var(--ink); border-left-color: var(--fac); }
+.rd-user { font-weight: 600; font-stretch: 87.5%; color: inherit; }
+.more { margin-top: 1rem; font: inherit; font-weight: 600; padding: 0.5rem 0.9rem; border: 2px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; }
+.more:hover { background: var(--soft); }
+.more:disabled { opacity: 0.6; cursor: progress; }

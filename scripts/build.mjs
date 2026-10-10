@@ -6,6 +6,8 @@ import { cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { archiveSubjectPage, archiveYearPage, loadArchiveText, textMap } from './lib/archive.mjs';
 import * as kuali from './lib/kuali.mjs';
+import { loadReddit, redditSection, SHOWN } from './lib/reddit.mjs';
+import { groupThreads } from '../site/reddit.js';
 import * as opendata from './lib/opendata.mjs';
 import {
   coursePage,
@@ -55,7 +57,8 @@ async function main() {
   const builtAt = new Date();
   const css = await readFile('site/style.css');
   const js = await readFile('site/app.js');
-  const version = createHash('sha1').update(css).update(js).digest('hex').slice(0, 8);
+  const rjs = await readFile('site/reddit.js');
+  const version = createHash('sha1').update(css).update(js).update(rjs).digest('hex').slice(0, 8);
 
   // 1. Calendars (Kuali): undergrad by academic year, grad by term.
   const { ug, grad } = await kuali.loadCatalogList(builtAt);
@@ -170,6 +173,11 @@ async function main() {
   });
   const leadsList = (codes, titleOf) => [...(codes ?? [])].map((c) => ({ code: c, title: titleOf(c) })).sort((a, b) => byCode(a.code, b.code));
 
+  // r/uwaterloo mentions (data/reddit/, see tools/reddit/). Pages show the newest; /reddit/{code}.json has the rest.
+  const reddit = await loadReddit();
+  const repo = process.env.GITHUB_REPOSITORY || 'UmarPatel77/uwloo.ca';
+  let redditPages = 0;
+
   for (const [code, { cat, course }] of primary) {
     const history = historyFor(code);
     const strip = offerings
@@ -197,9 +205,13 @@ async function main() {
         sectionsByTerm,
         curTerm,
         subjectHref: subjectHref(cat, course.subject, code).replace(/#.*$/, ''),
+        reddit: redditSection(code, reddit.map.get(code), reddit.meta, { repo, slug: slug(code), version }),
       }),
     ]);
     sitemap.push(`/${slug(code)}/`);
+    const mentions = reddit.map.get(code);
+    if (mentions && groupThreads(mentions).length > SHOWN) pages.push([`reddit/${slug(code)}.json`, JSON.stringify(mentions)]);
+    if (mentions?.length) redditPages++;
   }
 
   // Grad version pages (/1249/math631): each course exactly as one term's Graduate Calendar lists it.
@@ -354,7 +366,7 @@ async function main() {
   const pastTerms = historyWindow.filter((t) => Number(t) <= Number(curTerm));
   const csvCell = (v) => (/[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
   const csvRows = [
-    ['code', 'title', 'level', 'in_current_calendar', 'last_ran_term', 'last_ran', `terms_run_since_${termName(pastTerms[0]).replace(' ', '_')}`, 'outline_search', 'uwloo'],
+    ['code', 'title', 'level', 'in_current_calendar', 'last_ran_term', 'last_ran', `terms_run_since_${termName(pastTerms[0]).replace(' ', '_')}`, 'outline_search', 'reddit_mentions', 'uwloo'],
   ];
   for (const [code, { cat, course }] of [...primary.entries()].sort((a, b) => byCode(a[0], b[0]))) {
     const ran = offerings ? pastTerms.filter((t) => offerings.terms[t]?.offered.has(code)) : [];
@@ -368,6 +380,7 @@ async function main() {
       last ? termName(last) : offerings ? 'not since ' + termName(pastTerms[0]) : 'unknown (no UW_API_KEY)',
       offerings ? ran.length : '',
       outlineUrl(course.subject, course.number),
+      reddit.map.get(code)?.length ?? 0,
       `${SITE}/${slug(code)}/`,
     ]);
   }
@@ -382,7 +395,7 @@ async function main() {
   await cp('site', OUT, { recursive: true });
   await writeAll(pages);
   const gradOnly = [...primary.values()].filter((p) => p.cat.level === 'grad').length;
-  console.log(`Wrote ${pages.length} files to ${OUT}/ (${primary.size} course pages, ${gradOnly} from the Graduate Calendar, ${versionPages} grad term versions, ${archivePages} scanned-calendar subject pages)`);
+  console.log(`Wrote ${pages.length} files to ${OUT}/ (${primary.size} course pages, ${gradOnly} from the Graduate Calendar, ${versionPages} grad term versions, ${archivePages} scanned-calendar subject pages, ${redditPages} with r/uwaterloo mentions${reddit.removed ? `, ${reddit.removed} removal requests applied` : ''})`);
 }
 
 main().catch((err) => {

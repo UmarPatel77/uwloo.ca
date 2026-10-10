@@ -80,6 +80,29 @@ Records stay **DNS only** because GitHub can't issue its certificate through Clo
 
 Setup still checks things and says what's missing. Set Settings → Pages → Source to **GitHub Actions**, enter `uwloo.ca` under Custom domain, add the DNS records above, and tick Enforce HTTPS when GitHub offers it.
 
+## r/uwaterloo discussions
+
+Each course page has a "Discussed on r/uwaterloo" section: every post and comment that mentions the course, one card per thread, newest first and grouped by term. A card quotes the post, then for each reply that names the course, the comment that started its branch and the reply itself. Quotes are short verbatim excerpts with `u/` attribution, never reworded. "View on Reddit" opens the branch, so every parent comment is there. The page shows 12 threads; "Show all" loads the rest from `/reddit/{code}.json`.
+
+`tools/reddit/index_dump.py` builds `data/reddit/{SUBJ}.json` from the per-subreddit dump (Watchful1's "Subreddit comments/submissions" torrent, files `uwaterloo_submissions.zst` and `uwaterloo_comments.zst`):
+
+```sh
+pip install zstandard
+python -I tools/reddit/index_dump.py uwaterloo_submissions.zst uwaterloo_comments.zst
+```
+
+Course codes count in capitals (`CS 135`, `CS135`, `CS 135/136`, `C&O 250`) or lowercase (`cs135`), except codes that are also words (`me 100`, `fine 100`), which count only in capitals. The current data runs from 2009 to December 2024: 129,576 mentions of 4,553 codes. Newer posts need Arctic Shift's API, which is down at the moment, so each section links to a Reddit search for anything newer.
+
+**Removals.** Anything deleted or removed before it was archived is left out. Every card has a "Remove this" link that opens a GitHub issue with the ids involved. To act on one, add a line to `data/reddit/removed.txt` and push:
+
+```
+m45lu3j        # a comment (also accepts t1_m45lu3j); a thread starter loses its quote
+1hnxrf4        # a post (t3_…): drops its whole thread
+u/someone      # everything by that account
+```
+
+Reddit's API, which could check daily for deletions, now needs Reddit's approval for new keys, so removals are by request for now.
+
 ## Text for the scanned years
 
 Opening a PDF often means a download, so years with OCR text get real pages instead: `/9495/cs` lists every CS entry from the 1994–95 calendar, with its terms and units, prerequisites linked within that year, a link to its scanned page, and a link to the course today if it still exists. Courses listed under "not offered this year" get an anchor too, and a course the text missed shows a note pointing to its scanned page.
@@ -145,6 +168,9 @@ scripts/lib/requisites.mjs     Kuali requisite HTML → plain-language tree
 scripts/lib/render.mjs         page templates
 scripts/lib/terms.mjs          term codes (1269) and year codes (2627)
 scripts/test.mjs               unit tests, run before every build
+tools/reddit/index_dump.py     r/uwaterloo dump -> data/reddit/{SUBJ}.json
+data/reddit/removed.txt        quotes taken down on request
+site/reddit.js                 discussion cards, shared by the build and the browser
 data/archive/{year}.json       page numbers inside the 1963–64 to 1994–95 PDFs
 site/                          CSS, client JS, the URL router used by 404.html
 ```

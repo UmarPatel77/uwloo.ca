@@ -210,6 +210,7 @@ ${desc ? `<p class="desc">${linkCodes(desc, known)}</p>` : ''}
   <section aria-labelledby="leads-h"><h2 id="leads-h">Leads to</h2>${leads}</section>
 </div>
 ${sectionBlocks}
+${version ? '' : ctx.reddit ?? ''}
 <section aria-labelledby="out-h">
   <h2 id="out-h">Check it elsewhere for ${esc(termName(linkTerm))}</h2>
   <ul class="out">${out.map(([href, label, n]) => `<li><a href="${esc(href)}">${esc(label)}</a><small>${esc(n)}</small></li>`).join('')}</ul>
