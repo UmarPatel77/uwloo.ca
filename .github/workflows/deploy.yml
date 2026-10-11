@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write # read the repo; create the "files" release that holds resource PDFs (scripts/setup.mjs)
   pages: write
   id-token: write
 
@@ -56,6 +56,7 @@ jobs:
         run: node scripts/build.mjs
         env:
           UW_API_KEY: ${{ secrets.UW_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }} # downloads resource PDFs from the "files" release
 
       # Saved even if a later step fails, so downloaded data is never thrown away.
       - name: Save data cache

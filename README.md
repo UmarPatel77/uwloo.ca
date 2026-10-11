@@ -103,6 +103,22 @@ u/someone      # everything by that account
 
 Reddit's API, which could check daily for deletions, now needs Reddit's approval for new keys, so removals are by request for now.
 
+## Course resources
+
+Course pages can list resources: PDFs that uwloo hosts with the author's permission, and links to notes, slides and past exams posted elsewhere. A resource can be one PDF or a set (chapters, lecture slides, a course site and its recordings), shown as one card. Each hosted PDF gets a page like `/cs341/1249-notes/` or `/cs341/1249-notes/3/`, with the notes about it (what it covers, page notes, how to cite it) and the rest of its set above the PDF itself. The PDF is drawn by PDF.js (`site/viewer.js`, `site/vendor/`), so it shows in the page on phones too instead of downloading.
+
+The catalogue is `data/resources/{SUBJ}.json`; the PDFs are assets on a GitHub release tagged `files` (created by `scripts/setup.mjs`), so they never enter git history, and the build copies them into the site. `tools/resources/README.md` has the whole flow: zip the PDFs, catalogue them in a fresh chat with `tools/resources/intake.py`, upload the PDFs to the release, push the catalogue.
+
+### Found around the web
+
+Under each course's Resources, "Around the web" lists course websites, notes, slides, lecture videos and past exams that a weekly job finds: links posted on r/uwaterloo, the CS, SE and ECE webrings, students' link lists, professors' teaching pages (through department directories), course accounts like `student.cs.uwaterloo.ca/~cs341/`, and GitHub repositories of notes. Each page is checked to load and name the course; assignments and solutions are left out unless they're on the course's own site; dead links become Wayback Machine copies. It follows robots.txt and goes slowly; `/about/links/` explains it to site owners. `tools/links/README.md` has the details, and `data/links/removed.txt` takes links down.
+
+## Courses no longer offered
+
+A course that's in none of the calendars uwloo has (2024–25 on) still gets a page if Waterloo ever listed it: `uwloo.ca/msci452`. It says when it was in the course catalog, the terms it ran, its description and requirements as last listed, which of today's courses still mention it (usually as an antirequisite), its r/uwaterloo discussions, and links to its last calendar entry on ucalendar and to the scanned calendars it's in. Today's pages link to it too, greyed out.
+
+The history comes from UW Open Data: `Courses/{term}` (the catalog each term) and `ClassSchedules/{term}` (what ran), folded into `.cache/opendata/history.json` by `scripts/lib/history.mjs`. Past terms never change, so each is fetched once, newest first, `HISTORY_TERMS_PER_BUILD` (24, eight years) a build. Going back, four empty terms in a row mark where Open Data's records end, and the page says "since at least" that term. Older courses come from the scanned 1963–64 to 1994–95 calendars (seen in at least two years, so an OCR misread doesn't get a page).
+
 ## Text for the scanned years
 
 Opening a PDF often means a download, so years with OCR text get real pages instead: `/9495/cs` lists every CS entry from the 1994–95 calendar, with its terms and units, prerequisites linked within that year, a link to its scanned page, and a link to the course today if it still exists. Courses listed under "not offered this year" get an anchor too, and a course the text missed shows a note pointing to its scanned page.
@@ -153,6 +169,7 @@ Environment variables for `scripts/build.mjs`:
 | `TERMS_BACK` / `TERMS_AHEAD` | 6 / 2 | Terms shown in the strip around the current one |
 | `SECTION_TERMS` | 2 | How many terms (from the current one) get a sections table |
 | `HISTORY_TERMS_BACK` | 21 | How far back `courses.csv` looks for the last term a course ran |
+| `HISTORY_TERMS_PER_BUILD` | 24 | Past terms of Open Data added to the course history each build |
 | `KUALI_MAX_AGE_DAYS` | 7 | How often the live calendar's course details are refetched |
 | `KUALI_CONCURRENCY` / `OPENDATA_CONCURRENCY` | 6 / 3 | Parallel requests; keep these low |
 
@@ -172,6 +189,16 @@ tools/reddit/index_dump.py     r/uwaterloo dump -> data/reddit/{SUBJ}.json
 data/reddit/removed.txt        quotes taken down on request
 site/reddit.js                 discussion cards, shared by the build and the browser
 data/archive/{year}.json       page numbers inside the 1963–64 to 1994–95 PDFs
+scripts/lib/history.mjs        every course Open Data's catalog has listed, and when each ran
+scripts/lib/retired.mjs        pages for courses no longer offered (/msci452/)
+scripts/lib/resources.mjs      course resources: catalogue, course-page section, PDF pages, release files
+tools/resources/               intake.py (zip of PDFs → catalogue entries) and how to use it
+data/resources/                the resources catalogue, and each hosted PDF's text
+site/viewer.js                 the PDF viewer on resource pages (PDF.js, in site/vendor/)
+scripts/find-links.mjs         the weekly link finder (.github/workflows/find-links.yml)
+scripts/lib/links.mjs          its rules: course codes in pages and addresses, robots.txt, what's skipped
+tools/links/                   reddit_links.py (r/uwaterloo dump → data/links/seeds/) and how the finder works
+data/links/                    where the finder looks, what it found, and what's been removed
 site/                          CSS, client JS, the URL router used by 404.html
 ```
 

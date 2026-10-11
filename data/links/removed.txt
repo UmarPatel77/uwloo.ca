@@ -1,0 +1,4 @@
+# Links the finder must never list (see tools/links/README.md). One per line:
+#   https://example.com/page     that page
+#   https://example.com/notes/*  everything under it
+#   example.com                  a whole site

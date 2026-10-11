@@ -1,0 +1,76 @@
+name: Find course links
+
+# Looks for course resources around the web (scripts/find-links.mjs) and commits what it finds to
+# data/links/found.json, then rebuilds the site. Weekly, by hand from the Actions tab, or when its
+# sources change.
+on:
+  schedule:
+    - cron: "41 7 * * 0" # Sundays, ~3:40 a.m. in Waterloo
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: Time budget in minutes
+        default: "100"
+  push:
+    branches: [main]
+    paths:
+      - scripts/find-links.mjs
+      - scripts/lib/links.mjs
+      - data/links/sources.json
+      - data/links/seeds/**
+      - data/links/removed.txt
+
+permissions:
+  contents: write # commit data/links/found.json
+  actions: write # start the site rebuild afterwards
+
+concurrency:
+  group: find-links
+  cancel-in-progress: false
+
+jobs:
+  find:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      # Pages fetched on earlier runs, so a weekly run only refetches what's stale.
+      - name: Restore page cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/links
+          key: uwloo-links-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: uwloo-links-
+
+      - name: Find links
+        id: find
+        run: node scripts/find-links.mjs --minutes "${{ inputs.minutes || '100' }}"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Save page cache
+        if: always() && steps.find.outcome != 'skipped'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/links
+          key: uwloo-links-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Commit and rebuild
+        run: |
+          if git diff --quiet -- data/links/found.json && git ls-files --error-unmatch data/links/found.json >/dev/null 2>&1; then
+            echo "No change in found links."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/links/found.json
+          git commit -m "Links: $(node -e "const f=require('./data/links/found.json');console.log(f.links.length+' for '+f.courses+' courses')")"
+          for i in 1 2 3; do git pull --rebase --quiet && git push && break; sleep 5; done
+          gh workflow run deploy.yml --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}

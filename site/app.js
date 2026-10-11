@@ -24,6 +24,7 @@ export function search(q, rows, limit = 12) {
     else if (title.startsWith(raw)) s = 2;
     else if (title.includes(raw)) s = 3;
     else if (words.every((w) => title.includes(w) || code.startsWith(w))) s = 4;
+    if (s >= 0 && row[2]) s += 0.5; // no longer offered: after current courses that match as well
     if (s >= 0) scored.push([s, row]);
   }
   scored.sort((a, b) => a[0] - b[0] || a[1][0].localeCompare(b[1][0], 'en', { numeric: true }));
@@ -69,7 +70,7 @@ if (box && list) {
       return;
     }
     list.innerHTML = rows
-      .map(([code, title], i) => `<li><a id="r${i}" role="option" href="/${code.toLowerCase()}/" aria-selected="${i === active}"><span class="cc">${esc(fmt(code))}</span><span>${esc(title)}</span></a></li>`)
+      .map(([code, title, old], i) => `<li><a id="r${i}" role="option" href="/${code.toLowerCase()}/" aria-selected="${i === active}"><span class="cc">${esc(fmt(code))}</span><span>${esc(title)}${old ? ' <span class="t">· no longer offered</span>' : ''}</span></a></li>`)
       .join('');
   };
   const update = async () => {
@@ -108,7 +109,7 @@ if (miss?.dataset.query) {
     if (!hits.length && subject) hits = search(subject, rows, 8); // cs999 → other CS courses
     if (hits.length) {
       miss.innerHTML = `<h2>Closest courses</h2><ul class="results">${hits
-        .map(([code, title]) => `<li><a href="/${code.toLowerCase()}/"><span class="cc">${esc(fmt(code))}</span><span>${esc(title)}</span></a></li>`)
+        .map(([code, title, old]) => `<li><a href="/${code.toLowerCase()}/"><span class="cc">${esc(fmt(code))}</span><span>${esc(title)}${old ? ' <span class="t">· no longer offered</span>' : ''}</span></a></li>`)
         .join('')}</ul>`;
     }
   });

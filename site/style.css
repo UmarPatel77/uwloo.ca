@@ -277,3 +277,99 @@ footer p { margin: 0.25rem 0; }
 .more { margin-top: 1rem; font: inherit; font-weight: 600; padding: 0.5rem 0.9rem; border: 2px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; }
 .more:hover { background: var(--soft); }
 .more:disabled { opacity: 0.6; cursor: progress; }
+
+/* course resources: list on the course page */
+.res-list { list-style: none; margin: 0; padding: 0; }
+.res-item { padding: 0.75rem 0 0.8rem; border-top: 1px solid var(--rule); }
+.res-item:last-child { border-bottom: 1px solid var(--rule); }
+.res-line { margin: 0; display: flex; flex-wrap: wrap; gap: 0.1rem 0.6rem; align-items: baseline; }
+.kind { font-size: 0.82rem; font-weight: 700; font-stretch: 87.5%; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fac); }
+.res-title { font-weight: 650; }
+.res-meta { margin: 0.1rem 0 0; font-size: 0.95rem; }
+.res-note p { margin: 0.35rem 0 0; font-size: 0.97rem; }
+.res-item .entry-links { margin-top: 0.45rem; }
+.res-foot { font-size: 0.92rem; margin: 0.7rem 0 0; }
+.res-parts { list-style: none; margin: 0.4rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.15rem 1.1rem; font-size: 0.95rem; }
+.res-parts .t { font-size: 0.88rem; }
+.more-parts a { font-weight: 650; }
+
+/* a set's parts, on its PDF pages */
+.res-set { margin: 1.4rem 0 0; }
+.res-set summary { cursor: pointer; margin-bottom: 0.4rem; }
+.res-set summary h2 { display: inline; margin: 0; }
+.res-set summary .t { font-size: 0.92rem; margin-left: 0.3rem; }
+.set-list li > a { justify-self: start; }
+.set-list { list-style: none; margin: 0; padding: 0; columns: 2 19rem; column-gap: 2rem; }
+.set-list li { break-inside: avoid; display: grid; grid-template-columns: 1.9rem minmax(0, 1fr); gap: 0 0.3rem; margin: 0 0 0.25rem; }
+.set-list li .t { grid-column: 2; font-size: 0.88rem; margin-top: -0.15rem; }
+.set-list a[aria-current] { font-weight: 800; text-decoration: none; border-bottom: 3px solid var(--gold); }
+.pn { font-weight: 750; font-stretch: 75%; font-variant-numeric: tabular-nums; color: var(--muted); }
+.part-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.3rem 1rem; margin-top: 1.6rem; }
+.part-head h2 { margin: 0; font-size: 1.2rem; }
+.part-head .pn { color: var(--fac); margin-right: 0.2rem; }
+.part-nav { margin: 0; display: flex; gap: 1.2rem; font-weight: 600; }
+.part-head + .viewer { margin-top: 0.4rem; }
+
+/* resource page: notes on top, the PDF underneath */
+.crumb { margin: 0; display: flex; flex-wrap: wrap; gap: 0.1rem 0.6rem; align-items: baseline; }
+.crumb .cc { color: var(--fac); font-size: 1.25rem; }
+.res-head h1 { margin: 0.35rem 0 0; font-size: clamp(2rem, 6vw, 3.4rem); font-weight: 850; font-stretch: 62.5%; line-height: 0.98; max-width: 24ch; }
+.res-head .res-meta { margin-top: 0.5rem; color: var(--muted); font-size: 1rem; }
+.res-notes a, .res-note a, .pnotes span { overflow-wrap: anywhere; }
+.res-notes { margin: 1.25rem 0 0; padding: 0.9rem 1rem 1rem; background: var(--soft); border-left: 4px solid var(--fac); }
+.res-notes > p { margin: 0 0 0.6rem; }
+.res-notes h2 { margin: 0.9rem 0 0.3rem; font-size: 0.95rem; }
+.pnotes { list-style: none; margin: 0 0 0.6rem; padding: 0; }
+.pnotes li { display: grid; grid-template-columns: 3.6rem minmax(0, 1fr); gap: 0 0.5rem; margin: 0.15rem 0; }
+.pnotes a { font-weight: 700; font-stretch: 75%; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cite { margin: 0.8rem 0 0.4rem; font-size: 0.93rem; }
+.cite-label { font-weight: 700; font-stretch: 87.5%; margin-right: 0.3rem; }
+.copy { font: inherit; font-size: 0.85rem; font-weight: 600; margin-left: 0.4rem; padding: 0.05rem 0.5rem; border: 1px solid var(--muted); background: transparent; color: var(--ink); cursor: pointer; }
+.copy:hover { background: var(--paper); }
+.res-notes .entry-links { margin-top: 0.5rem; }
+
+.viewer { margin: 1.5rem 0 0; }
+.vbar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.4rem 0; background: var(--paper); border-bottom: 2px solid var(--ink); font-size: 0.95rem; }
+.vpage-no { font-variant-numeric: tabular-nums; color: var(--muted); }
+.vzoom { display: flex; gap: 0.25rem; }
+.vzoom button { font: inherit; font-weight: 700; min-width: 2.2rem; padding: 0.15rem 0.5rem; border: 1px solid var(--rule); background: transparent; color: var(--ink); cursor: pointer; }
+.vzoom button:hover { background: var(--soft); }
+.vzoom button[aria-pressed="true"] { border-color: var(--ink); }
+/* Block layout, not flex: a page zoomed wider than the screen then scrolls sideways from its left edge. */
+.vpages { overflow-x: auto; padding: 0.75rem 0 0; }
+.vpage { position: relative; box-sizing: content-box; margin: 0 auto 0.75rem; background: #fff; border: 1px solid var(--rule); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); --scale-round-x: 1px; --scale-round-y: 1px; scroll-margin-top: 3rem; }
+.vpage canvas { display: block; width: 100%; height: 100%; }
+.vmsg { color: var(--muted); }
+.res-text { margin: 2rem 0 0; }
+.res-text summary { cursor: pointer; font-weight: 650; }
+.res-text h3 { font-size: 0.9rem; color: var(--muted); margin: 1.2rem 0 0.3rem; }
+.res-text p { margin: 0.3rem 0; font-size: 0.95rem; }
+
+/* PDF.js text layer (selectable text over each page), from pdfjs-dist's pdf_viewer.css */
+.textLayer { position: absolute; text-align: initial; inset: 0; overflow: clip; opacity: 1; line-height: 1; letter-spacing: normal; word-spacing: normal; text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; caret-color: CanvasText; z-index: 0; --min-font-size: 1; --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size)); --min-font-size-inv: calc(1 / var(--min-font-size)); }
+.textLayer :is(span, br) { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; user-select: text; }
+.textLayer > :not(.markedContent), .textLayer .markedContent span:not(.markedContent) { z-index: 1; --font-height: 0; font-size: calc(var(--text-scale-factor) * var(--font-height)); --scale-x: 1; --rotate: 0deg; transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv)); }
+.textLayer .markedContent { display: contents; }
+.textLayer span[role="img"] { user-select: none; cursor: default; }
+.textLayer ::selection { background: rgb(0 0 255 / 0.25); background: color-mix(in srgb, AccentColor, transparent 50%); color: transparent; }
+.textLayer br::selection { background: transparent; }
+.textLayer .endOfContent { display: block; position: absolute; inset: 100% 0 0; z-index: 0; cursor: default; user-select: none; }
+.textLayer.selecting .endOfContent { top: 0; }
+
+/* links found around the web */
+.found-h { font-size: 0.95rem; font-weight: 700; font-stretch: 87.5%; margin: 1.4rem 0 0.1rem; }
+.found-note { margin: 0 0 0.4rem; font-size: 0.9rem; }
+.found { list-style: none; margin: 0; padding: 0; }
+.found li { padding: 0.4rem 0; border-top: 1px solid var(--rule); overflow-wrap: anywhere; }
+.found .t { font-size: 0.9rem; }
+.found .t a { color: inherit; }
+.found-title { font-weight: 600; margin-right: 0.3rem; }
+.found .rm { font-size: 0.8rem; color: var(--muted); margin-left: 0.4rem; }
+.found-more summary { cursor: pointer; font-weight: 600; padding: 0.4rem 0; border-top: 1px solid var(--rule); }
+.about h2 { margin-top: 1.8rem; }
+.about pre { background: var(--soft); padding: 0.6rem 0.8rem; overflow-x: auto; }
+
+/* courses no longer offered */
+.course.retired .code { color: var(--muted); }
+.mentions { list-style: none; margin: 0; padding: 0; }
+.mentions li { margin: 0.2rem 0; }

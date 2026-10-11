@@ -11,6 +11,8 @@
 //   /1249, /1249/cs   (grad terms)    → /1249/cs/  Graduate Calendar for that term (Spring 2024 on)
 //   /1249/math631, /1249/math/631     → /1249/math631/  MATH 631 as the Fall 2024 Graduate Calendar lists it
 //   …and when uwloo has no such page  → acal.fast.uwaterloo.ca/course/1249/MATH/631
+//   /CS341/1249-Notes                 → /cs341/1249-notes/  a course resource (notes, slides, a past exam…)
+//   /CS341/1249-Notes/3               → /cs341/1249-notes/3/  one PDF of a set (chapter 3, lecture 3…)
 
 const UCAL = 'https://ucalendar.uwaterloo.ca';
 const PDF_ARCHIVE = 'http://www.ucalendar.uwaterloo.ca/6394';
@@ -52,6 +54,8 @@ function gradTerm(term, meta, subject) {
   return { type: 'notfound', message: `There’s no ${termName(term)} Graduate Calendar yet.` };
 }
 const isSubject = (s) => /^[a-z]{2,8}$/.test(s);
+// Resource page names: 1249-notes, 1249-final-2, cheatsheet (same rule as SLUG_RE in scripts/lib/resources.mjs)
+const isResource = (s) => /^(\d{3}[159]-)?[a-z]+(-\d+)?$/.test(s);
 
 function yearTarget(y, meta, subject, number) {
   const S = subject?.toUpperCase();
@@ -127,6 +131,9 @@ export function resolve(pathname, meta) {
       return { type: 'redirect', to: `${ACAL}/${a}/${parts.subject}/${parts.number}` };
     }
   }
+
+  if (segs.length === 2 && normalizeCode(a) && isResource(b)) return done({ type: 'redirect', to: `/${normalizeCode(a)}/${b}/` });
+  if (segs.length === 3 && normalizeCode(a) && isResource(b) && /^[1-9]\d*$/.test(c)) return done({ type: 'redirect', to: `/${normalizeCode(a)}/${b}/${c}/` });
 
   if (segs.length === 2) {
     const code = normalizeCode(`${a}${b}`);

@@ -5,6 +5,7 @@
 //                                       TXT _github-pages-challenge-<owner> → PAGES_VERIFICATION_CODE
 //   GitHub (PAGES_ADMIN_TOKEN):         Pages on, source "GitHub Actions", custom domain from CNAME,
 //                                       Enforce HTTPS as soon as GitHub has issued the certificate
+//   GitHub (GITHUB_TOKEN):              the "files" release that holds course resource PDFs
 //
 // Either token can be missing; that part is skipped with a note. GitHub has no API for the
 // "Verify" button on the verified-domains page, so that one click stays manual.
@@ -218,6 +219,27 @@ async function syncPages({ owner, repo, domain, adminToken, readToken }) {
   }
 }
 
+// Course resource PDFs live as assets on a release tagged "files" (see tools/resources/README.md),
+// so they never enter git history. This makes sure that release exists to upload into.
+async function syncFilesRelease({ owner, repo, token }) {
+  const base = `/repos/${owner}/${repo}/releases`;
+  try {
+    const r = (await github('GET', `${base}/tags/files`, token)).data;
+    row('Resource files release', `${r.assets?.length ?? 0} file(s)`);
+    return;
+  } catch (err) {
+    if (err.status !== 404) throw err;
+  }
+  await github('POST', base, token, {
+    tag_name: 'files',
+    name: 'Course resource files',
+    body: 'PDFs for uwloo.ca course resources, one per catalogued file, named {id}.pdf. Upload here (Edit → attach files), then push the catalogue entries. See tools/resources/README.md.',
+    make_latest: 'false',
+  });
+  console.log('GitHub: created the "files" release for course resource PDFs');
+  row('Resource files release', 'created');
+}
+
 export async function main() {
   const [owner, repo] = String(process.env.GITHUB_REPOSITORY ?? '').split('/');
   if (!owner || !repo) throw new Error('GITHUB_REPOSITORY is not set (expected owner/repo; Actions sets it).');
@@ -231,6 +253,12 @@ export async function main() {
     row('Cloudflare DNS', `not checked: ${err.message}`);
   }
   await syncPages({ owner, repo, domain, adminToken: process.env.PAGES_ADMIN_TOKEN, readToken: process.env.GITHUB_TOKEN });
+  try {
+    await syncFilesRelease({ owner, repo, token: process.env.GITHUB_TOKEN });
+  } catch (err) {
+    note('warning', `Resource files release not checked: ${err.message}. The workflow needs "contents: write".`);
+    row('Resource files release', `not checked: ${err.message}`);
+  }
 
   const table = ['### Pages and DNS', '', '| Check | Status |', '| --- | --- |', ...summary, ''].join('\n');
   console.log(table);

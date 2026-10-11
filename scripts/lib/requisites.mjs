@@ -265,7 +265,8 @@ export function linkCodes(text, known) {
     const code = m[1] + m[2];
     out += esc(text.slice(last, m.index));
     const href = hrefFor(known, code);
-    out += href ? `<a class="cc" href="${href}">${esc(fmtCode(code))}</a>` : esc(m[0]);
+    const old = known.retired?.has?.(code); // a course that's no longer offered: linked, but marked
+    out += href ? `<a class="cc${old ? ' gone' : ''}" href="${href}"${old ? ' title="No longer offered"' : ''}>${esc(fmtCode(code))}</a>` : esc(m[0]);
     last = m.index + m[0].length;
   }
   return out + esc(text.slice(last));
@@ -273,8 +274,9 @@ export function linkCodes(text, known) {
 
 function courseItem(c, known) {
   const href = hrefFor(known, c.code);
+  const old = known.retired?.has?.(c.code);
   const link = href
-    ? `<a class="cc" href="${href}">${esc(c.code)}</a>`
+    ? `<a class="cc${old ? ' gone' : ''}" href="${href}"${old ? ' title="No longer offered"' : ''}>${esc(c.code)}</a>`
     : `<span class="cc gone" title="Not in the undergraduate calendar">${esc(c.code)}</span>`;
   const rest = [c.title && ` - ${esc(c.title)}`, c.units && ` (${esc(c.units)})`].filter(Boolean).join('');
   return `<li>${link}${rest ? `<span class="t">${rest}</span>` : ''}</li>`;

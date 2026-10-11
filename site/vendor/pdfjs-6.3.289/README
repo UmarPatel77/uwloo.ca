@@ -1,0 +1,8 @@
+PDF.js 6.3.289 (pdfjs-dist on npm), Mozilla, Apache License 2.0 (LICENSE).
+legacy/build/pdf.min.mjs and legacy/build/pdf.worker.min.mjs, unchanged apart from the .js extension
+(so every static host serves them as JavaScript). The legacy build, because the modern one needs
+JavaScript features only the newest browsers have (Map.getOrInsertComputed). Used by /viewer.js.
+Also from the package, loaded only when a PDF needs them: wasm/ (JBIG2 and JPEG 2000 image decoders,
+colour management; without them most scans draw blank), standard_fonts/, cmaps/, iccs/.
+To update: npm pack pdfjs-dist@<version>, copy the same files and folders into vendor/pdfjs-<version>/,
+and change PDFJS in scripts/lib/resources.mjs.

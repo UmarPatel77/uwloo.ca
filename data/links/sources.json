@@ -1,0 +1,36 @@
+{
+  "_about": "Where scripts/find-links.mjs looks for course resources. See tools/links/README.md.",
+  "lists": [
+    { "name": "UWaterloo Links (SE)", "url": "https://raw.githubusercontent.com/dhvanipa/UWaterloo-Links-SE/master/README.md", "site": "https://github.com/dhvanipa/UWaterloo-Links-SE" }
+  ],
+  "webrings": [
+    { "name": "CS webring", "list": "https://raw.githubusercontent.com/JusGu/uwatering/main/index.html", "site": "https://cs.uwatering.com/" },
+    { "name": "SE webring", "list": "https://raw.githubusercontent.com/simcard0000/se-webring/main/js/sites.js", "site": "https://se-webring.xyz/" },
+    { "name": "ECE webring", "list": "https://raw.githubusercontent.com/uw-ece/webring/main/js/ece_students.js", "site": "https://uw-ece.github.io/webring/" }
+  ],
+  "directories": [
+    { "name": "Computer Science", "url": "https://cs.uwaterloo.ca/about/people" },
+    { "name": "Combinatorics and Optimization", "url": "https://uwaterloo.ca/combinatorics-and-optimization/contacts" },
+    { "name": "Pure Mathematics", "url": "https://uwaterloo.ca/pure-mathematics/contacts" },
+    { "name": "Applied Mathematics", "url": "https://uwaterloo.ca/applied-mathematics/contacts" },
+    { "name": "Statistics and Actuarial Science", "url": "https://uwaterloo.ca/statistics-and-actuarial-science/contacts" },
+    { "name": "Electrical and Computer Engineering", "url": "https://uwaterloo.ca/electrical-computer-engineering/contacts" },
+    { "name": "Systems Design Engineering", "url": "https://uwaterloo.ca/systems-design-engineering/contacts" },
+    { "name": "Mechanical and Mechatronics Engineering", "url": "https://uwaterloo.ca/mechanical-mechatronics-engineering/contacts" },
+    { "name": "Civil and Environmental Engineering", "url": "https://uwaterloo.ca/civil-environmental-engineering/contacts" },
+    { "name": "Chemical Engineering", "url": "https://uwaterloo.ca/chemical-engineering/contacts" },
+    { "name": "Management Science and Engineering", "url": "https://uwaterloo.ca/management-science-engineering/contacts" },
+    { "name": "Physics and Astronomy", "url": "https://uwaterloo.ca/physics-astronomy/contacts" },
+    { "name": "Chemistry", "url": "https://uwaterloo.ca/chemistry/contacts" },
+    { "name": "Biology", "url": "https://uwaterloo.ca/biology/contacts" },
+    { "name": "Earth and Environmental Sciences", "url": "https://uwaterloo.ca/earth-environmental-sciences/contacts" },
+    { "name": "Economics", "url": "https://uwaterloo.ca/economics/contacts" },
+    { "name": "Philosophy", "url": "https://uwaterloo.ca/philosophy/contacts" },
+    { "name": "Psychology", "url": "https://uwaterloo.ca/psychology/contacts" }
+  ],
+  "course_sites": [
+    { "subjects": ["CS", "SE", "CM"], "url": "https://student.cs.uwaterloo.ca/~{code}/" },
+    { "subjects": ["ECE"], "url": "https://ece.uwaterloo.ca/~{code}/" }
+  ],
+  "github_search": ["uwaterloo notes", "waterloo course notes", "uwaterloo cheatsheet", "university of waterloo notes", "uwaterloo study notes"]
+}

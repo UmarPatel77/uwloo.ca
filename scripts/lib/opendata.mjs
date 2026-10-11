@@ -8,12 +8,12 @@ import { ageDays, getJson, HttpError, pool, readCache, writeCache } from './http
 
 export const OPENDATA_BASE = process.env.OPENDATA_BASE ?? 'https://openapi.data.uwaterloo.ca/v3';
 const KEY = process.env.UW_API_KEY ?? '';
-const CACHE = '.cache/opendata';
+export const CACHE = '.cache/opendata';
 const CONCURRENCY = Number(process.env.OPENDATA_CONCURRENCY ?? 3);
 
 export const enabled = () => Boolean(KEY);
 
-async function od(path) {
+export async function od(path) {
   try {
     return await getJson(`${OPENDATA_BASE}/${path}`, { headers: { 'x-api-key': KEY } });
   } catch (err) {

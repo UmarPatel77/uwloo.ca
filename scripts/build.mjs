@@ -7,6 +7,9 @@ import { dirname, join } from 'node:path';
 import { archiveSubjectPage, archiveYearPage, loadArchiveText, textMap } from './lib/archive.mjs';
 import * as kuali from './lib/kuali.mjs';
 import { loadReddit, redditSection, SHOWN } from './lib/reddit.mjs';
+import { available, entryPages, linksAboutPage, loadResources, publishFiles, resourcePage, resourcesSection, syncFiles } from './lib/resources.mjs';
+import { loadHistory } from './lib/history.mjs';
+import { archiveAppearances, mentionsOf, retiredCourses, retiredPage } from './lib/retired.mjs';
 import { groupThreads } from '../site/reddit.js';
 import * as opendata from './lib/opendata.mjs';
 import {
@@ -58,7 +61,8 @@ async function main() {
   const css = await readFile('site/style.css');
   const js = await readFile('site/app.js');
   const rjs = await readFile('site/reddit.js');
-  const version = createHash('sha1').update(css).update(js).update(rjs).digest('hex').slice(0, 8);
+  const vjs = await readFile('site/viewer.js');
+  const version = createHash('sha1').update(css).update(js).update(rjs).update(vjs).digest('hex').slice(0, 8);
 
   // 1. Calendars (Kuali): undergrad by academic year, grad by term.
   const { ug, grad } = await kuali.loadCatalogList(builtAt);
@@ -178,6 +182,47 @@ async function main() {
   const repo = process.env.GITHUB_REPOSITORY || 'UmarPatel77/uwloo.ca';
   let redditPages = 0;
 
+  // Courses no longer offered (in no calendar uwloo has): Open Data's catalog history, built up a few terms
+  // per build, and the scanned 1963–64 to 1994–95 calendars. They get pages, and links to them from
+  // today's calendar (an antirequisite that's gone, say) go there.
+  const courseHistory = await loadHistory(curTerm, opendata.enabled() ? {} : { maxNew: 0 });
+  const archiveText = await loadArchiveText();
+  const retired = retiredCourses({ history: courseHistory, archive: archiveAppearances(archiveText), current: known });
+  const linkable = { has: (c) => known.has(c) || retired.has(c), href: (c) => (known.has(c) || retired.has(c) ? `/${slug(c)}/` : null), retired };
+
+  // Course resources (data/resources/, see tools/resources/). Hosted PDFs come from the "files" release;
+  // one that isn't there yet is hidden, so a page never links to a missing file.
+  const res = await loadResources();
+  for (const err of res.errors) console.warn(`! data/resources/${err}`);
+  const onHand = await syncFiles(res.entries, { repo, token: process.env.GITHUB_TOKEN });
+  for (const e of res.entries) if (!known.has(e.codes[0])) console.warn(`! Resource ${e.id}: ${e.codes[0]} has no page on uwloo, so it's hidden`);
+  const shown = res.entries.filter((e) => known.has(e.codes[0])).map((e) => available(e, onHand)).filter(Boolean);
+  // Links the finder found (data/links/found.json, from scripts/find-links.mjs), minus any removed on request.
+  const foundFile = JSON.parse(await readFile('data/links/found.json', 'utf8').catch(() => 'null'));
+  const removedLinks = (await readFile('data/links/removed.txt', 'utf8').catch(() => ''))
+    .split('\n')
+    .map((l) => l.replace(/#.*$/, '').trim())
+    .filter(Boolean);
+  const linkRemoved = (url) =>
+    removedLinks.some((r) => (r.endsWith('*') ? url.startsWith(r.slice(0, -1)) : r.includes('/') ? url.replace(/\/$/, '') === r.replace(/\/$/, '') : new URL(url).hostname.replace(/^www\./, '') === r.replace(/^www\./, '')));
+  const foundFor = new Map();
+  for (const l of foundFile?.links ?? []) {
+    if (linkRemoved(l.url)) continue;
+    for (const c of l.codes) {
+      if (!linkable.has(c)) continue;
+      if (!foundFor.has(c)) foundFor.set(c, []);
+      foundFor.get(c).push(l);
+    }
+  }
+  const resourcesFor = new Map();
+  for (const e of shown) {
+    for (const c of e.codes) {
+      if (!known.has(c)) continue;
+      if (!resourcesFor.has(c)) resourcesFor.set(c, []);
+      resourcesFor.get(c).push(e);
+    }
+  }
+
   for (const [code, { cat, course }] of primary) {
     const history = historyFor(code);
     const strip = offerings
@@ -196,7 +241,7 @@ async function main() {
         ...ctxBase,
         course,
         cat,
-        known,
+        known: linkable,
         leadsTo: leads,
         history,
         faculty: faculty(code, course.subject),
@@ -206,12 +251,41 @@ async function main() {
         curTerm,
         subjectHref: subjectHref(cat, course.subject, code).replace(/#.*$/, ''),
         reddit: redditSection(code, reddit.map.get(code), reddit.meta, { repo, slug: slug(code), version }),
+        resources: resourcesSection(code, resourcesFor.get(code), { known: linkable, repo, found: foundFor.get(code) }),
       }),
     ]);
     sitemap.push(`/${slug(code)}/`);
     const mentions = reddit.map.get(code);
     if (mentions && groupThreads(mentions).length > SHOWN) pages.push([`reddit/${slug(code)}.json`, JSON.stringify(mentions)]);
     if (mentions?.length) redditPages++;
+  }
+
+  // "No longer offered" pages (/msci452/).
+  const stillMentioned = mentionsOf(primary, retired);
+  for (const r of retired.values()) {
+    const subject = /^[A-Z]+/.exec(r.code)[0];
+    const mentions = reddit.map.get(r.code);
+    const extra = redditSection(r.code, mentions, reddit.meta, { repo, slug: slug(r.code), version }) + resourcesSection(r.code, [], { known: linkable, repo, found: foundFor.get(r.code) });
+    pages.push([`${slug(r.code)}/index.html`, retiredPage({ ...ctxBase, r, known: linkable, mentions: stillMentioned, reddit: extra, floor: courseHistory.floor, faculty: faculty(r.code, subject) })]);
+    sitemap.push(`/${slug(r.code)}/`);
+    if (mentions && groupThreads(mentions).length > SHOWN) pages.push([`reddit/${slug(r.code)}.json`, JSON.stringify(mentions)]);
+    if (mentions?.length) redditPages++;
+  }
+
+  // Resource pages (/cs341/1249-notes/, /cs341/1249-notes/2/): the notes, then one PDF.
+  let hostedPages = 0;
+  for (const e of shown) {
+    const { course } = primary.get(e.codes[0]);
+    for (const [path, p] of entryPages(e)) {
+      if (!p) {
+        pages.push([`${path.slice(1)}index.html`, redirectPage(entryPages(e)[0][0])]);
+        continue;
+      }
+      const text = await readFile(`data/resources/text/${p.file.slice(0, -4)}.txt`, 'utf8').catch(() => '');
+      pages.push([`${path.slice(1)}index.html`, resourcePage({ ...ctxBase, e, p, course, known, text, repo, faculty: faculty(e.codes[0], course.subject) })]);
+      sitemap.push(path);
+      hostedPages++;
+    }
   }
 
   // Grad version pages (/1249/math631): each course exactly as one term's Graduate Calendar lists it.
@@ -304,7 +378,6 @@ async function main() {
   }
 
   // Scanned-calendar years (6364 to 9495) with OCR text: real subject pages instead of the PDF.
-  const archiveText = await loadArchiveText();
   const archiveIndex = {};
   for (const f of await readdir('data/archive').catch(() => [])) {
     if (/^\d{4}\.json$/.test(f)) archiveIndex[f.slice(0, 4)] = JSON.parse(await readFile(`data/archive/${f}`, 'utf8'));
@@ -347,6 +420,7 @@ async function main() {
         .filter((g) => g.subjects.length)
     : [{ key: 'all', name: 'Subjects', subjects: homeSubjects }];
   const liveCount = new Set([...current.courses.keys(), ...(gradCurrent?.courses.keys() ?? [])]).size;
+  pages.push(['about/links/index.html', linksAboutPage({ ...ctxBase, repo, meta: foundFile && { links: foundFile.links.length, courses: foundFor.size, generated: foundFile.generated } })]);
   pages.push(['index.html', homePage({ ...ctxBase, current, catalogs: ug, gradCatalogs: grad, groups, courseCount: liveCount })]);
   sitemap.push('/');
 
@@ -358,7 +432,11 @@ async function main() {
   };
   pages.push(['404.html', notFoundPage({ ...ctxBase, meta })]);
 
-  const search = [...primary.entries()].map(([code, { course }]) => [code, course.title]).sort((a, b) => byCode(a[0], b[0]));
+  // Courses no longer offered are in the search too, flagged (third field) so they rank after current ones.
+  const search = [
+    ...[...primary.entries()].map(([code, { course }]) => [code, course.title]),
+    ...[...retired.values()].map((r) => [r.code, r.od?.title ?? r.arch?.latest.title ?? '', 1]),
+  ].sort((a, b) => byCode(a[0], b[0]));
   pages.push(['search.json', JSON.stringify(search)]);
 
   // courses.csv: every course, whether it's in the current calendars, and the last term it ran.
@@ -366,7 +444,7 @@ async function main() {
   const pastTerms = historyWindow.filter((t) => Number(t) <= Number(curTerm));
   const csvCell = (v) => (/[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
   const csvRows = [
-    ['code', 'title', 'level', 'in_current_calendar', 'last_ran_term', 'last_ran', `terms_run_since_${termName(pastTerms[0]).replace(' ', '_')}`, 'outline_search', 'reddit_mentions', 'uwloo'],
+    ['code', 'title', 'level', 'in_current_calendar', 'last_ran_term', 'last_ran', `terms_run_since_${termName(pastTerms[0]).replace(' ', '_')}`, 'outline_search', 'reddit_mentions', 'resources', 'links_found', 'uwloo'],
   ];
   for (const [code, { cat, course }] of [...primary.entries()].sort((a, b) => byCode(a[0], b[0]))) {
     const ran = offerings ? pastTerms.filter((t) => offerings.terms[t]?.offered.has(code)) : [];
@@ -381,7 +459,28 @@ async function main() {
       offerings ? ran.length : '',
       outlineUrl(course.subject, course.number),
       reddit.map.get(code)?.length ?? 0,
+      resourcesFor.get(code)?.length ?? 0,
+      foundFor.get(code)?.length ?? 0,
       `${SITE}/${slug(code)}/`,
+    ]);
+  }
+  for (const r of [...retired.values()].sort((a, b) => byCode(a.code, b.code))) {
+    const S = /^[A-Z]+/.exec(r.code)[0];
+    const N = r.code.slice(S.length);
+    const last = r.od?.ran.at(-1) ?? '';
+    csvRows.push([
+      r.code,
+      r.od?.title ?? r.arch?.latest.title ?? '',
+      r.od?.career === 'GRD' || Number.parseInt(N, 10) >= 600 ? 'graduate' : 'undergraduate',
+      'no (no longer offered)',
+      last,
+      last ? termName(last) : r.od ? 'no classes in Open Data' : `in calendars to ${r.arch.years.at(-1).label}`,
+      offerings ? pastTerms.filter((t) => offerings.terms[t]?.offered.has(r.code)).length : '',
+      outlineUrl(S, N),
+      reddit.map.get(r.code)?.length ?? 0,
+      0,
+      foundFor.get(r.code)?.length ?? 0,
+      `${SITE}/${slug(r.code)}/`,
     ]);
   }
   pages.push(['courses.csv', `${csvRows.map((r) => r.map(csvCell).join(',')).join('\n')}\n`]);
@@ -394,8 +493,9 @@ async function main() {
   await mkdir(OUT, { recursive: true });
   await cp('site', OUT, { recursive: true });
   await writeAll(pages);
+  const fileBytes = await publishFiles(new Set(shown.flatMap((e) => e.parts.map((p) => p.file).filter(Boolean))), { out: join(OUT, 'files') });
   const gradOnly = [...primary.values()].filter((p) => p.cat.level === 'grad').length;
-  console.log(`Wrote ${pages.length} files to ${OUT}/ (${primary.size} course pages, ${gradOnly} from the Graduate Calendar, ${versionPages} grad term versions, ${archivePages} scanned-calendar subject pages, ${redditPages} with r/uwaterloo mentions${reddit.removed ? `, ${reddit.removed} removal requests applied` : ''})`);
+  console.log(`Wrote ${pages.length} files to ${OUT}/ (${primary.size} course pages, ${retired.size} no longer offered (${[...retired.values()].filter((r) => r.od).length} from Open Data), ${gradOnly} from the Graduate Calendar, ${versionPages} grad term versions, ${archivePages} scanned-calendar subject pages, ${redditPages} with r/uwaterloo mentions${reddit.removed ? `, ${reddit.removed} removal requests applied` : ''}, ${shown.length} resources on ${resourcesFor.size} courses, ${[...foundFor.values()].reduce((n, x) => n + x.length, 0)} found links on ${foundFor.size} courses, ${hostedPages} hosted PDFs, ${(fileBytes / 1e6).toFixed(1)} MB)`);
 }
 
 main().catch((err) => {
