@@ -290,21 +290,143 @@ function viaHtml(v) {
 export function sortFound(list) {
   const k = (l) => (FOUND_ORDER.indexOf(l.kind) + 1 || 99);
   const v = (l) => (VIA_ORDER.indexOf(l.via?.[0]?.type) + 1 || 99);
-  return [...list].sort((a, b) => k(a) - k(b) || v(a) - v(b) || Number(b.term ?? 0) - Number(a.term ?? 0) || (a.status === 'archived') - (b.status === 'archived') || a.title.localeCompare(b.title));
+  return [...list].sort((a, b) => k(a) - k(b) || v(a) - v(b) || Number(b.term ?? 0) - Number(a.term ?? 0) || (a.status === 'archived') - (b.status === 'archived') || natural(a.title, b.title));
+}
+
+/** "[lec4]" → "lec4"; "Logic and Computation Logic and Computation" → "Logic and Computation". */
+export function tidyTitle(t) {
+  let s = String(t ?? '').replace(/\s+/g, ' ').trim().replace(/^\[(.*)\]$/, '$1').trim();
+  const w = s.split(' ');
+  for (let n = Math.floor(w.length / 2); n >= 1; n--) {
+    // a phrase said twice in a row, as link text plus heading often is
+    for (let i = 0; i + 2 * n <= w.length; i++) {
+      const a = w.slice(i, i + n).join(' ');
+      if (a.length >= 4 && a.toLowerCase() === w.slice(i + n, i + 2 * n).join(' ').toLowerCase()) {
+        w.splice(i + n, n);
+        return tidyTitle(w.join(' '));
+      }
+    }
+  }
+  return s;
+}
+
+const natural = (a, b) => a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' });
+
+/**
+ * Links from one folder of one site, like a professor's lecture 1–13 PDFs or a student's chapter PDFs,
+ * become one entry with its parts inside. A folder under a course site that was found too (its Lectures/)
+ * joins that site's entry, which then leads with the site itself. Everything else stays as it is.
+ */
+export function groupFound(input) {
+  // The same page over http and https is one link (the https one).
+  const seen = new Map();
+  for (const l of input) {
+    const k = l.url.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/$/, '');
+    const had = seen.get(k);
+    if (!had || (/^https:/.test(l.url) && !/^https:/.test(had.url))) seen.set(k, l);
+  }
+  const list = [...seen.values()];
+  const where = (l) => {
+    try {
+      const u = new URL(l.url);
+      return { host: u.host, dir: u.pathname.replace(/[^/]*$/, ''), scheme: u.protocol };
+    } catch {
+      return { host: l.url, dir: '', scheme: '' };
+    }
+  };
+  const dirs = new Map(); // host → folders that have a link of their own
+  for (const l of list) {
+    const w = where(l);
+    if (!dirs.has(w.host)) dirs.set(w.host, new Set());
+    dirs.get(w.host).add(w.dir);
+  }
+  const byKey = new Map();
+  for (const l of list) {
+    const w = where(l);
+    // The shortest folder above this one that has a link of its own (never the site's root).
+    const up = [...dirs.get(w.host)].filter((d) => d.length > 1 && d !== w.dir && w.dir.startsWith(d)).sort((a, b) => a.length - b.length)[0];
+    const key = `${w.host}${up ?? w.dir}`;
+    if (!byKey.has(key)) byKey.set(key, []);
+    byKey.get(key).push(l);
+  }
+  const out = [];
+  for (const [key, items] of byKey) {
+    const dir = `${where(items.find((x) => /^https:/.test(x.url)) ?? items[0]).scheme}//${key}`;
+    if (items.length < 2) {
+      out.push(...items);
+      continue;
+    }
+    const most = (f) => Object.entries(items.reduce((m, x) => ((m[f(x)] = (m[f(x)] ?? 0) + 1), m), {})).sort((a, b) => b[1] - a[1])[0][0];
+    // A page at the folder itself (its index) leads the entry.
+    const lead = items.find((x) => {
+      const p = new URL(x.url);
+      return `${p.host}${p.pathname.replace(/(index\.(html?|php))?$/i, '')}` === key && !/\.pdf$/i.test(p.pathname);
+    });
+    const rest = items.filter((x) => x !== lead).sort((a, b) => natural(new URL(a.url).pathname, new URL(b.url).pathname));
+    const terms = new Set(items.map((x) => x.term ?? ''));
+    const pdfs = rest.every((x) => /\.pdf$/i.test(new URL(x.url).pathname));
+    const noun = `${rest.length} ${pdfs ? `PDF${rest.length === 1 ? '' : 's'}` : `page${rest.length === 1 ? '' : 's'}`}`;
+    out.push({
+      group: true,
+      dir,
+      url: lead?.url ?? items[0].url,
+      lead: lead ?? null,
+      items: rest,
+      noun,
+      kind: lead?.kind ?? most((x) => x.kind),
+      term: lead?.term ?? (terms.size === 1 ? items[0].term : undefined),
+      via: (lead ?? items[0]).via,
+      status: (lead ?? items[0]).status,
+      archived: lead?.archived,
+      title: lead ? partTitle(lead) : `${KINDS[most((x) => x.kind)] ?? 'Links'}, ${noun}`,
+    });
+  }
+  return out;
+}
+
+// Link text that says nothing about the page: "Notion", "Download PDF", "this midterm", a bare address.
+const GENERIC = /^(notion|download( (the )?pdf)?|pdf|here|click here|link|view|open|notes|home|index|this \w+|https?:\/\/\S+|[\w.-]+(\/[\w%().~-]+)+\/?)$/i;
+
+/** A link's title, or when the title says nothing, its file name: ".../CS-246-6633f1e6…" → "CS 246 (Notion page)". */
+export function partTitle(l) {
+  const t = tidyTitle(String(l.title ?? '').replace(/[*_`]{2,}|^[*_`]|[*_`]$/g, '').trim());
+  if (t && !GENERIC.test(t)) return t;
+  try {
+    const u = new URL(l.url);
+    const last = decodeURIComponent(u.pathname.split('/').filter(Boolean).at(-1) ?? '');
+    const name = last.replace(/\.(pdf|html?|php|md)$/i, '').replace(/[-_][0-9a-f]{16,}$/i, '').replace(/[-_]+/g, ' ').trim();
+    const where = /notion\.(so|site|com)$/.test(u.hostname) ? ' (Notion page)' : '';
+    return name ? `${name}${where}` : t || u.hostname;
+  } catch {
+    return t;
+  }
 }
 
 function foundItem(l, code, repo) {
-  const href = l.status === 'archived' ? l.archived : l.url;
   const bits = [esc(KINDS[l.kind] ?? 'Link'), l.term && esc(termName(l.term)), esc(host(l.url)), viaHtml(l.via?.[0])].filter(Boolean);
+  const target = l.group ? `${l.dir}*` : l.url;
+  const remove = issueUrl(repo, `Remove link (${fmtCode(code)})`, `Please stop listing this on uwloo.ca:\n${target}\n\nCourse: ${fmtCode(code)}\nWhy (you made it, it's wrong, it's out of date, something else):\n`);
+  const rm = `<a class="rm" href="${esc(remove)}" title="Ask for ${l.group ? 'these links' : 'this link'} to be removed">Remove</a>`;
+  if (l.group) {
+    const parts = l.items
+      .map((x) => `<li><a href="${esc(x.status === 'archived' ? x.archived : x.url)}">${esc(partTitle(x))}</a>${x.status === 'archived' ? ' <span class="t">(archived copy)</span>' : ''}</li>`)
+      .join('');
+    if (l.lead) {
+      // The course site, with what's under it folded away.
+      const href = l.lead.status === 'archived' ? l.lead.archived : l.lead.url;
+      return `<li class="found-set"><a class="found-title" href="${esc(href)}">${esc(l.title)}</a> <span class="t">${bits.join(' · ')}</span> ${rm}<details><summary>${esc(l.noun)} from this site</summary><ol class="found-parts">${parts}</ol></details></li>`;
+    }
+    return `<li class="found-set"><details><summary><span class="found-title">${esc(l.title)}</span> <span class="t">${bits.slice(1).join(' · ')}</span></summary><ol class="found-parts">${parts}</ol></details> ${rm}</li>`;
+  }
+  const href = l.status === 'archived' ? l.archived : l.url;
   if (l.status === 'archived') bits.push(`gone now; <a href="${esc(l.archived)}">archived copy</a>${l.archived_on ? ` from ${esc(monthYear(l.archived_on))}` : ''}`);
-  const remove = issueUrl(repo, `Remove link (${fmtCode(code)})`, `Please stop listing this on uwloo.ca:\n${l.url}\n\nCourse: ${fmtCode(code)}\nWhy (you made it, it's wrong, it's out of date, something else):\n`);
-  return `<li><a class="found-title" href="${esc(href)}">${esc(l.title)}</a> <span class="t">${bits.join(' · ')}</span> <a class="rm" href="${esc(remove)}" title="Ask for this link to be removed">Remove</a></li>`;
+  return `<li><a class="found-title" href="${esc(href)}">${esc(partTitle(l))}</a> <span class="t">${bits.join(' · ')}</span> ${rm}</li>`;
 }
 
 /** "Around the web": what the link finder found for this course, best first. */
 function foundHtml(code, found, repo) {
   if (!found?.length) return '';
-  const sorted = sortFound(found);
+  const sorted = sortFound(groupFound(found));
   const shown = sorted.slice(0, FOUND_SHOWN);
   const rest = sorted.slice(FOUND_SHOWN);
   return `<h3 class="found-h">Around the web</h3>

@@ -11,6 +11,11 @@
 //   /1249, /1249/cs   (grad terms)    → /1249/cs/  Graduate Calendar for that term (Spring 2024 on)
 //   /1249/math631, /1249/math/631     → /1249/math631/  MATH 631 as the Fall 2024 Graduate Calendar lists it
 //   …and when uwloo has no such page  → acal.fast.uwaterloo.ca/course/1249/MATH/631
+//   /1109/co   (older grad terms)     → /1109/co/  the Fall 2010 Graduate Calendar (Fall 2006 to Winter 2024)
+//   /1109/co602, /1109/co/602         → /1109/co/#CO602
+//   /1179      (not on uwloo)         → that term in Waterloo's calendar archive
+//   A few codes are both a term and a year: 1011 (Winter 2001 or 2010–11), 1415 (Spring 2041 or 2014–15)
+//   and 1819 (Fall 2081 or 2018–19). No Graduate Calendar uwloo has is one of those terms, so years win.
 //   /CS341/1249-Notes                 → /cs341/1249-notes/  a course resource (notes, slides, a past exam…)
 //   /CS341/1249-Notes/3               → /cs341/1249-notes/3/  one PDF of a set (chapter 3, lecture 3…)
 
@@ -44,12 +49,27 @@ const isTerm = (s) => /^\d\d\d[159]$/.test(s);
 const SEASONS = { 1: 'Winter', 5: 'Spring', 9: 'Fall' };
 const termName = (t) => `${SEASONS[t[3]]} ${(Number(t[0]) + 19) * 100 + Number(t.slice(1, 3))}`;
 
+const OLD_FIRST = 1069; // Fall 2006, the oldest Graduate Calendar online
+const OLD_LAST = 1241; // Winter 2024, the last before Kuali
+
+/** Where Waterloo keeps a pre-Kuali Graduate Calendar (Fall 2006 to Winter 2024), as linked from its archives page. */
+export function gradArchiveUrl(term) {
+  const year = (Number(term[0]) + 19) * 100 + Number(term.slice(1, 3));
+  const season = SEASONS[term[3]].toLowerCase();
+  const base = 'http://academic-calendar-archive.uwaterloo.ca/graduate-studies';
+  return Number(term) <= 1161
+    ? `${base}/${year}/${season}/gradcalendar.uwaterloo.ca/group/Gen-Info-Regs.html`
+    : `${base}/archive-${season}-${year}/index.html`;
+}
+
 /** /1249 or /1249/cs: a Graduate Calendar term page, or why there isn't one. */
 function gradTerm(term, meta, subject) {
   const terms = meta.gradTerms ?? [];
-  if (terms.includes(term)) return { type: 'redirect', to: `/${term}/${subject ? `${subject}/` : ''}` };
-  if (terms.length && Number(term) < Number(terms[0])) {
-    return { type: 'notfound', message: `Graduate Calendars before ${termName(terms[0])} aren’t on uwloo yet.` };
+  if (terms.includes(term) || (meta.gradOld ?? []).includes(term)) return { type: 'redirect', to: `/${term}/${subject ? `${subject}/` : ''}` };
+  const n = Number(term);
+  if (n >= OLD_FIRST && n <= OLD_LAST) return { type: 'redirect', to: gradArchiveUrl(term) };
+  if (n < OLD_FIRST) {
+    return { type: 'notfound', message: `Waterloo’s Graduate Calendars online start at Fall 2006. Older ones are available on request from Graduate Studies.` };
   }
   return { type: 'notfound', message: `There’s no ${termName(term)} Graduate Calendar yet.` };
 }
@@ -85,7 +105,7 @@ function yearTarget(y, meta, subject, number) {
   return { type: 'notfound', message: why };
 }
 
-/** meta: { years: ['2425','2526','2627'], current: '2627', gradTerms: ['1245', …], subjects: ['cs', 'math', …], pdfPages?: { '8889': { CS: 412 } } } */
+/** meta: { years: ['2425','2526','2627'], current: '2627', gradTerms: ['1245', …], gradOld: ['1069', …], subjects: ['cs', 'math', …], pdfPages?: { '8889': { CS: 412 } } } */
 export function resolve(pathname, meta) {
   let path;
   try {
@@ -119,7 +139,14 @@ export function resolve(pathname, meta) {
     if (parts && segs.length <= 3) return done(yearTarget(year, meta, parts.subject, parts.number));
   }
 
-  if (isTerm(a) && segs.length === 2 && isSubject(b)) return done(gradTerm(a, meta, b));
+  if (isTerm(a) && segs.length === 2 && isSubject(b)) {
+    const r = gradTerm(a, meta, b);
+    // Already at /1109/xyz/ and it isn't a page: that term has no such subject.
+    if (r.type === 'redirect' && bare(r.to) === bare(original)) {
+      return { type: 'notfound', query: b, message: `The ${termName(a)} Graduate Calendar has no ${b.toUpperCase()} courses.` };
+    }
+    return r;
+  }
 
   if (isTerm(a)) {
     const parts = splitCode(segs.length === 2 ? b : `${b}${c ?? ''}`);
@@ -128,6 +155,8 @@ export function resolve(pathname, meta) {
       // Reaching the router at that exact address means no such page, so acal takes it.
       const page = `/${a}/${(parts.subject + parts.number).toLowerCase()}/`;
       if ((meta.gradTerms ?? []).includes(a) && bare(page) !== bare(original)) return { type: 'redirect', to: page };
+      // Older terms have subject pages only: /1109/co602 → /1109/co/#CO602
+      if ((meta.gradOld ?? []).includes(a)) return { type: 'redirect', to: `/${a}/${parts.subject.toLowerCase()}/#${parts.subject}${parts.number}` };
       return { type: 'redirect', to: `${ACAL}/${a}/${parts.subject}/${parts.number}` };
     }
   }

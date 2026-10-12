@@ -297,6 +297,7 @@ export function cleanTitle(title, url) {
   const m = /^(.{8,}?)\s+[|·–—]\s+([^|·–—\d]{1,45})$/.exec(t);
   if (m) t = m[1].trim();
   t = t.replace(/^GitHub - [^\s:]+(?:: (.+))?$/, (m, d) => d ?? m.replace(/^GitHub - /, '')).replace(/ at (master|main|[0-9a-f]{7,40}) · [^\s]+$/, '');
+  t = t.replace(/^\[(.*)\]$/, '$1').trim();
   if (t.length > 110) t = `${t.slice(0, 107).replace(/\s+\S*$/, '')}…`;
   if (!t || /^(index of|home|untitled|404|page not found)\b/i.test(t)) {
     try {

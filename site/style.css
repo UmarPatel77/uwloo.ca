@@ -188,6 +188,23 @@ h2 { font-size: 1.05rem; font-weight: 700; font-stretch: 87.5%; margin: 2.25rem 
 .cal-head p { margin: 0.5rem 0 0; color: var(--muted); }
 .years { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; list-style: none; margin: 1.1rem 0 0; padding: 0; font-stretch: 87.5%; }
 .years a[aria-current] { font-weight: 800; text-decoration: none; border-bottom: 3px solid var(--gold); }
+/* Older Graduate Calendars: one row per academic year */
+.older { margin: 0.85rem 0 0; }
+.older summary { cursor: pointer; font-stretch: 87.5%; color: var(--muted); }
+.older[open] summary { color: var(--ink); }
+.tgrid { border-collapse: collapse; margin: 0.5rem 0 0; font-stretch: 87.5%; }
+.tgrid th, .tgrid td { text-align: left; padding: 0.12rem 1.2rem 0.12rem 0; white-space: nowrap; }
+.tgrid thead th { font-weight: 500; font-size: 0.88rem; color: var(--muted); }
+.tgrid tbody th { font-weight: 600; color: var(--muted); }
+.tgrid a[aria-current] { font-weight: 800; text-decoration: none; border-bottom: 3px solid var(--gold); }
+.tgrid a { font-weight: 650; }
+.tgrid a.no, .tgrid a.ext { color: var(--muted); font-weight: 450; text-decoration-color: var(--rule); }
+.tgrid a.ext::after { content: "\2009↗"; font-size: 0.8em; }
+.tstep { display: flex; flex-wrap: wrap; gap: 0.3rem 1.5rem; margin: 0.9rem 0 0; font-stretch: 87.5%; }
+.older > .t { margin: 0.45rem 0 0; font-size: 0.9rem; max-width: 42rem; }
+.topics { margin: 0.3rem 0 0; padding-left: 1.2rem; font-style: italic; }
+.ver-old summary { cursor: pointer; }
+.ver-old .versions { margin-top: 0.35rem; }
 .nums { display: flex; flex-wrap: wrap; gap: 0.15rem 0.7rem; margin: 1.25rem 0 0.5rem; font-stretch: 75%; font-weight: 650; }
 .nums + .nums { margin-top: 0.4rem; }
 .nums-label { font-stretch: 87.5%; font-weight: 500; color: var(--muted); min-width: 7.5rem; }
@@ -373,3 +390,11 @@ footer p { margin: 0.25rem 0; }
 .course.retired .code { color: var(--muted); }
 .mentions { list-style: none; margin: 0; padding: 0; }
 .mentions li { margin: 0.2rem 0; }
+
+.found-set summary { cursor: pointer; }
+.found-set summary .found-title { font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.18em; }
+.found-parts { margin: 0.35rem 0 0.2rem; padding-left: 1.4rem; columns: 2 14rem; column-gap: 1.5rem; font-size: 0.95rem; }
+.found-parts li { break-inside: avoid; margin: 0 0 0.15rem; }
+.found-set > .rm { display: inline-block; margin-top: 0.2rem; }
+.found-set > details > summary { font-size: 0.92rem; color: var(--muted); margin-top: 0.15rem; }
+.found-set > details > summary:has(.found-title) { font-size: inherit; color: inherit; }

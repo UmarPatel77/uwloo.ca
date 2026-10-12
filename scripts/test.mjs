@@ -230,8 +230,12 @@ test('router: grad term pages', () => {
   assert.equal(to('/1249/CS'), '/1249/cs/');
   assert.equal(to('/1245/STAT'), '/1245/stat/');
   assert.equal(resolve('/1249/cs/', meta).type, 'notfound'); // exists-check: same path means no such page
-  assert.match(resolve('/1241/cs', meta).message, /before Spring 2024 aren’t on uwloo yet/);
-  assert.match(resolve('/1239', meta).message, /before Spring 2024/);
+  assert.match(resolve('/1249/xyz/', meta).message, /Fall 2024 Graduate Calendar has no XYZ courses/);
+  // Before Kuali and not on uwloo: Waterloo's own archive.
+  assert.equal(to('/1241/cs'), 'http://academic-calendar-archive.uwaterloo.ca/graduate-studies/archive-winter-2024/index.html');
+  assert.equal(to('/1165'), 'http://academic-calendar-archive.uwaterloo.ca/graduate-studies/archive-spring-2016/index.html');
+  assert.equal(to('/1109'), 'http://academic-calendar-archive.uwaterloo.ca/graduate-studies/2010/fall/gradcalendar.uwaterloo.ca/group/Gen-Info-Regs.html');
+  assert.match(resolve('/1065', meta).message, /start at Fall 2006/);
   assert.match(resolve('/1275/cs', meta).message, /no Spring 2027 Graduate Calendar yet/);
   // Grad terms: uwloo's version page first, acal when there isn't one.
   assert.equal(to('/1249/CS686'), '/1249/cs686/');
@@ -239,6 +243,22 @@ test('router: grad term pages', () => {
   assert.equal(to('/1249/cs686/'), 'https://acal.fast.uwaterloo.ca/course/1249/CS/686');
   assert.equal(to('/1241/cs686'), 'https://acal.fast.uwaterloo.ca/course/1241/CS/686');
   assert.equal(to('/2627/cs686'), '/2627/cs/#CS686');
+});
+
+test('router: older grad terms on uwloo, and codes that are both a term and a year', () => {
+  const m = { ...meta, gradOld: ['1069', '1109', '1201'] };
+  const go = (p) => resolve(p, m).to;
+  assert.equal(go('/1109/CO'), '/1109/co/');
+  assert.equal(resolve('/1109', m).type, 'notfound', 'the router only runs when /1109/ isn’t a page');
+  assert.equal(go('/1109/co602'), '/1109/co/#CO602');
+  assert.equal(go('/1109/CO/602'), '/1109/co/#CO602');
+  assert.equal(go('/1201/cs-646/'), '/1201/cs/#CS646');
+  assert.match(resolve('/1109/xyz/', m).message, /Fall 2010 Graduate Calendar has no XYZ courses/);
+  assert.equal(go('/1171/cs'), 'http://academic-calendar-archive.uwaterloo.ca/graduate-studies/archive-winter-2017/index.html');
+  assert.equal(go('/1171/cs646'), 'https://acal.fast.uwaterloo.ca/course/1171/CS/646');
+  // 1011 is Winter 2001 and 2010–11; 1415 is Spring 2041 and 2014–15: the year wins.
+  assert.equal(go('/1011/cs'), 'https://ucalendar.uwaterloo.ca/1011/COURSE/course-CS.html');
+  assert.equal(go('/1415/msci452'), 'https://ucalendar.uwaterloo.ca/1415/COURSE/course-MSCI.html#MSCI452');
 });
 
 test('catalogs: undergrad years and grad terms from Kuali titles', () => {
@@ -910,3 +930,239 @@ test('retired: pages for courses no calendar has, linked from today’s calendar
   const { linkCodes } = await import('./lib/requisites.mjs');
   assert.equal(linkCodes('Antireq: MSCI 452', known), 'Antireq: <a class="cc gone" href="/msci452/" title="No longer offered">MSCI 452</a>');
 });
+
+test('found links: one folder of PDFs is one entry, under its course site when found', async () => {
+  const { groupFound, tidyTitle, partTitle, resourcesSection } = await import('./lib/resources.mjs');
+  const via = [{ type: 'faculty', name: 'Prof A', url: 'https://a.ca/' }];
+  const link = (url, title, kind = 'notes', extra = {}) => ({ url, codes: ['CS466'], kind, title, via, status: 'ok', ...extra });
+  const found = [
+    link('https://a.ca/courses/cs466-f24/', 'CS 466 (Fall 2024)', 'site', { term: '1249' }),
+    ...[1, 2, 10].map((n) => link(`https://a.ca/courses/cs466-f24/Lectures/lec${n}.pdf`, `[lec${n}]`)),
+    ...[1, 2].map((n) => link(`https://b.me/assets/notes/CS466-${n}.pdf`, `Module ${n}`)),
+    link('http://b.me/assets/notes/CS466-1.pdf', 'Module 1'),
+    link('https://c.dev/notes/cs466.pdf', 'Algorithms Algorithms'),
+  ];
+  const g = groupFound(found);
+  assert.equal(g.length, 3);
+  const site = g.find((x) => x.lead);
+  assert.equal(site.title, 'CS 466 (Fall 2024)');
+  assert.deepEqual(site.items.map((x) => x.title), ['[lec1]', '[lec2]', '[lec10]'], 'in number order');
+  assert.equal(site.noun, '3 PDFs');
+  const set = g.find((x) => x.group && !x.lead);
+  assert.equal(set.items.length, 2, 'http and https copies are one link');
+  assert.equal(set.title, 'Course notes, 2 PDFs');
+  assert.equal(tidyTitle('Logic and Computation Logic and Computation'), 'Logic and Computation');
+  assert.equal(tidyTitle('[lec4]'), 'lec4');
+  assert.equal(partTitle({ url: 'https://x.notion.site/CS-246-7a97ec0fce9245798ab12', title: 'Notion' }), 'CS 246 (Notion page)');
+  assert.equal(partTitle({ url: 'https://x.ca/static/CS_246_CN.pdf', title: '**https://x.ca/static/CS\\_246\\_CN.pdf**' }), 'CS 246 CN');
+  const html = resourcesSection('CS466', [], { known: new Set(['CS466']), repo: 'r', found });
+  assert.equal((html.match(/<li class="found-set">/g) ?? []).length, 2);
+  assert.match(html, /<a class="found-title" href="https:\/\/a\.ca\/courses\/cs466-f24\/">CS 466 \(Fall 2024\)<\/a>.*<summary>3 PDFs from this site<\/summary>/s);
+  assert.match(html, /<li><a href="https:\/\/a\.ca\/courses\/cs466-f24\/Lectures\/lec1\.pdf">lec1<\/a><\/li>/);
+  assert.match(html, /Remove%20link%20\(CS%20466\)&amp;body=Please%20stop%20listing%20this%20on%20uwloo\.ca%3A%0Ahttps%3A%2F%2Fa\.ca%2Fcourses%2Fcs466-f24%2F\*/);
+  assert.match(html, />Algorithms<\/a>/);
+});
+
+// ---------------- older Graduate Calendars ----------------
+
+const gaFixture = (f) => readFileSync(new URL(`./fixtures/grad-archive/${f}`, import.meta.url));
+
+test('grad archive: course pages in list and table layouts', async () => {
+  const { parseCoursePage, parseHeader, htmlLines, courseLinkText } = await import('./lib/gradarchive.mjs');
+  const { decodeBody } = await import('./grad-archive.mjs');
+  assert.deepEqual(parseHeader('CS 642 Principles of Programming Languages (0.50) LEC Course ID: 000599'), {
+    subject: 'CS', number: '642', title: 'Principles of Programming Languages', units: 0.5, comp: 'LEC', id: '000599',
+  });
+  assert.equal(parseHeader('CO 739 Topics in Combinatorics (Advanced) (0.50) LEC Course ID: 000300').title, 'Topics in Combinatorics (Advanced)');
+  assert.equal(parseHeader('ECE 602 Thesis (0.00) Course ID: 1234').units, 0);
+  assert.equal(parseHeader('CS 798 Research Topics LEC,SEM Course ID: 011950').comp, 'LEC,SEM');
+  assert.equal(parseHeader('Prereq: CS 241'), null);
+  assert.deepEqual(htmlLines('<p>a <i>b c d e f</i></p><h3>X</h3><hr>').map((l) => [l.kind, l.text, l.italic]), [['text', 'a b c d e f', true], ['heading', 'X', false], ['rule', '', false]]);
+  assert.deepEqual(courseLinkText('Combinatorics & Optimization (CO) Courses'), { dept: 'Combinatorics & Optimization', code: 'CO' });
+  assert.deepEqual(parseCoursePage('<p><b>CO 601 A (0.50)</b> LEC Course ID: 000001</p><p>Text.</p><p><b>CO 700s</b></p><p>Stray.</p>').courses[0].d, ['Text.'], 'a section line that isn’t a heading still ends the entry');
+
+  const co = parseCoursePage(decodeBody(new Uint8Array(gaFixture('GRDcourse-CO.html')), 'text/html'));
+  assert.deepEqual(co.courses.map((c) => c.code), ['CO601', 'CO602', 'CO639', 'CO839']);
+  assert.equal(co.ids, 4);
+  assert.deepEqual(co.courses[1].x, ['(Cross-listed with CM 740)'], 'italic notes, wherever they sit');
+  assert.deepEqual(co.courses[1].d, ['Linear, combinatorial and continuous optimization; duality and the simplex method.']);
+  assert.deepEqual(co.courses[2].x, ['1 Quantum Error Correction', '3 Quantum Cryptography']);
+  assert.deepEqual(co.courses[3], { code: 'CO839', subject: 'CO', number: '839', title: 'Seminar in Graph Theory', units: 0.5, comp: 'SEM', id: '000332', d: [], x: ['Department Consent Required'] });
+
+  const cs = parseCoursePage(decodeBody(new Uint8Array(gaFixture('GRDcourse-CS.html')), 'text/html'));
+  assert.deepEqual(cs.courses.map((c) => [c.code, c.units, c.comp, c.id]), [['CS642', 0.5, 'LEC,TUT', '000599'], ['CS798', null, 'LEC', '011950']]);
+  assert.deepEqual(cs.courses[0].d, ['Survey of language design. [Note: Offered in Fall only.]', 'Second paragraph about CS 646.']);
+  assert.deepEqual(cs.courses[0].x, ['Prereq: CS 241; Antireq: CS 442']);
+  assert.match(cs.courses[1].d[0], /^Théorie des langages, with a note in italics/, 'Windows-1252, and a mostly plain line stays description');
+  assert.equal(cs.courses[1].d.length, 1, 'a header it can’t read, and the footer, aren’t added to the last course');
+  assert.deepEqual(cs.missed, ['CS 700 Readings, see the Course ID listing']);
+});
+
+test('grad archive: the crawler end to end, against a local copy', async () => {
+  const http = await import('node:http');
+  const { mkdtemp, readFile: rf, rm: rmr } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { main, Polite } = await import('./grad-archive.mjs');
+  const { readStore, loadGradArchive, PARSER } = await import('./lib/gradarchive.mjs');
+  const T = '/gsac-archive/2010/fall';
+  const G = `${T}/gradcalendar.uwaterloo.ca`;
+  const C = `${T}/www.ucalendar.uwaterloo.ca/SA/GRAD/1011`;
+  const page = (body) => `<html><body>${body}</body></html>`;
+  const routes = {
+    '/robots.txt': [200, 'text/plain', 'User-agent: *\nDisallow: /aca/\nDisallow: /gsac-archive/2010/fall/gradcalendar.uwaterloo.ca/page/Secret.html\n'],
+    [`${G}/group/Gen-Info-Regs.html`]: [200, 'text/html', page(`<a href="../page/Faculty-of-Mathematics.html">Math</a> <a href="../page/printable/1.html">Print</a> <a href="/gsac-archive/gradcalendar.uwaterloo.ca/page/Archived-Calendars.html">Archives</a> <a href="../page/Secret.html">x</a>`)],
+    [`${G}/page/Faculty-of-Mathematics.html`]: [200, 'text/html', page(`<a href="../group/Combinatorics-Optimization.html">C&amp;O</a> <a href="../group/Computer-Science.html">CS</a> <a href="../page/CO-Programs.html">Programs</a>`)],
+    [`${G}/group/Combinatorics-Optimization.html`]: [200, 'text/html', page(`<a href="${C}/GRDcourse-CO.html">Combinatorics &amp; Optimization (CO) Courses</a> <a href="${C}/GRDcourse-QIC.html">Combinatorics &amp; Optimization (QIC) Courses</a> <a href="/gsac-archive/2010/spring/www.ucalendar.uwaterloo.ca/SA/GRAD/0910/GRDcourse-PMATH.html">old</a>`)],
+    [`${G}/group/Computer-Science.html`]: [200, 'text/html', page(`<a href="${C}/GRDcourse-CS.html">Computer Science (CS) Courses</a> <a href="../group/Combinatorics-Optimization.html">C&amp;O</a>`)],
+    [`${C}/GRDcourse-CO.html`]: [200, 'text/html; charset=utf-8', gaFixture('GRDcourse-CO.html')],
+    [`${C}/GRDcourse-CS.html`]: [200, 'text/html', gaFixture('GRDcourse-CS.html')],
+  };
+  const hits = [];
+  const server = http.createServer((req, res) => {
+    const path = new URL(req.url, 'http://x').pathname;
+    hits.push(path);
+    const r = routes[path];
+    res.writeHead(r ? r[0] : 404, { 'content-type': r ? r[1] : 'text/html' });
+    res.end(r ? r[2] : 'nope');
+  });
+  await new Promise((ok) => server.listen(0, '127.0.0.1', ok));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const dir = await mkdtemp(`${tmpdir()}/ga-`);
+  const quiet = { log() {}, warn() {} };
+  const urls = { gsac: `${base}/gsac-archive`, aca: `${base}/aca` };
+  const odRows = [
+    { associatedAcademicCareer: 'GRD', subjectCode: 'CS', catalogNumber: '646', title: 'Software  Design', description: 'Design. See CS 642.', requirementsDescription: 'Prereq: CS 445', courseId: '13085' },
+    { associatedAcademicCareer: 'UG', subjectCode: 'CS', catalogNumber: '135', title: 'Undergrad' },
+  ];
+  try {
+    const opts = { dir: `${dir}/data`, urls, log: quiet, od: async (term) => (term === '1201' ? odRows : null), polite: new Polite({ delay: 0, cacheDir: `${dir}/cache`, log: quiet }) };
+    const run = await main(['--terms', '1109,1179,1201', '--minutes', '5'], opts);
+    assert.equal(run.left, 0);
+    assert.ok(!hits.some((h) => h.startsWith('/aca/')), 'robots.txt keeps it out of /aca/');
+    assert.ok(!hits.includes(`${G}/page/Secret.html`), 'robots.txt rules for single pages too');
+    assert.ok(!hits.some((h) => /printable|Archived-Calendars|spring|CO-Programs/.test(h)), 'only this term’s faculty and department pages');
+    const store = await readStore(`${dir}/data`);
+    assert.deepEqual(Object.keys(store.terms).sort(), ['1109', '1201']);
+    const t = store.terms['1109'];
+    assert.equal(t.source, 'calendar');
+    assert.equal(t.parser, PARSER);
+    assert.deepEqual(t.subjects.map((x) => [x.code, x.dept, x.courses.length]), [['CO', null, 4], ['CS', 'Computer Science', 2]], 'QIC’s page is missing; a department with two subjects doesn’t name either');
+    assert.equal(store.terms['1201'].source, 'opendata');
+    const report = JSON.parse(await rf(`${dir}/data/report.json`, 'utf8'));
+    assert.equal(report.aca.robots, 'robots');
+    assert.equal(report.terms['1109'].missed.length, 1);
+    assert.ok((await rf(`${dir}/data/samples/1109-GRDcourse-CS.html`, 'utf8')).includes('CS 642'));
+    const entries = (await rf(`${dir}/data/entries.json`, 'utf8')).split('\n');
+    assert.ok(entries[1].startsWith('"CO601~'), 'one entry per line, in code order');
+
+    // Again: nothing to do, nothing fetched.
+    const before = hits.length;
+    const again = await main(['--terms', '1109,1179,1201', '--minutes', '5'], { ...opts, polite: new Polite({ delay: 0, cacheDir: `${dir}/cache`, log: quiet }) });
+    assert.equal(again.changed, 0);
+    assert.equal(hits.length, before, 'done terms are skipped, and the aca check waits a month');
+
+    // The same course text in two terms is stored once.
+    const { saveTerm } = await import('./lib/gradarchive.mjs');
+    const s2 = await readStore(`${dir}/data`);
+    const co = s2.terms['1109'].subjects[0].courses;
+    await saveTerm(s2, { term: '1111', label: 'Winter 2011', source: 'calendar', from: 'x', parser: PARSER }, [{ code: 'CO', dept: null, url: 'u', courses: [{ code: 'CO601', title: 'Fundamentals of Enumerative Combinatorics', units: 0.5, comp: 'LEC', id: '012175', d: ['Counting, generating series, integer partitions & linear recurrences. See also CO 630.'], x: [] }] }], `${dir}/data`);
+    assert.equal((await readStore(`${dir}/data`)).terms['1111'].subjects[0].courses[0], co[0]);
+
+    const cats = await loadGradArchive({ dir: `${dir}/data`, names: (x) => ({ CO: 'Combinatorics and Optimization' })[x] ?? null });
+    assert.deepEqual(cats.map((c) => [c.term, c.source, c.courses.size]), [['1109', 'calendar', 6], ['1111', 'calendar', 1], ['1201', 'opendata', 1]]);
+    assert.equal(cats[0].names.get('CO'), 'Combinatorics and Optimization');
+    assert.equal(cats[0].names.get('CS'), 'Computer Science', 'the department’s name when today’s calendars don’t have one');
+    assert.equal(cats[2].courses.get('CS646').title, 'Software Design');
+  } finally {
+    server.close();
+    await rmr(dir, { recursive: true, force: true });
+  }
+});
+
+test('grad archive: term pages, the older-terms grid, versions and retired courses', async () => {
+  const { mkdtemp, rm: rmr } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { saveTerm, readStore, loadGradArchive, gradAppearances, oldTermSubjectPage, oldTermIndexPage, oldTerms, PARSER } = await import('./lib/gradarchive.mjs');
+  const { termNav } = await import('./lib/render.mjs');
+  const { retiredCourses, retiredPage } = await import('./lib/retired.mjs');
+  const dir = await mkdtemp(`${tmpdir()}/ga-`);
+  try {
+    const store = await readStore(dir);
+    const c = (code, title, d, x = []) => ({ code, title, units: 0.5, comp: 'LEC', id: '000001', d, x });
+    const url = 'https://uwaterloo.ca/gsac-archive/2015/fall/www.ucalendar.uwaterloo.ca/SA/GRAD/1516/GRDcourse-CS.html';
+    await saveTerm(store, { term: '1159', label: 'Fall 2015', source: 'calendar', from: 'https://uwaterloo.ca/gsac-archive/2015/fall/gradcalendar.uwaterloo.ca/group/Gen-Info-Regs.html', parser: PARSER }, [
+      { code: 'CS', dept: null, url, courses: [c('CS642', 'Principles of Programming Languages', ['Uses CS 646 ideas.'], ['Prereq: CS 641', '1 Types']), c('CS641', 'Old Course', ['Gone now.'], ['Antireq: CS 642'])] },
+    ], dir);
+    await saveTerm(store, { term: '1169', label: 'Fall 2016', source: 'calendar', from: 'f', parser: PARSER }, [
+      { code: 'CS', dept: null, url, courses: [c('CS642', 'Principles of Programming Languages', ['Uses CS 646 ideas.'], ['Prereq: CS 640']), c('CS641', 'Old Course', ['Gone now.'], ['Antireq: CS 642'])] },
+    ], dir);
+    const cats = await loadGradArchive({ dir, names: () => 'Computer Science' });
+    const current = new Set(['CS642', 'CS646']);
+    const ga = gradAppearances(cats);
+    const retired = retiredCourses({ history: { codes: {} }, archive: new Map(), current, grad: ga });
+    assert.deepEqual([...retired.keys()], ['CS641']);
+    const linkable = { has: (x) => current.has(x) || retired.has(x), href: (x) => (current.has(x) || retired.has(x) ? `/${x.toLowerCase()}/` : null), retired };
+
+    const grad = [{ term: '1245', label: 'Spring 2024', subjects: new Set(['CS']), status: 'past' }, { term: '1249', label: 'Fall 2024', subjects: new Set(['CS']), status: 'current' }];
+    const have = new Set(cats.map((k) => k.term));
+    const nav = [...cats, ...oldTerms().filter((t) => !have.has(t.term)).map((t) => ({ term: t.term, label: t.label, kind: 'link', href: t.official })), ...grad].sort((a, b) => a.term - b.term);
+    const html = oldTermSubjectPage({ cat: cats[0], nav: termNav(nav, cats[0], 'CS'), subject: 'CS', courses: cats[0].bySubject.get('CS'), linkable, builtAt: new Date(), version: 'v' });
+    assert.match(html, /<h1>Computer Science \(CS\)<\/h1>/);
+    assert.match(html, /<section class="entry" id="CS642">/);
+    assert.match(html, /<a class="cc" href="\/cs642\/">CS 642<\/a> <span>Principles of Programming Languages<\/span><span class="u">0\.50 units<\/span>/);
+    assert.match(html, /<p><i>Prereq: <a class="cc" href="\/1159\/cs\/#CS641">CS 641<\/a><\/i><\/p>/, 'codes in the same term link within it, unmarked');
+    assert.match(html, /Uses <a class="cc" href="\/cs646\/">CS 646<\/a> ideas/, 'others link to their page today');
+    assert.match(html, /<ul class="topics"><li>1 Types<\/li><\/ul>/);
+    assert.match(html, /<a href="https:\/\/uwaterloo\.ca\/gsac-archive\/2015\/fall\/www\.ucalendar[^"]+GRDcourse-CS\.html">Archived page<\/a>/);
+    assert.match(html, /<details class="older"><summary>Older calendars, Fall 2006 to Winter 2024<\/summary>/);
+    assert.match(html, /<p class="tstep"><a href="\/1169\/cs\/" rel="next">Fall 2016 →<\/a><\/p>/, 'step to the next term uwloo has');
+    assert.match(html, /2 graduate courses in the Fall 2015 Graduate Calendar, from <a href="https:\/\/uwaterloo\.ca\/gsac-archive\/2015\/fall\/gradcalendar[^"]+">Waterloo’s archived copy<\/a>\./);
+    assert.match(html, /<tr><th scope="row">2015–16<\/th><td><a href="\/1159\/cs\/" aria-current="page">Fall<\/a><\/td><td><a class="ext" href="http:\/\/academic-calendar-archive\.uwaterloo\.ca\/graduate-studies\/2016\/winter\/[^"]+" title="Winter 2016, in Waterloo’s archive">Winter<\/a><\/td>/);
+    assert.match(html, /<tr><th scope="row">2023–24<\/th><td><a class="ext"[^>]*>Fall<\/a><\/td><td><a class="ext"[^>]*>Winter<\/a><\/td><td><a href="\/1245\/cs\/">Spring<\/a><\/td><\/tr>/, 'Spring 2024 is Kuali, in the same row');
+    assert.match(html, /<link rel="canonical" href="https:\/\/uwloo\.ca\/1159\/cs\/">/);
+    const idx = oldTermIndexPage({ cat: cats[0], nav: termNav(nav, cats[0]), builtAt: new Date(), version: 'v' });
+    assert.match(idx, /2 graduate courses in 1 subject/);
+    assert.match(idx, /<a class="cc" href="\/1159\/cs\/">CS<\/a>/);
+    // Kuali pages: the pills, then the grid, closed.
+    const kn = termNav(nav, grad[1], 'CS');
+    assert.match(kn, /<li><a href="\/1249\/cs\/" aria-current="page">Fall 2024<\/a><\/li><\/ul><details class="older"><summary>/);
+    assert.ok(!/Winter 2024 and earlier/.test(kn));
+
+    // Retired: only in older Graduate Calendars.
+    const page = retiredPage({ r: retired.get('CS641'), known: linkable, mentions: new Map(), oldHave: have, builtAt: new Date(), version: 'v' });
+    assert.match(page, /It’s in the archived Graduate Calendars from Fall 2015 to Fall 2016\. The calendars after Fall 2016 aren’t on uwloo, so it may have been listed a little longer\./);
+    assert.match(page, /<p class="desc">Gone now\.<\/p>/);
+    assert.match(page, /Notes, as last listed<\/h2><div class="notes"><p><i>Antireq: <a class="cc" href="\/cs642\/">CS 642<\/a><\/i><\/p>/);
+    assert.match(page, /<a href="\/1169\/cs\/#CS641">Fall 2016<\/a>/);
+    assert.match(page, /<dt>Last listed<\/dt><dd>Fall 2016<\/dd>/);
+    assert.match(page, /<dt>Level<\/dt><dd>Graduate<\/dd>/);
+
+    // Course pages: "Older Graduate Calendars", with the requisites change marked.
+    const { coursePage } = await import('./lib/render.mjs');
+    const hist = (k) => ({ cat: k, href: `/${k.term}/cs/#CS642` });
+    const course = { code: 'CS642', subject: 'CS', number: '642', subjectName: 'Computer Science', title: 'Principles of Programming Languages', units: 0.5, crossListed: [], prereq: null, antireq: null, coreq: null, description: '', notesHtml: '' };
+    const cp = coursePage({ course, cat: { level: 'grad', label: 'Fall 2024', status: 'current', pageUrl: 'https://x/' }, known: linkable, leadsTo: [], history: { ug: [], grad: [], old: [hist(cats[0]), { ...hist(cats[1]), changed: cats[0].courses.get('CS642').signature !== cats[1].courses.get('CS642').signature }] }, strip: null, hint: null, sectionsByTerm: [], curTerm: '1269', subjectHref: '/1249/cs/', builtAt: new Date(), version: 'v' });
+    assert.match(cp, /<h3 class="ver-h">Older Graduate Calendars<\/h3><details class="ver-old" open><summary>In 2 terms, Fall 2015 to Fall 2016<\/summary><ul class="versions"><li><a href="\/1159\/cs\/#CS642">Fall 2015<\/a><\/li><li><a href="\/1169\/cs\/#CS642">Fall 2016<\/a> <span class="changed">requisites changed<\/span><\/li>/);
+  } finally {
+    await rmr(dir, { recursive: true, force: true });
+  }
+});
+
+test('grad archive: data files are well-formed', async () => {
+  const { readStore, oldTerms } = await import('./lib/gradarchive.mjs');
+  const { entries, terms } = await readStore();
+  const valid = new Set(oldTerms().map((t) => t.term));
+  for (const [term, t] of Object.entries(terms)) {
+    assert.ok(valid.has(term), `${term}: not a term from Fall 2006 to Winter 2024`);
+    assert.ok(['calendar', 'opendata'].includes(t.source), `${term}: source`);
+    for (const s of t.subjects) {
+      assert.match(s.code, /^[A-Z]{2,8}$/);
+      for (const k of s.courses) assert.ok(entries[k], `${term} ${s.code}: ${k} missing from entries.json`);
+    }
+  }
+  for (const [k, e] of Object.entries(entries)) {
+    assert.match(k, /^[A-Z]{2,8}\d{3}[A-Z]{0,2}~[0-9a-f]{8}$/);
+    assert.ok(Array.isArray(e.d) && Array.isArray(e.x), k);
+  }
+});
+

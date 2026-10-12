@@ -10,6 +10,7 @@ import { loadReddit, redditSection, SHOWN } from './lib/reddit.mjs';
 import { available, entryPages, linksAboutPage, loadResources, publishFiles, resourcePage, resourcesSection, syncFiles } from './lib/resources.mjs';
 import { loadHistory } from './lib/history.mjs';
 import { archiveAppearances, mentionsOf, retiredCourses, retiredPage } from './lib/retired.mjs';
+import { gradAppearances, loadGradArchive, oldTermIndexPage, oldTermSubjectPage, oldTerms } from './lib/gradarchive.mjs';
 import { groupThreads } from '../site/reddit.js';
 import * as opendata from './lib/opendata.mjs';
 import {
@@ -20,6 +21,7 @@ import {
   redirectPage,
   SITE,
   termIndexPage,
+  termNav,
   termSubjectPage,
   yearPage,
   yearSubjectPage,
@@ -73,6 +75,21 @@ async function main() {
     cat.bySubject = bySubject(cat.courses.values());
     cat.subjects = new Set(cat.bySubject.keys());
   }
+  // Older Graduate Calendars, Fall 2006 to Winter 2024 (data/grad-archive, from scripts/grad-archive.mjs).
+  // Terms not in there yet still show in the term grid, linked to Waterloo's archive.
+  const subjectNames = new Map();
+  for (const cat of [...ug, ...grad]) for (const c of cat.courses.values()) if (c.subjectName) subjectNames.set(c.subject, c.subjectName);
+  const oldCats = await loadGradArchive({ names: (s) => subjectNames.get(s) ?? null });
+  const oldHave = new Set(oldCats.map((c) => c.term));
+  const gradNav = [
+    ...oldCats,
+    ...oldTerms()
+      .filter((t) => !oldHave.has(t.term))
+      .map((t) => ({ term: t.term, label: t.label, kind: 'link', href: t.official })),
+    ...grad,
+  ].sort((a, b) => Number(a.term) - Number(b.term));
+  console.log(`Older Graduate Calendars: ${oldCats.length} terms (${oldCats.filter((c) => c.source === 'opendata').length} from Open Data), ${oldCats.reduce((n, c) => n + c.courses.size, 0)} course entries`);
+
   const current = ug.find((c) => c.status === 'current');
   const gradCurrent = grad.find((c) => c.status === 'current') ?? null;
   console.log(`Current calendars: ${current.label} undergraduate, ${gradCurrent?.label ?? 'none'} graduate`);
@@ -174,6 +191,7 @@ async function main() {
   const historyFor = (code) => ({
     ug: historyIn(ug, code, (k, v) => `/${k.yearCode}/${slug(v.subject)}/#${code}`),
     grad: historyIn(grad, code, (k) => `/${k.term}/${slug(code)}/`),
+    old: historyIn(oldCats, code, (k, v) => `/${k.term}/${slug(v.subject)}/#${code}`),
   });
   const leadsList = (codes, titleOf) => [...(codes ?? [])].map((c) => ({ code: c, title: titleOf(c) })).sort((a, b) => byCode(a.code, b.code));
 
@@ -187,7 +205,8 @@ async function main() {
   // today's calendar (an antirequisite that's gone, say) go there.
   const courseHistory = await loadHistory(curTerm, opendata.enabled() ? {} : { maxNew: 0 });
   const archiveText = await loadArchiveText();
-  const retired = retiredCourses({ history: courseHistory, archive: archiveAppearances(archiveText), current: known });
+  const gradOld = gradAppearances(oldCats);
+  const retired = retiredCourses({ history: courseHistory, archive: archiveAppearances(archiveText), current: known, grad: gradOld });
   const linkable = { has: (c) => known.has(c) || retired.has(c), href: (c) => (known.has(c) || retired.has(c) ? `/${slug(c)}/` : null), retired };
 
   // Course resources (data/resources/, see tools/resources/). Hosted PDFs come from the "files" release;
@@ -266,7 +285,7 @@ async function main() {
     const subject = /^[A-Z]+/.exec(r.code)[0];
     const mentions = reddit.map.get(r.code);
     const extra = redditSection(r.code, mentions, reddit.meta, { repo, slug: slug(r.code), version }) + resourcesSection(r.code, [], { known: linkable, repo, found: foundFor.get(r.code) });
-    pages.push([`${slug(r.code)}/index.html`, retiredPage({ ...ctxBase, r, known: linkable, mentions: stillMentioned, reddit: extra, floor: courseHistory.floor, faculty: faculty(r.code, subject) })]);
+    pages.push([`${slug(r.code)}/index.html`, retiredPage({ ...ctxBase, r, known: linkable, mentions: stillMentioned, reddit: extra, floor: courseHistory.floor, oldHave, faculty: faculty(r.code, subject) })]);
     sitemap.push(`/${slug(r.code)}/`);
     if (mentions && groupThreads(mentions).length > SHOWN) pages.push([`reddit/${slug(r.code)}.json`, JSON.stringify(mentions)]);
     if (mentions?.length) redditPages++;
@@ -369,11 +388,27 @@ async function main() {
       rows.push({ subject, name: courses[0].subjectName, ug: 0, grad: courses.length });
       pages.push([
         `${cat.term}/${slug(subject)}/index.html`,
-        termSubjectPage({ ...ctxBase, cat, gradCatalogs: grad, subject, subjectName: courses[0].subjectName, courses, known, faculty: subjectFaculty(subject) }),
+        termSubjectPage({ ...ctxBase, cat, gradCatalogs: gradNav, subject, subjectName: courses[0].subjectName, courses, known, faculty: subjectFaculty(subject) }),
       ]);
       if (cat === gradCurrent) sitemap.push(`/${cat.term}/${slug(subject)}/`);
     }
-    pages.push([`${cat.term}/index.html`, termIndexPage({ ...ctxBase, cat, gradCatalogs: grad, subjects: rows })]);
+    pages.push([`${cat.term}/index.html`, termIndexPage({ ...ctxBase, cat, gradCatalogs: gradNav, subjects: rows })]);
+    sitemap.push(`/${cat.term}/`);
+  }
+
+  // Older grad term pages (/1109/co): one subject as that term's calendar had it. No per-course pages:
+  // /1109/co602 goes to /1109/co/#CO602.
+  let oldPages = 0;
+  for (const cat of oldCats) {
+    for (const [subject, courses] of [...cat.bySubject.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+      pages.push([
+        `${cat.term}/${slug(subject)}/index.html`,
+        oldTermSubjectPage({ ...ctxBase, cat, nav: termNav(gradNav, cat, subject), subject, courses, linkable, faculty: subjectFaculty(subject) }),
+      ]);
+      sitemap.push(`/${cat.term}/${slug(subject)}/`);
+      oldPages++;
+    }
+    pages.push([`${cat.term}/index.html`, oldTermIndexPage({ ...ctxBase, cat, nav: termNav(gradNav, cat) })]);
     sitemap.push(`/${cat.term}/`);
   }
 
@@ -403,11 +438,13 @@ async function main() {
   }
 
   // /cs → the current year's CS page (or the newest page that has the subject), as a real file so it isn't a 404.
+  // Subjects only in older Graduate Calendars go to the newest term that has them.
+  const RESERVED = new Set(['about', 'archive', 'files', 'reddit', 'vendor']);
   const allSubjects = new Set();
-  for (const cat of [...ug, ...grad]) for (const s of cat.subjects) allSubjects.add(s);
+  for (const cat of [...ug, ...grad, ...oldCats]) for (const s of cat.subjects) if (!RESERVED.has(slug(s))) allSubjects.add(s);
   for (const s of allSubjects) {
     const year = [current, ...[...ug].reverse()].find((k) => yearSubjects.get(k.yearCode)?.some((r) => r.subject === s));
-    const term = [...grad].reverse().find((k) => k.subjects.has(s));
+    const term = [...grad].reverse().find((k) => k.subjects.has(s)) ?? [...oldCats].reverse().find((k) => k.subjects.has(s));
     const target = year ? `/${year.yearCode}/${slug(s)}/` : `/${term.term}/${slug(s)}/`;
     pages.push([`${slug(s)}/index.html`, redirectPage(target)]);
   }
@@ -421,13 +458,14 @@ async function main() {
     : [{ key: 'all', name: 'Subjects', subjects: homeSubjects }];
   const liveCount = new Set([...current.courses.keys(), ...(gradCurrent?.courses.keys() ?? [])]).size;
   pages.push(['about/links/index.html', linksAboutPage({ ...ctxBase, repo, meta: foundFile && { links: foundFile.links.length, courses: foundFor.size, generated: foundFile.generated } })]);
-  pages.push(['index.html', homePage({ ...ctxBase, current, catalogs: ug, gradCatalogs: grad, groups, courseCount: liveCount })]);
+  pages.push(['index.html', homePage({ ...ctxBase, current, catalogs: ug, gradCatalogs: gradNav, groups, courseCount: liveCount })]);
   sitemap.push('/');
 
   const meta = {
     years: ug.map((c) => c.yearCode),
     current: current.yearCode,
     gradTerms: grad.map((c) => c.term),
+    gradOld: oldCats.map((c) => c.term),
     subjects: [...allSubjects].map(slug).sort(),
   };
   pages.push(['404.html', notFoundPage({ ...ctxBase, meta })]);
@@ -435,7 +473,7 @@ async function main() {
   // Courses no longer offered are in the search too, flagged (third field) so they rank after current ones.
   const search = [
     ...[...primary.entries()].map(([code, { course }]) => [code, course.title]),
-    ...[...retired.values()].map((r) => [r.code, r.od?.title ?? r.arch?.latest.title ?? '', 1]),
+    ...[...retired.values()].map((r) => [r.code, r.od?.title ?? r.ga?.latest.title ?? r.arch?.latest.title ?? '', 1]),
   ].sort((a, b) => byCode(a[0], b[0]));
   pages.push(['search.json', JSON.stringify(search)]);
 
@@ -470,11 +508,11 @@ async function main() {
     const last = r.od?.ran.at(-1) ?? '';
     csvRows.push([
       r.code,
-      r.od?.title ?? r.arch?.latest.title ?? '',
-      r.od?.career === 'GRD' || Number.parseInt(N, 10) >= 600 ? 'graduate' : 'undergraduate',
+      r.od?.title ?? r.ga?.latest.title ?? r.arch?.latest.title ?? '',
+      r.od?.career === 'GRD' || r.ga || Number.parseInt(N, 10) >= 600 ? 'graduate' : 'undergraduate',
       'no (no longer offered)',
       last,
-      last ? termName(last) : r.od ? 'no classes in Open Data' : `in calendars to ${r.arch.years.at(-1).label}`,
+      last ? termName(last) : r.od ? 'no classes in Open Data' : r.ga ? `in Graduate Calendars to ${r.ga.terms.at(-1).label}` : `in calendars to ${r.arch.years.at(-1).label}`,
       offerings ? pastTerms.filter((t) => offerings.terms[t]?.offered.has(r.code)).length : '',
       outlineUrl(S, N),
       reddit.map.get(r.code)?.length ?? 0,
@@ -495,7 +533,7 @@ async function main() {
   await writeAll(pages);
   const fileBytes = await publishFiles(new Set(shown.flatMap((e) => e.parts.map((p) => p.file).filter(Boolean))), { out: join(OUT, 'files') });
   const gradOnly = [...primary.values()].filter((p) => p.cat.level === 'grad').length;
-  console.log(`Wrote ${pages.length} files to ${OUT}/ (${primary.size} course pages, ${retired.size} no longer offered (${[...retired.values()].filter((r) => r.od).length} from Open Data), ${gradOnly} from the Graduate Calendar, ${versionPages} grad term versions, ${archivePages} scanned-calendar subject pages, ${redditPages} with r/uwaterloo mentions${reddit.removed ? `, ${reddit.removed} removal requests applied` : ''}, ${shown.length} resources on ${resourcesFor.size} courses, ${[...foundFor.values()].reduce((n, x) => n + x.length, 0)} found links on ${foundFor.size} courses, ${hostedPages} hosted PDFs, ${(fileBytes / 1e6).toFixed(1)} MB)`);
+  console.log(`Wrote ${pages.length} files to ${OUT}/ (${primary.size} course pages, ${retired.size} no longer offered (${[...retired.values()].filter((r) => r.od).length} from Open Data), ${gradOnly} from the Graduate Calendar, ${versionPages} grad term versions, ${oldPages} older grad subject pages, ${archivePages} scanned-calendar subject pages, ${redditPages} with r/uwaterloo mentions${reddit.removed ? `, ${reddit.removed} removal requests applied` : ''}, ${shown.length} resources on ${resourcesFor.size} courses, ${[...foundFor.values()].reduce((n, x) => n + x.length, 0)} found links on ${foundFor.size} courses, ${hostedPages} hosted PDFs, ${(fileBytes / 1e6).toFixed(1)} MB)`);
 }
 
 main().catch((err) => {

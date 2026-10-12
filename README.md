@@ -12,17 +12,32 @@ Waterloo course pages at short URLs. A GitHub Action pulls the university's own 
 | `uwloo.ca/1249/cs` | Graduate CS courses exactly as the Fall 2024 Graduate Calendar has them, for every term from Spring 2024 on |
 | `uwloo.ca/1249` | All subjects in the Fall 2024 Graduate Calendar |
 | `uwloo.ca/1249/math631` | MATH 631 exactly as the Fall 2024 Graduate Calendar lists it, with links for that term (archived entry, acal for 1249). Clicking a course on `/1249/math` lands here |
+| `uwloo.ca/1109/co`, any term from `1069` (Fall 2006) to `1241` (Winter 2024) | Graduate C&O courses as that term's Graduate Calendar had them, read from Waterloo's archived copy; `/1109/co602` jumps to CO 602. Terms uwloo hasn't read go to that term in Waterloo's archive |
 | `uwloo.ca/cs` | The current calendar year's CS page |
 | `uwloo.ca/2627` | All subjects in the 2026–27 calendar |
 | `uwloo.ca/2324/cs`, any year from `9596` to `2324` | Redirects to `ucalendar.uwaterloo.ca/2324/COURSE/course-CS.html` |
 | `uwloo.ca/9495/cs`, any year from `6364` to `9495` | That year's CS courses read from the scanned calendar (`/9495/cs241` jumps to CS 241), each linking to its scanned page. Each course links to its scanned page |
 | `uwloo.ca/6263/…` and earlier | Not online; says the archive starts at 1963–64 |
 | `uwloo.ca/courses.csv` | Every course: title, level, whether it's in the current calendars, the last term it ran (looking back 7 years), and its outline.uwaterloo.ca search link. Opens in Excel |
-| `uwloo.ca/1269/cs135` | Redirects to `acal.fast.uwaterloo.ca/course/1269/CS/135` whenever uwloo has no page for it (undergrad codes, and terms before Spring 2024) |
+| `uwloo.ca/1269/cs135` | Redirects to `acal.fast.uwaterloo.ca/course/1269/CS/135` whenever uwloo has no page for it (undergrad codes, and terms uwloo doesn't have) |
+| `uwloo.ca/1065` and earlier terms | Says the online Graduate Calendars start at Fall 2006 |
 
-Every entry on a calendar page also links to its official entry and to acal for that year or term (the fall term for an undergrad year). Term codes and year codes can't be confused until Spring 2041 (`1415`, which is also 2014–15).
+Every entry on a calendar page also links to its official entry and to acal for that year or term (the fall term for an undergrad year). A few codes are both a term and a year: `1011` (Winter 2001, or 2010–11), `1415` (Spring 2041, or 2014–15) and `1819` (Fall 2081, or 2018–19). None of those terms has a Graduate Calendar on uwloo, so the year wins.
 
-Undergraduate calendars from 2024–25 and graduate calendars from Spring 2024 come from Kuali and are rebuilt here. New years and terms appear automatically when Waterloo publishes them. Graduate calendars before Spring 2024 aren't included yet.
+Undergraduate calendars from 2024–25 and graduate calendars from Spring 2024 come from Kuali and are rebuilt here. New years and terms appear automatically when Waterloo publishes them. Older Graduate Calendars are below.
+
+## Older Graduate Calendars (Fall 2006 to Winter 2024)
+
+Before Kuali, each grad term's calendar was its own website, and Waterloo keeps them:
+
+| Terms | Where | On uwloo |
+| --- | --- | --- |
+| Fall 2006 to Fall 2016 | `uwaterloo.ca/gsac-archive/{year}/{season}/`, a saved copy of gradcalendar.uwaterloo.ca. Each department links its course list, `…/SA/GRAD/{YYyy}/GRDcourse-{SUBJ}.html` | Read in full: `/1109/co/` |
+| Winter 2017 to Winter 2024 | `academic-calendar-archive.uwaterloo.ca` (the WCMS calendar) | Only if its robots.txt lets uwloo in. Until then, Winter 2020 on uses Open Data's course catalog for the term (`Courses/{term}`, the same source as the history above), and Winter 2017 to Fall 2019 link to Waterloo's archive |
+
+`scripts/grad-archive.mjs` reads them into `data/grad-archive/`: one file per term (`terms/1109.json`) and `entries.json`, where a course that reads the same in twenty terms is stored once. Archives don't change, so it's a one-off: `.github/workflows/grad-archive.yml` runs on push, reads for up to 150 minutes, commits, rebuilds the site, and starts itself again until every term it can read is in. It follows robots.txt, makes one request at a time with a pause, and keeps every page in its Actions cache. `data/grad-archive/report.json` says what it found per term (pages, courses, any header it couldn't read) and what it saw on academic-calendar-archive; `samples/` keeps a few raw pages so the reader can be checked against the real thing.
+
+Each term gets subject pages (`/1109/co/`) and an index (`/1109/`). Course pages list the older terms a course is in under "Calendar versions", marking where its requisites changed, and a grad course that's gone since (in an older calendar but none today) gets a "no longer offered" page from its last entry. Every grad term page has a grid of the older terms. To read terms again after changing the reader, bump `PARSER` in `scripts/lib/gradarchive.mjs` and push; to redo some by hand, run the workflow from the Actions tab with their codes.
 
 ## How I intially thought about approaching it
 uwloo./[2627≥YYyy≥5758]/[subj] uses new course index uwaterloo.ca/academic-calendar/[(under)graduate]-studies/catalog#/courses/ to replicate ucalendar.uwaterloo.ca/[≤2324]/COURSE/course-[SUBJ].html, and uwloo./[subj][ID][suffix] is an updated version of uwflow.com’s outdated requisites and pathways vs acal.fast.uwaterloo.ca/course/[current or 4#’s:Century less 20 + /YY/ + 1stMofTerm]/[subj]/[ID#] and quest.pecs.uW/psc/PB/ACADEMIC/SA/c/NUI_FRAMEWORK.PT_LANDINGPAGE.GBL#:~:text=Class,Search and https://classes.uwaterloo.ca/cgi-bin/cgiwrap/infocour/salook.pl?level=under&sess=[4#’s]&subject=[subj]
@@ -115,7 +130,7 @@ Under each course's Resources, "Around the web" lists course websites, notes, sl
 
 ## Courses no longer offered
 
-A course that's in none of the calendars uwloo has (2024–25 on) still gets a page if Waterloo ever listed it: `uwloo.ca/msci452`. It says when it was in the course catalog, the terms it ran, its description and requirements as last listed, which of today's courses still mention it (usually as an antirequisite), its r/uwaterloo discussions, and links to its last calendar entry on ucalendar and to the scanned calendars it's in. Today's pages link to it too, greyed out.
+A course that's in none of the current calendars uwloo has (2024–25 on) still gets a page if Waterloo ever listed it: `uwloo.ca/msci452`. It says when it was in the course catalog or the older Graduate Calendars, the terms it ran, its description and requirements as last listed, which of today's courses still mention it (usually as an antirequisite), its r/uwaterloo discussions, and links to its last calendar entry on ucalendar and to the scanned calendars it's in. Today's pages link to it too, greyed out.
 
 The history comes from UW Open Data: `Courses/{term}` (the catalog each term) and `ClassSchedules/{term}` (what ran), folded into `.cache/opendata/history.json` by `scripts/lib/history.mjs`. Past terms never change, so each is fetched once, newest first, `HISTORY_TERMS_PER_BUILD` (24, eight years) a build. Going back, four empty terms in a row mark where Open Data's records end, and the page says "since at least" that term. Older courses come from the scanned 1963–64 to 1994–95 calendars (seen in at least two years, so an OCR misread doesn't get a page).
 
@@ -191,6 +206,9 @@ site/reddit.js                 discussion cards, shared by the build and the bro
 data/archive/{year}.json       page numbers inside the 1963–64 to 1994–95 PDFs
 scripts/lib/history.mjs        every course Open Data's catalog has listed, and when each ran
 scripts/lib/retired.mjs        pages for courses no longer offered (/msci452/)
+scripts/grad-archive.mjs       reads the Fall 2006 to Winter 2024 Graduate Calendars (.github/workflows/grad-archive.yml)
+scripts/lib/gradarchive.mjs    where they are, how a course page is read and stored, their pages (/1109/co/)
+data/grad-archive/             those calendars, a report of each read, and sample pages
 scripts/lib/resources.mjs      course resources: catalogue, course-page section, PDF pages, release files
 tools/resources/               intake.py (zip of PDFs → catalogue entries) and how to use it
 data/resources/                the resources catalogue, and each hosted PDF's text

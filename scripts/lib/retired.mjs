@@ -1,12 +1,16 @@
-// Pages for courses that are no longer offered: uwloo.ca/msci452. They come from two places:
+// Pages for courses that are no longer offered: uwloo.ca/msci452. They come from three places:
 //   Open Data history (scripts/lib/history.mjs)  the catalog as far back as Open Data goes: title, description,
 //                                                requirements as last listed, and every term it ran
+//   older Graduate Calendars (data/grad-archive) Fall 2006 to Winter 2024 (scripts/lib/gradarchive.mjs)
 //   the scanned calendars (data/archive-text)    1963–64 to 1994–95, for courses older than that
 // A course in any calendar uwloo has (2024–25 on) has a regular page instead.
 import { shell } from './render.mjs';
 import { codesIn, esc, fmtCode, linkCodes, slug, treeCodes } from './requisites.mjs';
 import { FACULTY, FACULTY_NAMES } from './opendata.mjs';
-import { parseTerm, termName, termShort, yearCodeFor, yearLabel } from './terms.mjs';
+import { parseTerm, shiftTerm, termName, termShort, yearCodeFor, yearLabel } from './terms.mjs';
+
+const OLD_FIRST = '1069'; // Fall 2006, the oldest archived Graduate Calendar (scripts/lib/gradarchive.mjs)
+const OLD_LAST = '1241';
 
 const UCAL = 'https://ucalendar.uwaterloo.ca';
 const ARCHIVES = 'https://uwaterloo.ca/academic-calendar/archives';
@@ -37,15 +41,18 @@ export function archiveAppearances(archiveText) {
 }
 
 /**
- * Which courses get a "no longer offered" page: everything in Open Data's history that no calendar uwloo has
- * lists, plus scanned-calendar courses seen in at least two years (one year alone may be an OCR misread).
+ * Which courses get a "no longer offered" page: everything in Open Data's history or an older Graduate
+ * Calendar that no current calendar lists, plus scanned-calendar courses seen in at least two years (one
+ * year alone may be an OCR misread). `grad` is gradAppearances() from scripts/lib/gradarchive.mjs.
  */
-export function retiredCourses({ history, archive, current }) {
+export function retiredCourses({ history, archive, current, grad = new Map() }) {
   const out = new Map();
-  for (const [code, od] of Object.entries(history?.codes ?? {})) if (!current.has(code)) out.set(code, { code, od, arch: archive.get(code) ?? null });
+  const add = (code, od) => out.set(code, { code, od, arch: archive.get(code) ?? null, ga: grad.get(code) ?? null });
+  for (const [code, od] of Object.entries(history?.codes ?? {})) if (!current.has(code)) add(code, od);
+  for (const code of grad.keys()) if (!current.has(code) && !out.has(code)) add(code, null);
   for (const [code, arch] of archive) {
     if (current.has(code) || out.has(code)) continue;
-    if (arch.years.length >= 2) out.set(code, { code, od: null, arch });
+    if (arch.years.length >= 2) add(code, null);
   }
   return out;
 }
@@ -80,36 +87,56 @@ function ranHtml(ran, first, last) {
 </section>`;
 }
 
-export function retiredPage({ r, known, mentions, reddit, floor, faculty: fac, builtAt, version }) {
-  const { code, od, arch } = r;
+/** `oldHave`: the older Graduate Calendar terms uwloo has (a Set), to say when a course's trail goes cold. */
+export function retiredPage({ r, known, mentions, reddit, floor, faculty: fac, oldHave = new Set(), builtAt, version }) {
+  const { code, od, arch, ga } = r;
   const S = /^[A-Z]+/.exec(code)[0];
   const N = code.slice(S.length);
-  const grad = od?.career === 'GRD' || Number.parseInt(N, 10) >= 600;
-  const title = od?.title ?? arch?.latest.title ?? '';
+  const grad = od?.career === 'GRD' || Boolean(ga) || Number.parseInt(N, 10) >= 600;
+  const title = od?.title ?? ga?.latest.title ?? arch?.latest.title ?? '';
   const faculty = fac ?? FACULTY[od?.group] ?? null;
+  const gaFirst = ga?.terms[0];
+  const gaLast = ga?.terms.at(-1);
 
   // When it was last around.
   let note;
   if (od) {
     const lastRan = od.ran.at(-1);
-    const since = floor && od.first === floor ? `since at least ${termName(od.first)} (as far back as Open Data goes)` : `from ${termName(od.first)}`;
-    note = `No longer offered. It was in Waterloo’s course catalog ${since} to ${termName(od.last)}${lastRan ? ` and last ran in ${termName(lastRan)}` : ''}. It isn’t in the 2024–25 or later calendars.`;
+    const earlier = gaFirst && Number(gaFirst.term) < Number(od.first);
+    const since = earlier
+      ? `from ${gaFirst.label}${gaFirst.term === OLD_FIRST ? ' (as far back as the archived Graduate Calendars go)' : ''}`
+      : floor && od.first === floor
+        ? `since at least ${termName(od.first)} (as far back as Open Data goes)`
+        : `from ${termName(od.first)}`;
+    note = `No longer offered. It was in Waterloo’s ${earlier ? 'calendars' : 'course catalog'} ${since} to ${termName(od.last)}${lastRan ? ` and last ran in ${termName(lastRan)}` : ''}. It isn’t in the 2024–25 or later calendars.`;
+  } else if (ga) {
+    const next = shiftTerm(gaLast.term, 1);
+    const cold = Number(next) <= Number(OLD_LAST) && !oldHave.has(next);
+    note = `No longer offered. It’s in the archived Graduate Calendars from ${gaFirst.label}${gaFirst.term === OLD_FIRST ? ' (the oldest one online)' : ''} to ${gaLast.label}.${cold ? ` The calendars after ${gaLast.label} aren’t on uwloo, so it may have been listed a little longer.` : ''}`;
   } else {
     note = `No longer offered. It’s in Waterloo’s scanned calendars from ${arch.years[0].label} to ${arch.years.at(-1).label}; the 1995–96 to 2023–24 calendars are on ucalendar.`;
   }
 
+  const lastListed = od?.detail ? termName(od.detail) : gaLast?.label;
   const facts = [
     grad && ['Level', 'Graduate'],
     faculty && ['Faculty', FACULTY_NAMES[faculty]],
-    od?.detail && ['Last listed', esc(termName(od.detail))],
+    lastListed && ['Last listed', esc(lastListed)],
   ].filter(Boolean);
 
   // Where to read the old calendar entries.
   const out = [];
+  if (ga) {
+    const last = ga.latestCat;
+    const url = last.source === 'calendar' && ga.latest.url ? ga.latest.url : last.official;
+    out.push([url, `Graduate Calendar, ${gaLast.label}`, last.source === 'calendar' ? 'Its last archived entry' : 'That term’s calendar, in Waterloo’s archive']);
+  }
   if (od) {
     const year = academicYearOf(od.last);
     if (!grad && year >= 1995 && year <= 2023) out.push([`${UCAL}/${yearCodeFor(year)}/COURSE/course-${S}.html#${code}`, `Undergraduate Calendar, ${yearLabel(year)}`, 'Its last calendar entry, on ucalendar']);
     if (grad) out.push([ARCHIVES, 'Graduate Calendar archives', 'Past Graduate Calendars']);
+  } else if (ga) {
+    out.push([ARCHIVES, 'Graduate Calendar archives', 'Past Graduate Calendars']);
   } else {
     out.push([`${UCAL}/9596/COURSE/course-${S}.html#${code}`, 'Undergraduate Calendar, 1995–96', 'If it ran past 1994–95, on ucalendar']);
   }
@@ -124,6 +151,12 @@ export function retiredPage({ r, known, mentions, reddit, floor, faculty: fac, b
         .join('')}</ul></section>`
     : '';
 
+  const gaHtml = ga
+    ? `<section aria-labelledby="ga-h"><h2 id="ga-h">In older Graduate Calendars</h2><ul class="versions">${ga.terms.map((t) => `<li><a href="${esc(t.href)}">${esc(t.label)}</a></li>`).join('')}</ul></section>`
+    : '';
+  const description = od?.description ?? ga?.latest.description;
+  const gaNotes = !od?.requirements && ga?.latest.notes.length ? ga.latest.notes : null;
+
   const archHtml = arch
     ? `<section aria-labelledby="scan-h"><h2 id="scan-h">In the scanned calendars</h2><ul class="versions">${arch.years.map((y) => `<li><a href="${esc(y.href)}">${esc(y.label)}</a></li>`).join('')}</ul></section>`
     : '';
@@ -135,18 +168,20 @@ export function retiredPage({ r, known, mentions, reddit, floor, faculty: fac, b
   <p class="gone-note">${esc(note)}</p>
 </header>
 ${od ? ranHtml(od.ran, od.first, od.last) : ''}
-${od?.description ? `<p class="desc">${linkCodes(od.description, known)}</p>` : ''}
+${description ? `<p class="desc">${linkCodes(description, known)}</p>` : ''}
 ${od?.requirements ? `<section aria-labelledby="req-h"><h2 id="req-h">Requirements, as last listed</h2><p>${linkCodes(od.requirements, known)}</p></section>` : ''}
-${!od && arch ? `<p class="desc t">Its description is in the scanned calendars below (OCR text, with the page images).</p>` : ''}
+${gaNotes ? `<section aria-labelledby="req-h"><h2 id="req-h">Notes, as last listed</h2><div class="notes">${gaNotes.map((n) => `<p><i>${linkCodes(n, known)}</i></p>`).join('')}</div></section>` : ''}
+${!od && !ga && arch ? `<p class="desc t">Its description is in the scanned calendars below (OCR text, with the page images).</p>` : ''}
 ${mentionHtml}
 ${reddit ?? ''}
 <section aria-labelledby="out-h">
   <h2 id="out-h">Check it elsewhere</h2>
   <ul class="out">${out.map(([href, label, n]) => `<li><a href="${esc(href)}">${esc(label)}</a><small>${esc(n)}</small></li>`).join('')}</ul>
 </section>
+${gaHtml}
 ${archHtml}
 </article>`;
-  const span = od ? `${termName(od.first)} to ${termName(od.last)}` : `${arch.years[0].label} to ${arch.years.at(-1).label}`;
+  const span = od ? `${termName(od.first)} to ${termName(od.last)}` : ga ? `${gaFirst.label} to ${gaLast.label}` : `${arch.years[0].label} to ${arch.years.at(-1).label}`;
   return shell({
     title: `${fmtCode(code)}: ${title || 'No longer offered'} | uwloo`,
     description: `${fmtCode(code)} ${title} at the University of Waterloo, no longer offered (${span}).`,

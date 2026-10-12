@@ -1,0 +1,88 @@
+name: Older Graduate Calendars
+
+# Reads the Graduate Calendars from Fall 2006 to Winter 2024 (scripts/grad-archive.mjs) into
+# data/grad-archive/ and rebuilds the site. Archives don't change, so this runs until every term it can
+# read is in: each run starts the next one while there's work left, then it stops. Runs again on its own
+# only when the reader changes; by hand from the Actions tab any time.
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: Time budget in minutes
+        default: "150"
+      terms:
+        description: Only these terms, e.g. 1069,1109 (blank for all)
+        default: ""
+      redo:
+        description: Read them again even if they're in already
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - scripts/grad-archive.mjs
+      - scripts/lib/gradarchive.mjs
+      - .github/workflows/grad-archive.yml
+
+permissions:
+  contents: write # commit data/grad-archive
+  actions: write # start the next run, and the site rebuild
+
+concurrency:
+  group: grad-archive
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 200
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      # Every page fetched so far, so a rerun (after a parser fix, say) fetches nothing twice.
+      - name: Restore page cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/grad-archive
+          key: uwloo-grad-archive-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: uwloo-grad-archive-
+
+      - name: Read the calendars
+        id: read
+        run: node scripts/grad-archive.mjs --minutes "${{ inputs.minutes || '150' }}" ${{ inputs.terms && format('--terms {0}', inputs.terms) || '' }} ${{ inputs.redo && '--redo' || '' }}
+        env:
+          UW_API_KEY: ${{ secrets.UW_API_KEY }} # Open Data's course catalog stands in for Winter 2020 to Winter 2024
+
+      - name: Save page cache
+        if: always() && steps.read.outcome != 'skipped'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/grad-archive
+          key: uwloo-grad-archive-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Commit, rebuild, and carry on
+        run: |
+          if [ -n "$(git status --porcelain -- data/grad-archive)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/grad-archive
+            if git diff --cached --quiet -- data/grad-archive/terms data/grad-archive/entries.json; then
+              echo "Only the report changed: no rebuild."
+              REBUILD=no
+            fi
+            git commit -m "Older Graduate Calendars: $(node -e "const fs=require('fs');const d='data/grad-archive/terms';const t=fs.existsSync(d)?fs.readdirSync(d).length:0;console.log(t+' terms')")"
+            for i in 1 2 3; do git pull --rebase --quiet && git push && break; sleep 5; done
+            [ "$REBUILD" = "no" ] || gh workflow run deploy.yml --ref main
+          else
+            echo "No change in data/grad-archive."
+          fi
+          if [ "${{ steps.read.outputs.more }}" = "true" ]; then
+            echo "Terms left: starting the next run."
+            gh workflow run grad-archive.yml --ref main -f minutes="${{ inputs.minutes || '150' }}"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}

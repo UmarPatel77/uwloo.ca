@@ -1,7 +1,7 @@
 import { esc, fmtCode, hrefFor, linkCodes, renderTree, sanitize, slug } from './requisites.mjs';
 import { CALENDAR_PAGE, GRAD_CALENDAR_PAGE, calendarCourseUrl } from './kuali.mjs';
 import { FACULTY_NAMES } from './opendata.mjs';
-import { shiftTerm, termFrom, termName, termShort } from './terms.mjs';
+import { parseTerm, SEASONS, shiftTerm, termFrom, termName, termShort } from './terms.mjs';
 
 export const SITE = 'https://uwloo.ca';
 const FONTS = 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap';
@@ -10,6 +10,7 @@ const QUEST = 'https://quest.pecs.uwaterloo.ca/psc/PB/ACADEMIC/SA/c/NUI_FRAMEWOR
 const ARCHIVES = 'https://uwaterloo.ca/academic-calendar/archives';
 
 const fmtUnits = (u) => (u == null ? null : u.toFixed(2));
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 const fmtDate = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 const fmtStamp = (d) => d.toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Toronto' });
 
@@ -172,11 +173,14 @@ export function coursePage(ctx) {
           `<li><a href="${esc(h.href)}">${esc(h.cat.label)}</a>${h.changed ? ' <span class="changed">requisites changed</span>' : ''}${h.cat === cat ? ' <span class="t">(shown here)</span>' : ''}</li>`,
       )
       .join('');
+  const old = history.old ?? [];
   const versions = [
     history.ug.length &&
       `<h3 class="ver-h">Undergraduate Calendar</h3><ul class="versions">${verItems(history.ug)}<li><a href="${UCAL}/2324/COURSE/course-${S}.html#${c.code}">2023–24 and earlier</a> <span class="t">on ucalendar</span></li></ul>`,
     history.grad.length &&
-      `<h3 class="ver-h">Graduate Calendar</h3><ul class="versions">${verItems(history.grad)}<li><a href="${ARCHIVES}">Winter 2024 and earlier</a> <span class="t">in the calendar archives</span></li></ul>`,
+      `<h3 class="ver-h">Graduate Calendar</h3><ul class="versions">${verItems(history.grad)}${old.length ? '' : `<li><a href="${ARCHIVES}">Winter 2024 and earlier</a> <span class="t">in the calendar archives</span></li>`}</ul>`,
+    old.length &&
+      `<h3 class="ver-h">Older Graduate Calendars</h3><details class="ver-old"${old.length <= 6 ? ' open' : ''}><summary>In ${plural(old.length, 'term')}, ${esc(old[0].cat.label)} to ${esc(old.at(-1).cat.label)}</summary><ul class="versions">${verItems(old)}<li><a href="${ARCHIVES}">All archived calendars</a></li></ul></details>`,
   ]
     .filter(Boolean)
     .join('');
@@ -237,8 +241,6 @@ ${version ? '' : ctx.reddit ?? ''}
 
 // ---------------- calendar pages (ucalendar / gradcalendar replicas) ----------------
 
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
 function yearNav(catalogs, active, subject) {
   const items = catalogs
     .map((k) => `<li><a href="/${k.yearCode}/${subject ? `${slug(subject)}/` : ''}"${k === active ? ' aria-current="page"' : ''}>${esc(k.label)}</a></li>`)
@@ -247,18 +249,72 @@ function yearNav(catalogs, active, subject) {
   return `<nav aria-label="Undergraduate calendar year"><ul class="years">${items}<li><a href="${old}">2023–24 and earlier</a></li></ul></nav>`;
 }
 
-/** Every grad term; links to this subject in that term when it's there, else to the term's subject list. */
-function termNav(gradCatalogs, active, subject) {
+const academicStart = (term) => {
+  const t = parseTerm(term);
+  return t.month === 9 ? t.year : t.year - 1;
+};
+
+/**
+ * The older terms (kind 'old': pages on uwloo; kind 'link': only in Waterloo's archive) as a grid, one row
+ * per academic year, newest first: Fall, Winter, Spring.
+ */
+function olderGrid(list, active, subject) {
+  const older = list.filter((t) => t.kind === 'old' || t.kind === 'link');
+  if (!older.length) return '';
+  const byTerm = new Map(list.map((t) => [t.term, t]));
+  const years = [...new Set(older.map((t) => academicStart(t.term)))].sort((a, b) => b - a);
+  const cell = (term) => {
+    const t = byTerm.get(term);
+    if (!t) return '<td></td>';
+    const season = SEASONS[term[3]];
+    if (t.kind === 'link') return `<td><a class="ext" href="${esc(t.href)}" title="${esc(t.label)}, in Waterloo’s archive">${season}</a></td>`;
+    const has = !subject || t.subjects?.has(subject);
+    const href = subject && has ? `/${t.term}/${slug(subject)}/` : `/${t.term}/`;
+    return `<td><a href="${href}"${t === active ? ' aria-current="page"' : ''}${has ? '' : ` class="no" title="No ${esc(subject)} courses in ${esc(t.label)}"`}>${season}</a></td>`;
+  };
+  const rows = years
+    .map((y) => `<tr><th scope="row">${y}–${String((y + 1) % 100).padStart(2, '0')}</th>${cell(termFrom(y, 9))}${cell(termFrom(y + 1, 1))}${cell(termFrom(y + 1, 5))}</tr>`)
+    .join('');
+  const kinds = new Set(older.map((t) => (t.kind === 'link' ? 'link' : t.source)));
+  const notes = [
+    kinds.has('calendar') && 'Terms on uwloo come from Waterloo’s archived copies of the calendar.',
+    kinds.has('opendata') && 'Where uwloo can’t read a term’s calendar, its course list is Waterloo’s course catalog for that term (UW Open Data).',
+    kinds.has('link') && 'Terms marked ↗ aren’t on uwloo yet: they go to Waterloo’s archive.',
+  ].filter(Boolean);
+  const first = older[0].label;
+  const last = older.at(-1).label;
+  return `<details class="older"><summary>Older calendars, ${esc(first)} to ${esc(last)}</summary>
+<table class="tgrid"><thead><tr><th scope="col">Year</th><th scope="col">Fall</th><th scope="col">Winter</th><th scope="col">Spring</th></tr></thead><tbody>${rows}</tbody></table>
+${notes.length ? `<p class="t">${notes.join(' ')}</p>` : ''}</details>`;
+}
+
+/**
+ * Every grad term: Kuali's as a row of links, older ones in a grid under them. Links go to this subject in
+ * that term when it's there, else to the term's subject list.
+ */
+export function termNav(gradCatalogs, active, subject) {
   const items = gradCatalogs
+    .filter((t) => t.kind !== 'old' && t.kind !== 'link')
     .map((t) => {
       const href = subject && t.subjects.has(subject) ? `/${t.term}/${slug(subject)}/` : `/${t.term}/`;
       return `<li><a href="${href}"${t === active ? ' aria-current="page"' : ''}>${esc(t.label)}</a></li>`;
     })
     .join('');
-  return `<nav aria-label="Graduate calendar term"><ul class="years">${items}<li><a href="${ARCHIVES}">Winter 2024 and earlier</a></li></ul></nav>`;
+  const grid = olderGrid(gradCatalogs, active, subject);
+  // On an older term's page: the terms either side that uwloo has (with this subject), so you can step through.
+  let step = '';
+  if (active?.kind === 'old') {
+    const pages = gradCatalogs.filter((t) => t.kind !== 'link' && (t === active || !subject || t.subjects?.has(subject)));
+    const i = pages.indexOf(active);
+    const to = (t) => (subject && t.subjects?.has(subject) ? `/${t.term}/${slug(subject)}/` : `/${t.term}/`);
+    const prev = pages[i - 1];
+    const next = pages[i + 1];
+    step = `<p class="tstep">${prev ? `<a href="${to(prev)}" rel="prev">← ${esc(prev.label)}</a>` : ''}${next ? `<a href="${to(next)}" rel="next">${esc(next.label)} →</a>` : ''}</p>`;
+  }
+  return `<nav aria-label="Graduate calendar term">${items ? `<ul class="years">${items}${grid ? '' : `<li><a href="${ARCHIVES}">Winter 2024 and earlier</a></li>`}</ul>` : ''}${step}${grid}</nav>`;
 }
 
-function numsNav(label, courses) {
+export function numsNav(label, courses) {
   if (!courses.length) return '';
   return `<nav class="nums" aria-label="${label || 'Course'} numbers">${label ? `<span class="nums-label">${label}</span>` : ''}${courses.map((c) => `<a href="#${c.code}">${esc(c.number)}</a>`).join('')}</nav>`;
 }
@@ -346,7 +402,7 @@ ${courses.map((c) => entryHtml(c, known, cat, { term: cat.term, codeHref: (code)
   });
 }
 
-const subjectList = (base, subjects) =>
+export const subjectList = (base, subjects) =>
   `<ul class="cols">${subjects
     .map((s) => {
       const counts = [s.ug && `${s.ug} undergrad`, s.grad && `${s.grad} grad`].filter(Boolean).join(', ');
