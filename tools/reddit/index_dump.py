@@ -60,6 +60,12 @@ CODE_RE = re.compile(r"(?<![A-Za-z0-9&])(C&O|E&CE|[A-Za-z]{2,6})[ \-]?(" + NUM +
                      r"((?:\s*(?:/|,|&|\band\b|\bor\b)\s*" + NUM + r"(?![0-9A-Za-z%$]))*)")
 MORE_RE = re.compile(r"(\d{3}[A-Za-z]?)")
 
+# Subjects whose courses have one- or two-digit numbers (PD 1, PD 11, PD 20). Any case counts here:
+# on r/uwaterloo "pd11" and "Pd 5" are the course (checked against the dump), unlike "pd 120".
+# COOP 1, 2… aren't calendar courses, and "coop 4 days ago" is noise, so they're left out.
+SHORT = ("PD",)
+SHORT_RE = re.compile(r"(?<![A-Za-z0-9&])(" + "|".join(SHORT) + r")[ \-]?(\d{1,2})(?![0-9A-Za-z%$])(?!\.\d)", re.I)
+
 
 def codes_in(text):
     """{code: first character offset} for every course mentioned in `text`."""
@@ -76,6 +82,8 @@ def codes_in(text):
             suf = n[3:]
             code = subj + n[:3] + (suf if suf.isupper() or suf == "l" else "")  # CS136L, cs136l; not "135s"
             out.setdefault(code.upper(), m.start())
+    for m in SHORT_RE.finditer(text or ""):
+        out.setdefault(m.group(1).upper() + str(int(m.group(2))), m.start())   # "PD 01" -> PD1
     return out
 
 

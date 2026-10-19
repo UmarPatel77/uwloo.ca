@@ -9,11 +9,12 @@
 // first, a few terms per build. Going back, a run of empty terms means Open Data's records have ended:
 // that's the floor, and nothing older is asked for again.
 import { readCache, writeCache } from './http.mjs';
+import { isCode } from './requisites.mjs';
 import { CACHE, od } from './opendata.mjs';
 import { shiftTerm, termRange } from './terms.mjs';
 
 export const HISTORY_FLOOR = '0951'; // Winter 1995: no point asking for anything older
-const PATH = `${CACHE}/history.json`;
+const PATH = `${CACHE}/history-2.json`; // -2: refolds every term so PD 1 to PD 99 are in it
 const EMPTY_RUN = 4; // this many empty terms in a row, going back, and the records have ended
 const clip = (s, n) => {
   const t = String(s ?? '').replace(/\s+/g, ' ').trim();
@@ -26,7 +27,7 @@ export function addTerm(h, term, rows, scheduledIds) {
   const t = Number(term);
   for (const r of rows ?? []) {
     const code = `${String(r.subjectCode ?? '').trim()}${String(r.catalogNumber ?? '').trim()}`.toUpperCase();
-    if (!/^[A-Z]{2,8}\d{3}[A-Z]{0,2}$/.test(code)) continue;
+    if (!isCode(code)) continue; // CS135, and PD 1 to PD 99
     const e = (h.codes[code] ??= { first: term, last: term, ran: [] });
     if (t < Number(e.first)) e.first = term;
     // The newest catalog entry is the one shown: its title, description and requirements.

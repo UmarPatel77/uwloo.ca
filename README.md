@@ -106,7 +106,7 @@ pip install zstandard
 python -I tools/reddit/index_dump.py uwaterloo_submissions.zst uwaterloo_comments.zst
 ```
 
-Course codes count in capitals (`CS 135`, `CS135`, `CS 135/136`, `C&O 250`) or lowercase (`cs135`), except codes that are also words (`me 100`, `fine 100`), which count only in capitals. The current data runs from 2009 to December 2024: 129,576 mentions of 4,553 codes. Newer posts need Arctic Shift's API, which is down at the moment, so each section links to a Reddit search for anything newer.
+Course codes count in capitals (`CS 135`, `CS135`, `CS 135/136`, `C&O 250`) or lowercase (`cs135`), except codes that are also words (`me 100`, `fine 100`), which count only in capitals. PD courses have one- or two-digit numbers (`PD 1`, `pd11`, `Pd 5`), and those count in any case. The current data runs from 2009 to December 2024: 132,175 mentions of 4,576 codes. Newer posts need Arctic Shift's API, which is down at the moment, so each section links to a Reddit search for anything newer.
 
 **Removals.** Anything deleted or removed before it was archived is left out. Every card has a "Remove this" link that opens a GitHub issue with the ids involved. To act on one, add a line to `data/reddit/removed.txt` and push:
 

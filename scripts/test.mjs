@@ -414,8 +414,9 @@ test('reddit: data files are well-formed', async () => {
   if (!map.size) return;
   assert.ok(meta?.through > 1.7e9, 'meta.through');
   let checked = 0;
+  assert.ok(map.get('PD11')?.length > 100, 'PD courses have one- or two-digit numbers');
   for (const [code, entries] of map) {
-    assert.match(code, /^[A-Z]{2,6}\d{3}[A-Z]?$/, code);
+    assert.match(code, /^([A-Z]{2,6}\d{3}[A-Z]?|PD\d{1,2})$/, code);
     for (let i = 0; i < entries.length; i++) {
       const e = entries[i];
       assert.ok(/^[a-z0-9]+$/.test(e.post) && Number.isInteger(e.t), `${code}: entry ${i}`);
@@ -864,6 +865,22 @@ test('history: catalog terms fold into one record per course', async () => {
   assert.deepEqual([e.first, e.last, e.ran, e.title, e.detail], ['1149', '1161', ['1159', '1161'], 'Decision Making Under Uncertainty', '1161']);
   assert.equal(e.requirements, 'Prereq: MSCI 211.');
   assert.equal(Object.keys(h.codes).length, 1);
+  // PD courses have one- or two-digit numbers; other subjects don't.
+  addTerm(h, '1201', [row('8', '2', 'Critical Reflection', { subjectCode: 'PD' }), row('9', '1', 'Not a course', { subjectCode: 'COOP' })], ['8']);
+  assert.deepEqual(Object.keys(h.codes).sort(), ['MSCI452', 'PD2']);
+});
+
+test('course codes: PD 1 to PD 99, and nothing else with short numbers', async () => {
+  const { codesIn, linkCodes, isCode } = await import('./lib/requisites.mjs');
+  assert.deepEqual(codesIn('Antireq: PD 11 or PD1; CS 135, PD 120'), ['PD11', 'PD1', 'CS135', 'PD120']);
+  assert.deepEqual(codesIn('Grade 12 U Physics, STAT 2, XPD 11, PD 11A'), []);
+  assert.equal(linkCodes('Take PD 1 first', { has: (c) => c === 'PD1' }), 'Take <a class="cc" href="/pd1/">PD 1</a> first');
+  assert.ok(isCode('PD11') && isCode('CS136L') && !isCode('CS1') && !isCode('PD'));
+  assert.equal(to('/PD1'), '/pd1/');
+  assert.equal(to('/pd-11'), '/pd11/');
+  assert.equal(to('/pd/20'), '/pd20/');
+  assert.equal(to('/2627/pd/1'), '/2627/pd/#PD1');
+  assert.equal(resolve('/cs1', meta).type, 'notfound');
 });
 
 test('history: fetched newest first, a few terms per build, until Open Data runs out', async () => {

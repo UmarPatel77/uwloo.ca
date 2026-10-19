@@ -87,7 +87,12 @@ function closest(n, tag, stop) {
 
 // ---------- course codes ----------
 
-export const CODE_RE = /\b([A-Z]{2,8}) ?(\d{3}[A-Z]{0,2})\b/g;
+// Most course numbers have three digits. A few subjects use one or two (PD 1, PD 11, PD 20): those are
+// read only after their own subject, so "Grade 12" or "STAT 2" in a sentence never looks like a course.
+export const SHORT_SUBJECTS = ['PD'];
+export const CODE_RE = new RegExp(String.raw`\b([A-Z]{2,8}) ?(\d{3}[A-Z]{0,2}|(?<=\b(?:${SHORT_SUBJECTS.join('|')}) ?)\d{1,2})\b`, 'g');
+/** "CS135", "PD11": a course code as the site stores it. */
+export const isCode = (c) => /^[A-Z]{2,8}\d{3}[A-Z]{0,2}$/.test(c) || new RegExp(`^(?:${SHORT_SUBJECTS.join('|')})\\d{1,2}$`).test(c);
 
 /** "CS136L" → "CS 136L" */
 export function fmtCode(code) {
@@ -176,7 +181,7 @@ function liToNode(li) {
     const label = norm(textOf(a));
     if (!href.includes('/courses/')) continue;
     const code = label.replace(/\s+/g, '').toUpperCase();
-    if (!/^[A-Z]{2,8}\d{3}[A-Z]{0,2}$/.test(code) || seen.has(code)) continue;
+    if (!isCode(code) || seen.has(code)) continue;
     seen.add(code);
     const item = closest(a, 'li', result);
     let title = item ? norm(textOf(item)) : '';

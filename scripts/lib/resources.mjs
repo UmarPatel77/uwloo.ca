@@ -15,7 +15,7 @@ import { createHash } from 'node:crypto';
 import { copyFile, mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { shell, SITE } from './render.mjs';
-import { esc, fmtCode, linkCodes, slug } from './requisites.mjs';
+import { esc, fmtCode, isCode, linkCodes, slug } from './requisites.mjs';
 import { termName } from './terms.mjs';
 
 export const KINDS = {
@@ -72,7 +72,7 @@ function partErrors(p, i, multi) {
 export function validate(e) {
   const errs = [];
   if (!/^[0-9a-f]{12}$/.test(e.id ?? '')) errs.push('id must be 12 hex characters');
-  if (!Array.isArray(e.codes) || !e.codes.length || !e.codes.every((c) => /^[A-Z]{2,8}\d{3}[A-Z]{0,2}$/.test(c))) errs.push('codes must list course codes like "CS341"');
+  if (!Array.isArray(e.codes) || !e.codes.length || !e.codes.every(isCode)) errs.push('codes must list course codes like "CS341"');
   if (!SLUG_RE.test(e.slug ?? '')) errs.push('slug must look like "1249-notes" or "notes-2"');
   if (!KINDS[e.kind]) errs.push(`kind must be one of ${KIND_ORDER.join(', ')}`);
   if (!isStr(e.title)) errs.push('title is required');

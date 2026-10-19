@@ -29,7 +29,9 @@ export const pdfUrl = (start) => `${PDF_ARCHIVE}/${start}-${String((start + 1) %
 const ACAL = 'https://acal.fast.uwaterloo.ca/course';
 
 export function splitCode(s) {
-  const m = /^([a-z]{2,8})[\s\-_.]*(\d{3}[a-z]{0,2})$/i.exec(String(s).trim());
+  // Three-digit numbers, or one or two after a subject that uses them (PD 1, PD 11): same rule as
+  // SHORT_SUBJECTS in scripts/lib/requisites.mjs.
+  const m = /^([a-z]{2,8})[\s\-_.]*(\d{3}[a-z]{0,2})$/i.exec(String(s).trim()) ?? /^(pd)[\s\-_.]*(\d{1,2})$/i.exec(String(s).trim());
   return m ? { subject: m[1].toUpperCase(), number: m[2].toUpperCase() } : null;
 }
 
