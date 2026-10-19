@@ -1,0 +1,713 @@
+{
+ "terms": {
+  "1069": {
+   "source": "calendar",
+   "courses": 1395,
+   "subjects": 46,
+   "pages": 48,
+   "coursePages": 46,
+   "ids": 1415,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     40
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1071": {
+   "source": "calendar",
+   "courses": 1395,
+   "subjects": 46,
+   "pages": 50,
+   "coursePages": 46,
+   "ids": 1415,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     42
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1075": {
+   "source": "calendar",
+   "courses": 1445,
+   "subjects": 48,
+   "pages": 51,
+   "coursePages": 48,
+   "ids": 1465,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     43
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1079": {
+   "source": "calendar",
+   "courses": 1476,
+   "subjects": 49,
+   "pages": 52,
+   "coursePages": 49,
+   "ids": 1494,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     44
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1081": {
+   "source": "calendar",
+   "courses": 1494,
+   "subjects": 50,
+   "pages": 53,
+   "coursePages": 50,
+   "ids": 1512,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     45
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1085": {
+   "source": "calendar",
+   "courses": 1515,
+   "subjects": 53,
+   "pages": 53,
+   "coursePages": 53,
+   "ids": 1533,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     45
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1089": {
+   "source": "calendar",
+   "courses": 1518,
+   "subjects": 54,
+   "pages": 53,
+   "coursePages": 54,
+   "ids": 1536,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     45
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1091": {
+   "source": "calendar",
+   "courses": 1518,
+   "subjects": 54,
+   "pages": 53,
+   "coursePages": 54,
+   "ids": 1536,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     45
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1095": {
+   "source": "calendar",
+   "courses": 1518,
+   "subjects": 54,
+   "pages": 53,
+   "coursePages": 54,
+   "ids": 1536,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     45
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1099": {
+   "source": "calendar",
+   "courses": 1636,
+   "subjects": 56,
+   "pages": 55,
+   "coursePages": 56,
+   "ids": 1658,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     47
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1101": {
+   "source": "calendar",
+   "courses": 1650,
+   "subjects": 58,
+   "pages": 57,
+   "coursePages": 58,
+   "ids": 1672,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     49
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1105": {
+   "source": "calendar",
+   "courses": 1671,
+   "subjects": 60,
+   "pages": 57,
+   "coursePages": 60,
+   "ids": 1693,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     49
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1109": {
+   "source": "calendar",
+   "courses": 1748,
+   "subjects": 62,
+   "pages": 59,
+   "coursePages": 62,
+   "ids": 1770,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     51
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1111": {
+   "source": "calendar",
+   "courses": 1748,
+   "subjects": 62,
+   "pages": 59,
+   "coursePages": 62,
+   "ids": 1770,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     51
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1115": {
+   "source": "calendar",
+   "courses": 1748,
+   "subjects": 62,
+   "pages": 59,
+   "coursePages": 62,
+   "ids": 1770,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     51
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1119": {
+   "source": "calendar",
+   "courses": 1781,
+   "subjects": 63,
+   "pages": 60,
+   "coursePages": 63,
+   "ids": 1803,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     52
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1121": {
+   "source": "calendar",
+   "courses": 1818,
+   "subjects": 65,
+   "pages": 62,
+   "coursePages": 65,
+   "ids": 1840,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     54
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1125": {
+   "source": "calendar",
+   "courses": 1831,
+   "subjects": 65,
+   "pages": 62,
+   "coursePages": 65,
+   "ids": 1853,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     54
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1129": {
+   "source": "calendar",
+   "courses": 1808,
+   "subjects": 65,
+   "pages": 62,
+   "coursePages": 65,
+   "ids": 1834,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     54
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1131": {
+   "source": "calendar",
+   "courses": 1808,
+   "subjects": 65,
+   "pages": 63,
+   "coursePages": 65,
+   "ids": 1834,
+   "failed": 1,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     54
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1135": {
+   "source": "calendar",
+   "courses": 1819,
+   "subjects": 66,
+   "pages": 62,
+   "coursePages": 66,
+   "ids": 1845,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     54
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1139": {
+   "source": "calendar",
+   "courses": 1853,
+   "subjects": 68,
+   "pages": 63,
+   "coursePages": 68,
+   "ids": 1875,
+   "failed": 1,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     54
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1141": {
+   "source": "calendar",
+   "courses": 1853,
+   "subjects": 68,
+   "pages": 62,
+   "coursePages": 68,
+   "ids": 1875,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     54
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1145": {
+   "source": "calendar",
+   "courses": 1853,
+   "subjects": 68,
+   "pages": 62,
+   "coursePages": 68,
+   "ids": 1875,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     54
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1149": {
+   "source": "calendar",
+   "courses": 1867,
+   "subjects": 68,
+   "pages": 62,
+   "coursePages": 68,
+   "ids": 1888,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     54
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1151": {
+   "source": "calendar",
+   "courses": 1869,
+   "subjects": 69,
+   "pages": 63,
+   "coursePages": 69,
+   "ids": 1890,
+   "failed": 1,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     54
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1155": {
+   "source": "calendar",
+   "courses": 1874,
+   "subjects": 70,
+   "pages": 63,
+   "coursePages": 70,
+   "ids": 1895,
+   "failed": 1,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     54
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1159": {
+   "source": "calendar",
+   "courses": 1881,
+   "subjects": 70,
+   "pages": 62,
+   "coursePages": 70,
+   "ids": 1902,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     54
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1161": {
+   "source": "calendar",
+   "courses": 1881,
+   "subjects": 70,
+   "pages": 63,
+   "coursePages": 70,
+   "ids": 1902,
+   "failed": 1,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     54
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ]
+   ]
+  },
+  "1165": {
+   "source": null,
+   "error": "no course pages found",
+   "pages": 8,
+   "coursePages": 0,
+   "courses": 0,
+   "ids": 0,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     7
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     1
+    ]
+   ]
+  },
+  "1169": {
+   "source": null,
+   "error": "no course pages found",
+   "pages": 9,
+   "coursePages": 0,
+   "courses": 0,
+   "ids": 0,
+   "failed": 0,
+   "missed": [],
+   "looks": [
+    [
+     "gradcalendar.uwaterloo.ca/page/",
+     8
+    ],
+    [
+     "gradcalendar.uwaterloo.ca/group/",
+     1
+    ]
+   ]
+  },
+  "1201": {
+   "source": "opendata",
+   "courses": 1955,
+   "subjects": 76,
+   "missed": []
+  },
+  "1205": {
+   "source": "opendata",
+   "courses": 1973,
+   "subjects": 76,
+   "missed": []
+  },
+  "1209": {
+   "source": "opendata",
+   "courses": 1995,
+   "subjects": 76,
+   "missed": []
+  },
+  "1211": {
+   "source": "opendata",
+   "courses": 2007,
+   "subjects": 76,
+   "missed": []
+  },
+  "1215": {
+   "source": "opendata",
+   "courses": 2021,
+   "subjects": 76,
+   "missed": []
+  },
+  "1219": {
+   "source": "opendata",
+   "courses": 2029,
+   "subjects": 76,
+   "missed": []
+  },
+  "1221": {
+   "source": "opendata",
+   "courses": 2031,
+   "subjects": 76,
+   "missed": []
+  },
+  "1225": {
+   "source": "opendata",
+   "courses": 2035,
+   "subjects": 77,
+   "missed": []
+  },
+  "1229": {
+   "source": "opendata",
+   "courses": 2044,
+   "subjects": 77,
+   "missed": []
+  },
+  "1231": {
+   "source": "opendata",
+   "courses": 2041,
+   "subjects": 77,
+   "missed": []
+  },
+  "1235": {
+   "source": "opendata",
+   "courses": 2055,
+   "subjects": 78,
+   "missed": []
+  },
+  "1239": {
+   "source": "opendata",
+   "courses": 2057,
+   "subjects": 78,
+   "missed": []
+  },
+  "1241": {
+   "source": "opendata",
+   "courses": 2064,
+   "subjects": 78,
+   "missed": []
+  }
+ },
+ "aca": {
+  "checked": null,
+  "robots": "unreachable",
+  "term": "1179",
+  "readable": false,
+  "courses": 0,
+  "pages": 0,
+  "error": null,
+  "looks": []
+ },
+ "updated": "2026-10-12T23:30:28.603Z"
+}
