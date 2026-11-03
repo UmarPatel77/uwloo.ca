@@ -32,7 +32,7 @@ address (for a PDF, its address or the link to it). Course codes in prose count 
 
 - it's assignments, solutions, homework or projects, unless it's on the course's own website;
 - it's on a skipped site: social media, uwloo's own sources (calendars, uwflow), sign-in pages, homework
-  marketplaces, file lockers (Dropbox, Google Drive) whose contents can't be checked, or another
+  marketplaces, file lockers (Dropbox, Google Drive) whose contents can't be checked (Google Sites pages are fine: they're web pages), or another
   university;
 - robots.txt says no, or it's in `removed.txt`.
 

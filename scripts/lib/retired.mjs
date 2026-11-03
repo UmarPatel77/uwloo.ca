@@ -5,14 +5,14 @@
 //   the scanned calendars (data/archive-text)    1963–64 to 1994–95, for courses older than that
 // A course in any calendar uwloo has (2024–25 on) has a regular page instead.
 import { shell } from './render.mjs';
+import { ugArchiveUrl } from '../../site/route.js';
 import { codesIn, esc, fmtCode, linkCodes, slug, treeCodes } from './requisites.mjs';
 import { FACULTY, FACULTY_NAMES } from './opendata.mjs';
-import { parseTerm, shiftTerm, termName, termShort, yearCodeFor, yearLabel } from './terms.mjs';
+import { parseTerm, shiftTerm, termName, termShort, yearLabel } from './terms.mjs';
 
 const OLD_FIRST = '1069'; // Fall 2006, the oldest archived Graduate Calendar (scripts/lib/gradarchive.mjs)
 const OLD_LAST = '1241';
 
-const UCAL = 'https://ucalendar.uwaterloo.ca';
 const ARCHIVES = 'https://uwaterloo.ca/academic-calendar/archives';
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
@@ -88,7 +88,8 @@ function ranHtml(ran, first, last) {
 }
 
 /** `oldHave`: the older Graduate Calendar terms uwloo has (a Set), to say when a course's trail goes cold. */
-export function retiredPage({ r, known, mentions, reddit, floor, faculty: fac, oldHave = new Set(), builtAt, version }) {
+/** `hosted(start, code)`: uwloo's page for the course in an older undergrad year it hosts (/2324/cs/#CS135), or null. */
+export function retiredPage({ r, known, mentions, reddit, floor, faculty: fac, oldHave = new Set(), hosted = () => null, builtAt, version }) {
   const { code, od, arch, ga } = r;
   const S = /^[A-Z]+/.exec(code)[0];
   const N = code.slice(S.length);
@@ -133,12 +134,14 @@ export function retiredPage({ r, known, mentions, reddit, floor, faculty: fac, o
   }
   if (od) {
     const year = academicYearOf(od.last);
-    if (!grad && year >= 1995 && year <= 2023) out.push([`${UCAL}/${yearCodeFor(year)}/COURSE/course-${S}.html#${code}`, `Undergraduate Calendar, ${yearLabel(year)}`, 'Its last calendar entry, on ucalendar']);
+    const here = !grad && hosted(year, code);
+    if (here) out.push([here, `Undergraduate Calendar, ${yearLabel(year)}`, 'Its last calendar entry, on uwloo']);
+    else if (!grad && year >= 1995 && year <= 2023) out.push([ugArchiveUrl(year, S, code), `Undergraduate Calendar, ${yearLabel(year)}`, 'Its last calendar entry, on ucalendar']);
     if (grad) out.push([ARCHIVES, 'Graduate Calendar archives', 'Past Graduate Calendars']);
   } else if (ga) {
     out.push([ARCHIVES, 'Graduate Calendar archives', 'Past Graduate Calendars']);
   } else {
-    out.push([`${UCAL}/9596/COURSE/course-${S}.html#${code}`, 'Undergraduate Calendar, 1995–96', 'If it ran past 1994–95, on ucalendar']);
+    out.push([ugArchiveUrl(1995, S, code), 'Undergraduate Calendar, 1995–96', 'If it ran past 1994–95, on ucalendar']);
   }
   out.push([`https://outline.uwaterloo.ca/viewer/?q=${S.toLowerCase()}%2520${N.toLowerCase()}`, 'Course outlines', 'Syllabi from past terms (UW login)']);
   out.push([`https://uwflow.com/course/${slug(code)}`, 'UW Flow', 'Student ratings and reviews']);

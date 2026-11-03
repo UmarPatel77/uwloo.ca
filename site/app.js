@@ -114,3 +114,16 @@ if (miss?.dataset.query) {
     }
   });
 }
+
+// r/uwaterloo on course pages: stays open or closed the way you last left it (this browser only).
+const fold = document.querySelector('.rd-fold');
+if (fold) {
+  try {
+    if (localStorage.getItem('uwloo.reddit') === 'closed') fold.open = false;
+  } catch {}
+  fold.addEventListener('toggle', () => {
+    try {
+      localStorage.setItem('uwloo.reddit', fold.open ? 'open' : 'closed');
+    } catch {}
+  });
+}

@@ -1,6 +1,7 @@
-// Fetches the Graduate Calendars from before Kuali (Fall 2006 to Winter 2024) into data/grad-archive/.
-// scripts/lib/gradarchive.mjs says where each one is and how it's stored. Archives don't change, so each
-// term is fetched once; .github/workflows/grad-archive.yml runs this until every term it can read is in.
+// Fetches the calendars from before Kuali that uwloo hosts: the Graduate Calendars from Fall 2006 to Winter
+// 2024 into data/grad-archive/ (scripts/lib/gradarchive.mjs), and the Undergraduate Calendars from 2020–21
+// to 2023–24 into data/ug-archive/ (scripts/lib/ugarchive.mjs). Archives don't change, so each is fetched
+// once; .github/workflows/grad-archive.yml runs this until everything it can read is in.
 //
 //   node scripts/grad-archive.mjs                    every term not in yet, within the time budget
 //   node scripts/grad-archive.mjs --minutes 30
@@ -14,6 +15,8 @@ import { createHash } from 'node:crypto';
 import { appendFile, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { courseLinkText, DIR, oldTerms, PARSER, parseCoursePage, readStore, saveTerm } from './lib/gradarchive.mjs';
+import { oldYears, UG_DIR, UG_PARSER } from './lib/ugarchive.mjs';
+import { isCode } from './lib/requisites.mjs';
 import { parseRobots, readHtml, robotsAllows, robotsDelay } from './lib/links.mjs';
 import * as opendata from './lib/opendata.mjs';
 
@@ -175,7 +178,9 @@ export async function crawlTerm(t, polite, { maxPages = t.kind === 'gsac' ? 400 
       ? (u) => u.startsWith(site) && !/\/printable\//i.test(u) && /\/(group\/[^/]+|page\/(Faculty-of-[^/]+|Theology|[^/]*Courses?))\.html$/i.test(u)
       : (u) => u.startsWith(t.scope) && /(\.html?|\/)$/i.test(u);
   // gsac: the course pages saved with this term (…/2010/fall/www.ucalendar.uwaterloo.ca/SA/GRAD/1011/…).
+  // 2017 on: the archive's own pages, or ucalendar's SA/GRAD/{YYyy}/ ones, where its robots.txt allows (2122 on).
   const courseScope = t.kind === 'gsac' ? t.scope : `${new URL(t.scope).origin}/`;
+  const courseOk = (u) => u.startsWith(courseScope) || (t.kind !== 'gsac' && /^https?:\/\/(www\.)?ucalendar\.uwaterloo\.ca\/SA\/GRAD\//i.test(u));
   const queue = [[t.start, 0]];
   const seen = new Set([t.start]);
   const found = new Map(); // SUBJ → {url, dept}
@@ -202,7 +207,7 @@ export async function crawlTerm(t, polite, { maxPages = t.kind === 'gsac' ? 400 
     for (const l of links) {
       const u = l.href.replace(/#.*$/, '');
       const m = COURSE_PAGE.exec(new URL(u).pathname);
-      if (m && u.startsWith(courseScope)) {
+      if (m && courseOk(u)) {
         onPage.set(m[1].toUpperCase(), { url: u, text: l.text });
         continue;
       }
@@ -253,19 +258,24 @@ export async function crawlTerm(t, polite, { maxPages = t.kind === 'gsac' ? 400 
   return { subjects, stats, samples };
 }
 
-/** A term's course catalog from UW Open Data, as a stand-in for a calendar uwloo can't read. */
-export function fromOpenData(rows) {
+/**
+ * Course catalogs from UW Open Data, as a stand-in for a calendar uwloo can't read: one term's (grad) or a
+ * year's three terms (undergrad, `rows` newest last, so the newest wording wins).
+ */
+export function fromOpenData(rows, career = 'GRD') {
   const clean = (s) => String(s ?? '').replace(/\s+/g, ' ').trim();
   const bySubj = new Map();
   for (const r of rows ?? []) {
-    if (r.associatedAcademicCareer !== 'GRD') continue;
+    if (r.associatedAcademicCareer !== career) continue;
     const subject = clean(r.subjectCode).toUpperCase();
     const number = clean(r.catalogNumber).toUpperCase();
-    if (!/^[A-Z]{2,8}$/.test(subject) || !/^\d{3}[A-Z]{0,2}$/.test(number)) continue;
+    if (!/^[A-Z]{2,8}$/.test(subject) || !isCode(subject + number)) continue;
     const code = subject + number;
     const list = bySubj.get(subject) ?? [];
     bySubj.set(subject, list);
-    if (list.some((c) => c.code === code)) continue;
+    const at = list.findIndex((c) => c.code === code);
+    if (at >= 0 && career === 'GRD') continue;
+    if (at >= 0) list.splice(at, 1);
     list.push({
       code,
       subject,
@@ -283,6 +293,43 @@ export function fromOpenData(rows) {
     .map(([code, courses]) => ({ code, dept: null, url: null, courses: courses.sort((a, b) => a.number.localeCompare(b.number, 'en', { numeric: true })) }));
 }
 
+/**
+ * One ucalendar year (2022–23, 2023–24): the archive's Course Descriptions Index links every subject's
+ * course-{SUBJ}.html on ucalendar; read each. Same result shape as crawlTerm.
+ */
+export async function crawlUcalYear(y, polite, { log = console } = {}) {
+  const stats = { pages: 0, coursePages: 0, courses: 0, ids: 0, failed: 0, missed: [] };
+  const idx = await polite.get(y.index);
+  stats.pages++;
+  if (!idx.html) return { error: `index page: ${idx.error ?? `HTTP ${idx.status}`}`, stats };
+  const found = new Map();
+  for (const l of readHtml(idx.html, idx.url).links) {
+    const u = l.href.replace(/#.*$/, '');
+    const m = /\/COURSE\/course-([A-Za-z]+)\.html?$/i.exec(u);
+    if (m && u.startsWith(y.scope)) found.set(m[1].toUpperCase(), u);
+  }
+  if (!found.size) return { error: 'no course pages linked from the index', stats };
+  const subjects = [];
+  const samples = [];
+  for (const [code, url] of [...found].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const r = await polite.get(url);
+    if (!r.html) {
+      stats.failed++;
+      if (r.error === 'robots') return { error: `robots.txt doesn't allow ${new URL(url).pathname}`, stats };
+      continue;
+    }
+    const p = parseCoursePage(r.html);
+    stats.coursePages++;
+    stats.courses += p.courses.length;
+    stats.ids += p.ids;
+    stats.missed.push(...p.missed.map((x) => `${code}: ${x}`));
+    if (p.ids > p.courses.length) log.warn(`  ! ${y.yearCode} ${code}: ${p.ids} "Course ID"s but ${p.courses.length} courses read`);
+    subjects.push({ code, dept: null, url, courses: p.courses.filter((c) => c.title) });
+    if (code === 'CS' || code === 'MATH') samples.push({ name: `${y.yearCode}-course-${code}.html`, html: r.html });
+  }
+  return { subjects, stats, samples };
+}
+
 const PROBE_EVERY = 30 * DAY;
 
 export async function main(argv = process.argv.slice(2), opts = {}) {
@@ -295,20 +342,23 @@ export async function main(argv = process.argv.slice(2), opts = {}) {
   const only = a.terms && a.terms !== true ? String(a.terms).split(/[\s,]+/).filter(Boolean) : null;
   const odFetch = opts.od ?? (opendata.enabled() ? (term) => opendata.od(`Courses/${term}`) : null);
   const store = await readStore(dir);
+  const ugDir = opts.ugDir ?? UG_DIR;
+  const ugStore = await readStore(ugDir);
   const report = await readJson(`${dir}/report.json`, { terms: {} });
   const terms = oldTerms(opts.urls ?? {}).filter((t) => !only || only.includes(t.term));
   let changed = 0; // anything written, the report included
   let saved = 0; // terms read and saved: only these count as progress
   let left = 0;
-  const save = async (t, source, from, result) => {
+  const save = async (t, source, from, result, ug = false) => {
     const st = result.stats;
     const stats = st ? { pages: st.pages, coursePages: st.coursePages, courses: st.courses, ids: st.ids, failed: st.failed, missed: st.missed.length } : null;
-    const n = await saveTerm(store, { term: t.term, label: t.label, source, from, parser: source === 'calendar' ? PARSER : null, fetched: new Date().toISOString().slice(0, 10), stats }, result.subjects, dir);
-    report.terms[t.term] = { source, courses: n, subjects: result.subjects.length, ...(result.stats ?? {}), missed: result.stats?.missed?.slice(0, 8) ?? [] };
+    const [where, into, parser] = ug ? [ugDir, ugStore, UG_PARSER] : [dir, store, PARSER];
+    const n = await saveTerm(into, { term: t.term, label: t.label, source, from, parser: source === 'calendar' ? parser : null, fetched: new Date().toISOString().slice(0, 10), stats }, result.subjects, where);
+    (ug ? (report.ug ??= {}) : report.terms)[t.term] = { source, courses: n, subjects: result.subjects.length, ...(result.stats ?? {}), missed: result.stats?.missed?.slice(0, 8) ?? [] };
     for (const s of result.samples ?? []) {
-      const path = `${dir}/samples/${s.name}`;
+      const path = `${where}/samples/${s.name}`;
       if (!(await readFile(path).catch(() => null))) {
-        await mkdir(`${dir}/samples`, { recursive: true });
+        await mkdir(`${where}/samples`, { recursive: true });
         await writeFile(path, s.html.slice(0, 400_000));
       }
     }
@@ -326,7 +376,8 @@ export async function main(argv = process.argv.slice(2), opts = {}) {
     let acaReadable = report.aca?.readable === true;
     const probeDue = a.probe || !report.aca || Date.now() - Date.parse(report.aca.checked ?? 0) > PROBE_EVERY;
     if (aca.length && probeDue && !acaReadable) {
-      const probe = aca.find((t) => t.term === '1179') ?? aca[0];
+      // The newest term: ucalendar's robots.txt allows its grad course pages from 2021–22 on, not before.
+      const probe = aca.at(-1);
       const ok = await polite.allowed(probe.start);
       let res = null;
       if (ok === 'ok') res = await crawlTerm(probe, polite, { log });
@@ -364,7 +415,33 @@ export async function main(argv = process.argv.slice(2), opts = {}) {
       }
     }
 
-    // 2. Fall 2006 to Fall 2016: uwaterloo.ca/gsac-archive, newest first.
+    // 2. Undergraduate 2020–21 to 2023–24 (data/ug-archive): ucalendar where its robots.txt allows it, Open Data before.
+    for (const y of oldYears(opts.ugUrls ?? {})) {
+      if (only && !only.includes(y.yearCode)) continue;
+      const have = ugStore.terms[y.yearCode];
+      if (y.kind === 'ucal') {
+        if (!(redo || !have || (have.parser ?? 0) < UG_PARSER)) continue;
+        if (polite.late) {
+          left++;
+          continue;
+        }
+        const res = await crawlUcalYear(y, polite, { log });
+        if (res.error || !res.subjects.length) {
+          log.warn(`  ! ${y.yearCode} ${y.label}: ${res.error ?? 'no courses read'}`);
+          (report.ug ??= {})[y.yearCode] = { source: null, error: res.error ?? 'no courses read', ...(res.stats ?? {}) };
+          changed++;
+          continue;
+        }
+        await save(y, 'calendar', y.index, res, true);
+      } else if (odFetch && (!have || redo)) {
+        const rows = [];
+        for (const term of y.terms) rows.push(...((await odFetch(term)) ?? []));
+        const subjects = fromOpenData(rows, 'UG');
+        if (subjects.length) await save(y, 'opendata', `https://openapi.data.uwaterloo.ca/v3/Courses/${y.terms.join(',')}`, { subjects }, true);
+      }
+    }
+
+    // 3. Fall 2006 to Fall 2016: uwaterloo.ca/gsac-archive, newest first.
     for (const t of terms.filter((x) => x.kind === 'gsac').reverse()) {
       if (!due(t, store.terms[t.term])) continue;
       if (polite.late) {

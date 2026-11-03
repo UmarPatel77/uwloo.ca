@@ -28,7 +28,7 @@ export const DIR = 'data/grad-archive';
 export { gradArchiveUrl };
 
 const GSAC = process.env.GSAC_BASE ?? 'https://uwaterloo.ca/gsac-archive';
-const ACA = process.env.ACA_BASE ?? 'http://academic-calendar-archive.uwaterloo.ca/graduate-studies';
+const ACA = process.env.ACA_BASE ?? 'https://academic-calendar-archive.uwaterloo.ca/graduate-studies'; // https: no answer on http
 const academicYear = (t) => (t.month === 9 ? t.year : t.year - 1);
 
 /**
@@ -67,6 +67,10 @@ export function htmlLines(html) {
     .replace(/<(script|style|head|noscript|select)\b[\s\S]*?<\/\1\s*>/gi, ' ');
   s = s.replace(/<\s*(\/?)\s*([a-z][a-z0-9]*)\b[^>]*>/gi, (m, close, tag) => {
     const t = tag.toLowerCase();
+    if (t === 'a' && !close) {
+      const name = /\b(?:name|id)\s*=\s*["']?\s*([^"'\s>]+)/i.exec(m)?.[1];
+      if (name) return `\n${H}A${name}\n`;
+    }
     if (t === 'br') return '\n';
     if (t === 'hr') return `\n${H}R\n`;
     if (/^h[1-6]$/.test(t)) return close ? '\n' : `\n${H}H`;
@@ -82,6 +86,10 @@ export function htmlLines(html) {
     let line = raw;
     if (line.startsWith(`${H}R`)) {
       out.push({ kind: 'rule', text: '', italic: false });
+      continue;
+    }
+    if (line.startsWith(`${H}A`)) {
+      out.push({ kind: 'anchor', text: line.slice(2).trim(), italic: false });
       continue;
     }
     if (line.startsWith(`${H}H`)) {
@@ -113,6 +121,8 @@ export function htmlLines(html) {
 const COMPS = '[A-Z]{3}(?:\\s*[,/&]\\s*[A-Z]{3})*';
 const HEAD_UNITS = new RegExp(`^[-–•*\\s]*([A-Z]{2,8}) ?(\\d{3}[A-Z]{0,2})\\b\\s*(.*?)\\s*\\(\\s*(\\d{0,2}\\.\\d{1,3})\\s*\\)\\s*(${COMPS})?\\s*(?:Course\\s*ID\\s*:?\\s*(\\d{3,8}))?\\s*$`);
 const HEAD_ID = new RegExp(`^[-–•*\\s]*([A-Z]{2,8}) ?(\\d{3}[A-Z]{0,2})\\b\\s*(.*?)\\s*(${COMPS})?\\s*Course\\s*ID\\s*:?\\s*(\\d{3,8})\\s*$`);
+// ucalendar's undergraduate pages: "CS 135 LAB,LEC,TST,TUT 0.50  Course ID: 004380", the title on the next line.
+const HEAD_UG = new RegExp(`^[-–•*\\s]*([A-Z]{2,8}) ?(\\d{3}[A-Z]{0,2})\\s+(${COMPS})\\s+(\\d{1,2}\\.\\d{2})\\s*(?:Course\\s*ID\\s*:?\\s*(\\d{3,8}))?\\s*$`);
 const ID_ONLY = /^Course\s*ID\s*:?\s*(\d{3,8})$/i;
 const FOOTER = /^(back to top|top of page|return to|©|copyright|last (updated|modified)|printable version|page \d+ of)\b/i;
 
@@ -121,6 +131,8 @@ export function parseHeader(text) {
   if (m && (m[6] || m[5] || m[3])) {
     return { subject: m[1], number: m[2], title: m[3].replace(/[\s:–-]+$/, ''), units: Number(m[4]), comp: m[5]?.replace(/\s+/g, '') ?? null, id: m[6] ?? null };
   }
+  m = HEAD_UG.exec(text);
+  if (m) return { subject: m[1], number: m[2], title: '', units: Number(m[4]), comp: m[3].replace(/\s+/g, ''), id: m[5] ?? null };
   m = HEAD_ID.exec(text);
   if (m) return { subject: m[1], number: m[2], title: m[3].replace(/[\s:–-]+$/, ''), units: null, comp: m[4]?.replace(/\s+/g, '') ?? null, id: m[5] };
   return null;
@@ -140,6 +152,11 @@ export function parseCoursePage(html) {
   let ids = 0;
   for (const l of lines) {
     ids += (l.text.match(/Course\s*ID\b/gi) ?? []).length;
+    if (l.kind === 'anchor') {
+      // ucalendar marks each level and the subject's notes: #CS100S, #CS999. A course's own anchor (#CS135) comes just before its header.
+      if (/^[A-Z]{2,8}(\d00S|999)$/i.test(l.text)) cur = null;
+      continue;
+    }
     if (l.kind !== 'text' || /^[A-Z]{2,8} ?\d00s$/.test(l.text)) {
       cur = null; // "CS 600s" (a heading, or just a line), a rule: between entries
       continue;
@@ -164,6 +181,10 @@ export function parseCoursePage(html) {
     const id = ID_ONLY.exec(l.text);
     if (id) {
       cur.id ??= id[1];
+      continue;
+    }
+    if (!cur.title && !l.italic && !cur.d.length && !cur.x.length) {
+      cur.title = l.text; // the line after an undergraduate header
       continue;
     }
     (l.italic ? cur.x : cur.d).push(l.text);
@@ -355,7 +376,7 @@ export function termLinker(cat, linkable) {
   };
 }
 
-function notesHtml(notes, linker) {
+export function notesHtml(notes, linker) {
   if (!notes.length) return '';
   const topics = notes.filter((n) => TOPIC.test(n));
   const rest = notes.filter((n) => !TOPIC.test(n));

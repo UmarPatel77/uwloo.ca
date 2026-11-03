@@ -1,7 +1,7 @@
-name: Older Graduate Calendars
+name: Older calendars
 
-# Reads the Graduate Calendars from Fall 2006 to Winter 2024 (scripts/grad-archive.mjs) into
-# data/grad-archive/ and rebuilds the site. Archives don't change, so this runs until every term it can
+# Reads the Graduate Calendars from Fall 2006 to Winter 2024 and the Undergraduate Calendars from 2020–21
+# to 2023–24 (scripts/grad-archive.mjs) into data/grad-archive/ and data/ug-archive/, and rebuilds the site. Archives don't change, so this runs until every term it can
 # read is in: each run starts the next one while there's work left, then it stops. Runs again on its own
 # only when the reader changes; by hand from the Actions tab any time.
 on:
@@ -11,7 +11,7 @@ on:
         description: Time budget in minutes
         default: "150"
       terms:
-        description: Only these terms, e.g. 1069,1109 (blank for all)
+        description: Only these terms or undergrad years, e.g. 1069,1109,2324 (blank for all)
         default: ""
       redo:
         description: Read them again even if they're in already
@@ -22,10 +22,11 @@ on:
     paths:
       - scripts/grad-archive.mjs
       - scripts/lib/gradarchive.mjs
+      - scripts/lib/ugarchive.mjs
       - .github/workflows/grad-archive.yml
 
 permissions:
-  contents: write # commit data/grad-archive
+  contents: write # commit data/grad-archive and data/ug-archive
   actions: write # start the next run, and the site rebuild
 
 concurrency:
@@ -66,19 +67,19 @@ jobs:
 
       - name: Commit, rebuild, and carry on
         run: |
-          if [ -n "$(git status --porcelain -- data/grad-archive)" ]; then
+          if [ -n "$(git status --porcelain -- data/grad-archive data/ug-archive)" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add data/grad-archive
-            if git diff --cached --quiet -- data/grad-archive/terms data/grad-archive/entries.json; then
+            git add data/grad-archive data/ug-archive
+            if git diff --cached --quiet -- data/grad-archive/terms data/grad-archive/entries.json data/ug-archive/terms data/ug-archive/entries.json; then
               echo "Only the report changed: no rebuild."
               REBUILD=no
             fi
-            git commit -m "Older Graduate Calendars: $(node -e "const fs=require('fs');const d='data/grad-archive/terms';const t=fs.existsSync(d)?fs.readdirSync(d).length:0;console.log(t+' terms')")"
+            git commit -m "Older calendars: $(node -e "const fs=require('fs');const n=(d)=>fs.existsSync(d)?fs.readdirSync(d).length:0;console.log(n('data/grad-archive/terms')+' grad terms, '+n('data/ug-archive/terms')+' undergrad years')")"
             for i in 1 2 3; do git pull --rebase --quiet && git push && break; sleep 5; done
             [ "$REBUILD" = "no" ] || gh workflow run deploy.yml --ref main
           else
-            echo "No change in data/grad-archive."
+            echo "No change in data/grad-archive or data/ug-archive."
           fi
           if [ "${{ steps.read.outputs.more }}" = "true" ]; then
             echo "Terms left: starting the next run."

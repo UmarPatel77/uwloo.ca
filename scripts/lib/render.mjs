@@ -1,11 +1,11 @@
 import { esc, fmtCode, hrefFor, linkCodes, renderTree, sanitize, slug } from './requisites.mjs';
 import { CALENDAR_PAGE, GRAD_CALENDAR_PAGE, calendarCourseUrl } from './kuali.mjs';
+import { ugArchiveUrl } from '../../site/route.js';
 import { FACULTY_NAMES } from './opendata.mjs';
-import { parseTerm, SEASONS, shiftTerm, termFrom, termName, termShort } from './terms.mjs';
+import { parseTerm, SEASONS, shiftTerm, termFrom, termName, termShort, yearLabel } from './terms.mjs';
 
 export const SITE = 'https://uwloo.ca';
 const FONTS = 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap';
-const UCAL = 'https://ucalendar.uwaterloo.ca';
 const QUEST = 'https://quest.pecs.uwaterloo.ca/psc/PB/ACADEMIC/SA/c/NUI_FRAMEWORK.PT_LANDINGPAGE.GBL';
 const ARCHIVES = 'https://uwaterloo.ca/academic-calendar/archives';
 
@@ -176,7 +176,7 @@ export function coursePage(ctx) {
   const old = history.old ?? [];
   const versions = [
     history.ug.length &&
-      `<h3 class="ver-h">Undergraduate Calendar</h3><ul class="versions">${verItems(history.ug)}<li><a href="${UCAL}/2324/COURSE/course-${S}.html#${c.code}">2023–24 and earlier</a> <span class="t">on ucalendar</span></li></ul>`,
+      `<h3 class="ver-h">Undergraduate Calendar</h3><ul class="versions">${verItems(history.ug)}<li><a href="${ugArchiveUrl((ctx.ugFirst ?? 2024) - 1, S, c.code)}">${yearLabel((ctx.ugFirst ?? 2024) - 1)} and earlier</a> <span class="t">on ucalendar</span></li></ul>`,
     history.grad.length &&
       `<h3 class="ver-h">Graduate Calendar</h3><ul class="versions">${verItems(history.grad)}${old.length ? '' : `<li><a href="${ARCHIVES}">Winter 2024 and earlier</a> <span class="t">in the calendar archives</span></li>`}</ul>`,
     old.length &&
@@ -241,12 +241,22 @@ ${version ? '' : ctx.reddit ?? ''}
 
 // ---------------- calendar pages (ucalendar / gradcalendar replicas) ----------------
 
-function yearNav(catalogs, active, subject) {
+/**
+ * Every undergrad year uwloo has (Kuali's, and the older ones it hosts); links to this subject in that year
+ * when the year has it, else to the year's subject list. Earlier years go to ucalendar.
+ */
+export function yearNav(catalogs, active, subject) {
   const items = catalogs
-    .map((k) => `<li><a href="/${k.yearCode}/${subject ? `${slug(subject)}/` : ''}"${k === active ? ' aria-current="page"' : ''}>${esc(k.label)}</a></li>`)
+    .map((k) => {
+      const has = subject && (!k.pageSubjects || k.pageSubjects.has(subject));
+      const href = `/${k.yearCode}/${has ? `${slug(subject)}/` : ''}`;
+      const missing = subject && !has ? ` class="no" title="No ${esc(subject)} courses in ${esc(k.label)}"` : '';
+      return `<li><a href="${href}"${k === active ? ' aria-current="page"' : ''}${missing}>${esc(k.label)}</a></li>`;
+    })
     .join('');
-  const old = subject ? `${UCAL}/2324/COURSE/course-${subject}.html` : `${UCAL}/2324/`;
-  return `<nav aria-label="Undergraduate calendar year"><ul class="years">${items}<li><a href="${old}">2023–24 and earlier</a></li></ul></nav>`;
+  const first = Math.min(...catalogs.map((k) => k.start));
+  const old = ugArchiveUrl(first - 1, subject);
+  return `<nav aria-label="Undergraduate calendar year"><ul class="years">${items}<li><a href="${old}">${yearLabel(first - 1)} and earlier</a></li></ul></nav>`;
 }
 
 const academicStart = (term) => {

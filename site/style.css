@@ -197,6 +197,7 @@ h2 { font-size: 1.05rem; font-weight: 700; font-stretch: 87.5%; margin: 2.25rem 
 .tgrid thead th { font-weight: 500; font-size: 0.88rem; color: var(--muted); }
 .tgrid tbody th { font-weight: 600; color: var(--muted); }
 .tgrid a[aria-current] { font-weight: 800; text-decoration: none; border-bottom: 3px solid var(--gold); }
+.years a.no { color: var(--muted); }
 .tgrid a { font-weight: 650; }
 .tgrid a.no, .tgrid a.ext { color: var(--muted); font-weight: 450; text-decoration-color: var(--rule); }
 .tgrid a.ext::after { content: "\2009↗"; font-size: 0.8em; }
@@ -282,6 +283,12 @@ footer p { margin: 0.25rem 0; }
 .entry.listed h2 { margin-bottom: 0.1rem; }
 
 /* r/uwaterloo discussions */
+.rd-fold > summary { cursor: pointer; list-style: none; display: flex; align-items: baseline; gap: 0.45rem; margin: 2.25rem 0 0.6rem; }
+.rd-fold > summary::-webkit-details-marker { display: none; }
+.rd-fold > summary::before { content: "▸"; font-size: 0.95em; color: var(--muted); width: 0.8em; flex: none; }
+.rd-fold[open] > summary::before { content: "▾"; }
+.rd-fold > summary h2 { margin: 0; }
+.rd-fold > summary + * { margin-top: 0.5rem; }
 .reddit .rd-term { font-size: 0.95rem; font-weight: 700; font-stretch: 87.5%; color: var(--muted); margin: 1.4rem 0 0.2rem; }
 .rd { padding: 0.75rem 0 0.8rem; border-top: 1px solid var(--rule); }
 .rd-head { margin: 0 0 0.35rem; }

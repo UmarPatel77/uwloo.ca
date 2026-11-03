@@ -155,7 +155,7 @@ export function urlCodes(url, known) {
 
 // ---------------- URLs ----------------
 
-const TRACKING = /^(utm_|fbclid$|gclid$|ref$|ref_src$|s$|si$|feature$|share$)/;
+const TRACKING = /^(utm_|fbclid$|gclid$|ref$|ref_src$|s$|si$|feature$|share$|authuser$|usp$)/; // authuser, usp: Google's account and sharing tags
 
 /** One spelling per page: https when it was given, no tracking parameters, no fragment, no "www." doubles. */
 export function canonical(url) {
@@ -203,7 +203,7 @@ const SKIP_HOST = new RegExp(
     'discord\\.gg', 'discord\\.com', 'facebook\\.com', 'twitter\\.com', 'x\\.com', 'instagram\\.com', 'linkedin\\.com', 'tiktok\\.com',
     'amazon\\.ca', 'amazon\\.com', 'ratemyprofessors\\.com', 'ratemyprofessor\\.com', 'birdcourses\\.com', 'uwcourse\\.atomala\\.com',
     'coursehero\\.com', 'chegg\\.com', 'studocu\\.com', 'quizlet\\.com', 'scribd\\.com', 'oneclass\\.com', 'slader\\.com', 'bartleby\\.com',
-    'dropbox\\.com', 'drive\\.google\\.com', 'docs\\.google\\.com', 'sites\\.google\\.com', '1drv\\.ms', 'onedrive\\.live\\.com', 'mega\\.nz',
+    'dropbox\\.com', 'drive\\.google\\.com', 'docs\\.google\\.com', '1drv\\.ms', 'onedrive\\.live\\.com', 'mega\\.nz',
     'forms\\.gle', 'forms\\.office\\.com', 'google\\.com', 'goo\\.gl', 'bit\\.ly', 'tinyurl\\.com', 'wikipedia\\.org', 'scholar\\.google\\.com',
     'orcid\\.org', 'researchgate\\.net', 'academia\\.edu', 'arxiv\\.org', 'doi\\.org', 'dblp\\.org', 'semanticscholar\\.org',
     // other universities (their CS 107 isn't Waterloo's)
@@ -212,6 +212,9 @@ const SKIP_HOST = new RegExp(
     'torontomu\\.ca', 'ryerson\\.ca', 'uoguelph\\.ca', 'brocku\\.ca', 'ox\\.ac\\.uk', 'cam\\.ac\\.uk',
   ].join('|')})$`,
 );
+// Sites on a skipped domain that are still real web pages: Google Sites is where many professors keep
+// their teaching pages (sites.google.com/site/emmfis/teaching/amath-475).
+const ALLOW_HOST = /^(sites\.google\.com|youtube\.com|youtu\.be)$/;
 const SKIP_PATH = /\.(png|jpe?g|gif|webp|svg|ico|mp4|mov|zip|tar|gz|exe|dmg|docx?|pptx?|xlsx?)$/i;
 
 /** Why a URL is never listed, or null. */
@@ -225,7 +228,7 @@ export function skipReason(url) {
   if (u.protocol !== 'http:' && u.protocol !== 'https:') return 'not http';
   const host = u.hostname.toLowerCase().replace(/^www\./, '');
   if (u.hostname.toLowerCase() === 'uwloo.ca' || host.endsWith('uwloo.ca') || host.endsWith('uwloo.com')) return 'uwloo itself';
-  if (SKIP_HOST.test(host) && !(host === 'youtube.com' || host === 'youtu.be')) return 'skipped site';
+  if (SKIP_HOST.test(host) && !ALLOW_HOST.test(host)) return 'skipped site';
   if (SKIP_PATH.test(u.pathname)) return 'file type';
   if (RUDE.test(host.replace(/[.-]/g, ' '))) return 'rude';
   return null;

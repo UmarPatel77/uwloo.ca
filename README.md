@@ -15,7 +15,9 @@ Waterloo course pages at short URLs. A GitHub Action pulls the university's own 
 | `uwloo.ca/1109/co`, any term from `1069` (Fall 2006) to `1241` (Winter 2024) | Graduate C&O courses as that term's Graduate Calendar had them, read from Waterloo's archived copy; `/1109/co602` jumps to CO 602. Terms uwloo hasn't read go to that term in Waterloo's archive |
 | `uwloo.ca/cs` | The current calendar year's CS page |
 | `uwloo.ca/2627` | All subjects in the 2026–27 calendar |
-| `uwloo.ca/2324/cs`, any year from `9596` to `2324` | Redirects to `ucalendar.uwaterloo.ca/2324/COURSE/course-CS.html` |
+| `uwloo.ca/2324/cs`, `2021` to `2324` | That year's CS courses on uwloo, with the original ucalendar page linked at the top; `/2324/cs135` jumps to CS 135. 2022–23 and 2023–24 are read from ucalendar; 2020–21 and 2021–22 from Open Data's course catalog (ucalendar's robots.txt asks programs to stay out of those years) |
+| `uwloo.ca/1920/cs`, any year from `9596` to `1920` | Redirects to `ucalendar.uwaterloo.ca/1920/COURSE/course-CS.html` (`/1920/cs135` → `…#CS135`) |
+| `uwloo.ca/1920`, any year from `9596` to `1920` | That year's front page where Waterloo's archives page links it: `academic-calendar-archive.uwaterloo.ca` for 2007–08 on (ucalendar's own front pages for those years are gone), `www.ucalendar.uwaterloo.ca/0506/` before that |
 | `uwloo.ca/9495/cs`, any year from `6364` to `9495` | That year's CS courses read from the scanned calendar (`/9495/cs241` jumps to CS 241), each linking to its scanned page. Each course links to its scanned page |
 | `uwloo.ca/6263/…` and earlier | Not online; says the archive starts at 1963–64 |
 | `uwloo.ca/courses.csv` | Every course: title, level, whether it's in the current calendars, the last term it ran (looking back 7 years), and its outline.uwaterloo.ca search link. Opens in Excel |
@@ -25,6 +27,18 @@ Waterloo course pages at short URLs. A GitHub Action pulls the university's own 
 Every entry on a calendar page also links to its official entry and to acal for that year or term (the fall term for an undergrad year). A few codes are both a term and a year: `1011` (Winter 2001, or 2010–11), `1415` (Spring 2041, or 2014–15) and `1819` (Fall 2081, or 2018–19). None of those terms has a Graduate Calendar on uwloo, so the year wins.
 
 Undergraduate calendars from 2024–25 and graduate calendars from Spring 2024 come from Kuali and are rebuilt here. New years and terms appear automatically when Waterloo publishes them. Older Graduate Calendars are below.
+
+## Older Undergraduate Calendars (2020–21 to 2023–24)
+
+ucalendar.uwaterloo.ca still has every undergraduate year from 1995–96 to 2023–24, but its robots.txt asks programs to stay out of all of them except 2022–23 and 2023–24. So uwloo hosts:
+
+| Years | Read from |
+| --- | --- |
+| 2022–23, 2023–24 | ucalendar's `course-{SUBJ}.html` pages, found through each year's Course Descriptions Index on academic-calendar-archive.uwaterloo.ca (which has no robots.txt) |
+| 2020–21, 2021–22 | Open Data's course catalog for the year's three terms, newest wording first (Open Data starts at Winter 2020) |
+| 1995–96 to 2019–20 | Not read: uwloo links and redirects to ucalendar |
+
+The same job as the grad calendars below reads them into `data/ug-archive/` (one file per year, `terms/2324.json`, plus `entries.json`). Each subject gets a page with the original ucalendar link at the top (`/2324/cs/`), each year an index (`/2324/`), and they join the year links, "Calendar versions" on course pages, and "no longer offered" pages. To read them again after changing the reader, bump `UG_PARSER` in `scripts/lib/ugarchive.mjs`.
 
 ## Older Graduate Calendars (Fall 2006 to Winter 2024)
 
@@ -206,9 +220,11 @@ site/reddit.js                 discussion cards, shared by the build and the bro
 data/archive/{year}.json       page numbers inside the 1963–64 to 1994–95 PDFs
 scripts/lib/history.mjs        every course Open Data's catalog has listed, and when each ran
 scripts/lib/retired.mjs        pages for courses no longer offered (/msci452/)
-scripts/grad-archive.mjs       reads the Fall 2006 to Winter 2024 Graduate Calendars (.github/workflows/grad-archive.yml)
+scripts/grad-archive.mjs       reads the older calendars uwloo hosts (.github/workflows/grad-archive.yml)
 scripts/lib/gradarchive.mjs    where they are, how a course page is read and stored, their pages (/1109/co/)
 data/grad-archive/             those calendars, a report of each read, and sample pages
+scripts/lib/ugarchive.mjs      the 2020–21 to 2023–24 undergraduate years uwloo hosts, and their pages (/2324/cs/)
+data/ug-archive/               those years, read by the same job
 scripts/lib/resources.mjs      course resources: catalogue, course-page section, PDF pages, release files
 tools/resources/               intake.py (zip of PDFs → catalogue entries) and how to use it
 data/resources/                the resources catalogue, and each hosted PDF's text

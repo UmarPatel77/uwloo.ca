@@ -48,10 +48,14 @@ test('router: subjects and Kuali years', () => {
   assert.equal(resolve('/zzz', meta).type, 'notfound');
 });
 
-test('router: 9596 to 2324 go to ucalendar pages', () => {
+test('router: 9596 to 2324 go to ucalendar’s subject pages, and year front pages to Waterloo’s archive', () => {
   assert.equal(to('/2324/cs'), 'https://ucalendar.uwaterloo.ca/2324/COURSE/course-CS.html');
   assert.equal(to('/0910/math135'), 'https://ucalendar.uwaterloo.ca/0910/COURSE/course-MATH.html#MATH135');
   assert.equal(to('/9596/math'), 'https://ucalendar.uwaterloo.ca/9596/COURSE/course-MATH.html');
+  // ucalendar.uwaterloo.ca/2324/ is gone; the archives page links these instead.
+  assert.equal(to('/2324'), 'https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2023-2024/page/uWaterloo-Undergraduate-Calendar-Access.html');
+  assert.equal(to('/0708'), 'https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2007-2008/page/uWaterloo-Undergraduate-Calendar-Access.html');
+  assert.equal(to('/0607'), 'http://www.ucalendar.uwaterloo.ca/0607/');
   assert.match(resolve('/2829/cs', meta).message, /isn’t published yet/);
 });
 
@@ -232,9 +236,9 @@ test('router: grad term pages', () => {
   assert.equal(resolve('/1249/cs/', meta).type, 'notfound'); // exists-check: same path means no such page
   assert.match(resolve('/1249/xyz/', meta).message, /Fall 2024 Graduate Calendar has no XYZ courses/);
   // Before Kuali and not on uwloo: Waterloo's own archive.
-  assert.equal(to('/1241/cs'), 'http://academic-calendar-archive.uwaterloo.ca/graduate-studies/archive-winter-2024/index.html');
-  assert.equal(to('/1165'), 'http://academic-calendar-archive.uwaterloo.ca/graduate-studies/archive-spring-2016/index.html');
-  assert.equal(to('/1109'), 'http://academic-calendar-archive.uwaterloo.ca/graduate-studies/2010/fall/gradcalendar.uwaterloo.ca/group/Gen-Info-Regs.html');
+  assert.equal(to('/1241/cs'), 'https://academic-calendar-archive.uwaterloo.ca/graduate-studies/archive-winter-2024/index.html');
+  assert.equal(to('/1165'), 'https://academic-calendar-archive.uwaterloo.ca/graduate-studies/archive-spring-2016/index.html');
+  assert.equal(to('/1109'), 'https://academic-calendar-archive.uwaterloo.ca/graduate-studies/2010/fall/gradcalendar.uwaterloo.ca/group/Gen-Info-Regs.html');
   assert.match(resolve('/1065', meta).message, /start at Fall 2006/);
   assert.match(resolve('/1275/cs', meta).message, /no Spring 2027 Graduate Calendar yet/);
   // Grad terms: uwloo's version page first, acal when there isn't one.
@@ -254,7 +258,7 @@ test('router: older grad terms on uwloo, and codes that are both a term and a ye
   assert.equal(go('/1109/CO/602'), '/1109/co/#CO602');
   assert.equal(go('/1201/cs-646/'), '/1201/cs/#CS646');
   assert.match(resolve('/1109/xyz/', m).message, /Fall 2010 Graduate Calendar has no XYZ courses/);
-  assert.equal(go('/1171/cs'), 'http://academic-calendar-archive.uwaterloo.ca/graduate-studies/archive-winter-2017/index.html');
+  assert.equal(go('/1171/cs'), 'https://academic-calendar-archive.uwaterloo.ca/graduate-studies/archive-winter-2017/index.html');
   assert.equal(go('/1171/cs646'), 'https://acal.fast.uwaterloo.ca/course/1171/CS/646');
   // 1011 is Winter 2001 and 2010–11; 1415 is Spring 2041 and 2014–15: the year wins.
   assert.equal(go('/1011/cs'), 'https://ucalendar.uwaterloo.ca/1011/COURSE/course-CS.html');
@@ -661,6 +665,16 @@ test('links: course codes in addresses and text', async () => {
   assert.match(skipReason('https://uwflow.com/course/cs341'), /skipped/);
   assert.match(skipReason('https://uwloo.ca/cs341/'), /uwloo/);
   assert.equal(skipReason('https://www.youtube.com/playlist?list=x'), null);
+  assert.equal(skipReason('https://sites.google.com/site/emmfis/teaching/amath-475'), null, 'Google Sites pages are web pages');
+  assert.match(skipReason('https://drive.google.com/file/d/x/view'), /skipped/);
+  assert.match(skipReason('https://www.google.com/url?q=https://www.dropbox.com/s/x/Block1.pdf'), /skipped/);
+  const { canonical, homepageIn, teachingLinks } = await import('./lib/links.mjs');
+  assert.equal(canonical('https://sites.google.com/site/emmfis/teaching/amath-475?authuser=0'), 'https://sites.google.com/site/emmfis/teaching/amath-475');
+  // A professor's Google Site: profile → homepage → teaching page → one page per course.
+  const g = 'https://sites.google.com/site/emmfis';
+  assert.equal(homepageIn({ links: [{ href: 'https://uwaterloo.ca/applied-mathematics/profiles/x', text: 'Profile' }, { href: `${g}/homepage`, text: 'Personal website' }] }, 'https://uwaterloo.ca/applied-mathematics/profiles/x'), `${g}/homepage`);
+  assert.deepEqual(teachingLinks({ links: [{ href: `${g}/research`, text: 'Research' }, { href: `${g}/teaching`, text: 'Teaching' }] }, `${g}/homepage`), [`${g}/teaching`]);
+  assert.deepEqual(urlCodes(`${g}/teaching/amath-475`, new Set(['AMATH475'])), ['AMATH475']);
   assert.equal(skipReason('https://github.com/a/b'), null);
   assert.ok(looksLikeAnswers('https://x.ca/cs240/a2-solutions.pdf'));
   assert.ok(looksLikeAnswers('CS 341 Assignment 3'));
@@ -1134,7 +1148,7 @@ test('grad archive: term pages, the older-terms grid, versions and retired cours
     assert.match(html, /<details class="older"><summary>Older calendars, Fall 2006 to Winter 2024<\/summary>/);
     assert.match(html, /<p class="tstep"><a href="\/1169\/cs\/" rel="next">Fall 2016 →<\/a><\/p>/, 'step to the next term uwloo has');
     assert.match(html, /2 graduate courses in the Fall 2015 Graduate Calendar, from <a href="https:\/\/uwaterloo\.ca\/gsac-archive\/2015\/fall\/gradcalendar[^"]+">Waterloo’s archived copy<\/a>\./);
-    assert.match(html, /<tr><th scope="row">2015–16<\/th><td><a href="\/1159\/cs\/" aria-current="page">Fall<\/a><\/td><td><a class="ext" href="http:\/\/academic-calendar-archive\.uwaterloo\.ca\/graduate-studies\/2016\/winter\/[^"]+" title="Winter 2016, in Waterloo’s archive">Winter<\/a><\/td>/);
+    assert.match(html, /<tr><th scope="row">2015–16<\/th><td><a href="\/1159\/cs\/" aria-current="page">Fall<\/a><\/td><td><a class="ext" href="https:\/\/academic-calendar-archive\.uwaterloo\.ca\/graduate-studies\/2016\/winter\/[^"]+" title="Winter 2016, in Waterloo’s archive">Winter<\/a><\/td>/);
     assert.match(html, /<tr><th scope="row">2023–24<\/th><td><a class="ext"[^>]*>Fall<\/a><\/td><td><a class="ext"[^>]*>Winter<\/a><\/td><td><a href="\/1245\/cs\/">Spring<\/a><\/td><\/tr>/, 'Spring 2024 is Kuali, in the same row');
     assert.match(html, /<link rel="canonical" href="https:\/\/uwloo\.ca\/1159\/cs\/">/);
     const idx = oldTermIndexPage({ cat: cats[0], nav: termNav(nav, cats[0]), builtAt: new Date(), version: 'v' });
@@ -1181,5 +1195,120 @@ test('grad archive: data files are well-formed', async () => {
     assert.match(k, /^[A-Z]{2,8}\d{3}[A-Z]{0,2}~[0-9a-f]{8}$/);
     assert.ok(Array.isArray(e.d) && Array.isArray(e.x), k);
   }
+});
+
+test('year pages: links to other years skip subjects those years don’t have; 2023–24 and earlier is ucalendar’s subject page', async () => {
+  const { yearSubjectPage } = await import('./lib/render.mjs');
+  const y = (start, subs) => ({ start, yearCode: `${String(start % 100).padStart(2, '0')}${String((start + 1) % 100).padStart(2, '0')}`, label: `${start}–${String((start + 1) % 100).padStart(2, '0')}`, level: 'ug', status: 'past', pageUrl: 'https://x/', pageSubjects: new Set(subs) });
+  const cats = [y(2024, ['CS']), y(2025, ['CS', 'PD'])];
+  const c = { code: 'PD11', subject: 'PD', number: '11', title: 'Report Writing', units: 0.5, crossListed: [], prereq: null, coreq: null, antireq: null, description: '', notesHtml: '', pid: 'p' };
+  const html = yearSubjectPage({ cat: cats[1], catalogs: cats, gradCat: null, gradCatalogs: [], subject: 'PD', subjectName: 'Professional Development', ugCourses: [c], gradCourses: [], known: new Set(['PD11']), builtAt: new Date(), version: 'v' });
+  assert.match(html, /<li><a href="\/2425\/" class="no" title="No PD courses in 2024–25">2024–25<\/a><\/li><li><a href="\/2526\/pd\/" aria-current="page">2025–26<\/a><\/li>/);
+  assert.match(html, /<a href="https:\/\/ucalendar\.uwaterloo\.ca\/2324\/COURSE\/course-PD\.html">2023–24 and earlier<\/a>/);
+  const { yearPage } = await import('./lib/render.mjs');
+  assert.match(yearPage({ cat: cats[1], catalogs: cats, gradCat: null, subjects: [], builtAt: new Date(), version: 'v' }), /<a href="https:\/\/academic-calendar-archive\.uwaterloo\.ca\/undergraduate-studies\/2023-2024\/page\/uWaterloo-Undergraduate-Calendar-Access\.html">2023–24 and earlier<\/a>/, 'no subject: the year’s front page, which ucalendar no longer has');
+});
+
+// ---------------- older undergraduate years ----------------
+
+test('ug archive: ucalendar’s course pages', async () => {
+  const { parseCoursePage } = await import('./lib/gradarchive.mjs');
+  const r = parseCoursePage(readFileSync(new URL('./fixtures/ug-archive/course-CS.html', import.meta.url), 'utf8'));
+  assert.deepEqual(r.courses.map((c) => [c.code, c.title, c.units, c.comp, c.id]), [
+    ['CS135', 'Designing Functional Programs', 0.5, 'LAB,LEC,TST,TUT', '004380'],
+    ['CS136L', 'Tools and Techniques for Software Development', 0.25, 'LAB', '017090'],
+    ['CS241', 'Foundations of Sequential Programs', 0.5, 'LEC,TUT', '004397'],
+  ]);
+  assert.deepEqual(r.courses[0].x, ['Prereq: Not open to General Mathematics students.', 'Antireq: CS 115, 121, 122, 137, 145']);
+  assert.match(r.courses[0].d[0], /\[Note: Offered: F,W,S\]$/);
+  assert.deepEqual(r.courses[2].d, ['The relationship between high-level languages and the computer architecture.'], 'the subject’s notes (#CS999) aren’t the last course’s');
+  assert.equal(r.ids, 3);
+});
+
+test('ug archive: reads the years ucalendar allows, Open Data before, pages and links', async () => {
+  const http = await import('node:http');
+  const { mkdtemp, rm: rmr } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { main, Polite } = await import('./grad-archive.mjs');
+  const { readStore } = await import('./lib/gradarchive.mjs');
+  const { loadUgArchive, ugOldSubjectPage, oldYears } = await import('./lib/ugarchive.mjs');
+  const { yearNav } = await import('./lib/render.mjs');
+  const page = readFileSync(new URL('./fixtures/ug-archive/course-CS.html', import.meta.url));
+  const routes = {
+    '/robots.txt': 'User-agent: *\nDisallow: /ucal/2122/\n',
+    '/aca/undergraduate-studies/2023-2024/page/Course-Descriptions-Index.html': () =>
+      `<a href="${base}/ucal/2324/COURSE/course-CS.html#CS100S">CS</a> <a href="${base}/ucal/2324/COURSE/course-CS.html#CS999">notes</a> <a href="${base}/ucal/1920/COURSE/course-MATH.html">old</a>`,
+    '/ucal/2324/COURSE/course-CS.html': page,
+  };
+  const hits = [];
+  const server = http.createServer((req, res) => {
+    const p = new URL(req.url, 'http://x').pathname;
+    hits.push(p);
+    const r = routes[p];
+    res.writeHead(r ? 200 : 404, { 'content-type': p.endsWith('.txt') ? 'text/plain' : 'text/html' });
+    res.end(r ? (typeof r === 'function' ? r() : r) : 'nope');
+  });
+  await new Promise((ok) => server.listen(0, '127.0.0.1', ok));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const dir = await mkdtemp(`${tmpdir()}/ug-`);
+  const quiet = { log() {}, warn() {} };
+  const rows = (term) => [
+    { associatedAcademicCareer: 'UG', subjectCode: 'CS', catalogNumber: '135', title: term === '1225' ? 'Designing Functional Programs' : 'Old title', description: 'Functional programming.', courseId: '4380' },
+    { associatedAcademicCareer: 'UG', subjectCode: 'PD', catalogNumber: '11', title: 'Report Writing', courseId: '1' },
+    { associatedAcademicCareer: 'GRD', subjectCode: 'CS', catalogNumber: '646', title: 'Grad' },
+  ];
+  try {
+    const opts = { dir: `${dir}/grad`, ugDir: `${dir}/ug`, ugUrls: { ucal: `${base}/ucal`, aca: `${base}/aca/undergraduate-studies` }, log: quiet, od: async (t) => rows(t), polite: new Polite({ delay: 0, cacheDir: `${dir}/cache`, log: quiet }) };
+    await main(['--terms', '2324,2223,2122', '--minutes', '5'], opts);
+    assert.ok(!hits.some((h) => h.startsWith('/ucal/1920/')), 'only the year’s own course pages');
+    const store = await readStore(`${dir}/ug`);
+    assert.deepEqual(Object.keys(store.terms).sort(), ['2122', '2324'], '2022–23’s index isn’t there; 2021–22 from Open Data');
+    assert.deepEqual(store.terms['2324'].subjects.map((x) => [x.code, x.courses.length]), [['CS', 3]]);
+    assert.deepEqual(store.terms['2122'].subjects.map((x) => [x.code, x.courses.length]), [['CS', 1], ['PD', 1]], 'undergrad rows only, PD 11 included');
+    const cats = await loadUgArchive({ dir: `${dir}/ug`, names: (x) => ({ CS: 'Computer Science' })[x] ?? null });
+    assert.equal(cats[0].courses.get('CS135').title, 'Designing Functional Programs', 'the year’s newest wording');
+    const y = cats.find((c) => c.yearCode === '2324');
+    const kuali = [{ start: 2024, yearCode: '2425', label: '2024–25', pageSubjects: new Set(['CS']) }];
+    const nav = yearNav([...cats, ...kuali], y, 'CS');
+    assert.match(nav, /<a href="https:\/\/ucalendar\.uwaterloo\.ca\/2021\/COURSE\/course-CS\.html">2020–21 and earlier<\/a>/, 'before the first year uwloo has, ucalendar');
+    assert.match(nav, /<a href="\/2122\/" class="no" title="No CS courses in 2021–22">|<a href="\/2122\/cs\/">2021–22/);
+    const linkable = { has: (c) => c === 'CS135' || c === 'CS136', href: (c) => `/${c.toLowerCase()}/`, retired: new Set() };
+    const html = ugOldSubjectPage({ cat: y, nav, subject: 'CS', courses: y.bySubject.get('CS'), linkable, builtAt: new Date(), version: 'v' });
+    assert.match(html, /<h1>Computer Science \(CS\)<\/h1>\s*<p>3 courses in the 2023–24 Undergraduate Calendar\. Original: <a href="https:\/\/ucalendar\.uwaterloo\.ca\/2324\/COURSE\/course-CS\.html">ucalendar\.uwaterloo\.ca\/2324\/COURSE\/course-CS\.html<\/a><\/p>/);
+    assert.match(html, /<section class="entry" id="CS135">/);
+    assert.match(html, /<a href="https:\/\/ucalendar\.uwaterloo\.ca\/2324\/COURSE\/course-CS\.html#CS135">On ucalendar<\/a><a href="\/cs135\/">CS 135 today<\/a>/);
+    assert.match(html, /Coreq: <a class="cc" href="\/cs136\/">CS 136<\/a>/);
+    assert.match(html, /<link rel="canonical" href="https:\/\/uwloo\.ca\/2324\/cs\/">/);
+    const od = ugOldSubjectPage({ cat: cats[0], nav: '', subject: 'PD', courses: cats[0].bySubject.get('PD'), linkable, builtAt: new Date(), version: 'v' });
+    assert.match(od, /1 course in Waterloo’s course catalog for 2021–22 \(Fall 2021, Winter 2022, Spring 2022\), from <a href="https:\/\/openapi\.data\.uwaterloo\.ca\/api-docs">UW Open Data<\/a>\. ucalendar asks programs not to read that year’s calendar, so this stands in for it\. Original: <a href="https:\/\/ucalendar\.uwaterloo\.ca\/2122\/COURSE\/course-PD\.html">/);
+    // The router: a year uwloo hosts is a page; anything older is ucalendar.
+    const m = { ...meta, years: ['2021', '2122', '2324', ...meta.years] };
+    assert.equal(resolve('/2324/CS', m).to, '/2324/cs/');
+    assert.equal(resolve('/2324/cs135', m).to, '/2324/cs/#CS135');
+    assert.equal(resolve('/1920/cs135', m).to, 'https://ucalendar.uwaterloo.ca/1920/COURSE/course-CS.html#CS135');
+    assert.deepEqual(oldYears().map((x) => [x.yearCode, x.kind]), [['2021', 'opendata'], ['2122', 'opendata'], ['2223', 'ucal'], ['2324', 'ucal']]);
+  } finally {
+    server.close();
+    await rmr(dir, { recursive: true, force: true });
+  }
+});
+
+test('ug archive: data files are well-formed', async () => {
+  const { readStore } = await import('./lib/gradarchive.mjs');
+  const { oldYears, UG_DIR } = await import('./lib/ugarchive.mjs');
+  const { entries, terms } = await readStore(UG_DIR);
+  const valid = new Set(oldYears().map((y) => y.yearCode));
+  for (const [year, t] of Object.entries(terms)) {
+    assert.ok(valid.has(year), `${year}: not a year uwloo hosts`);
+    assert.ok(['calendar', 'opendata'].includes(t.source), `${year}: source`);
+    for (const s of t.subjects) for (const k of s.courses) assert.ok(entries[k], `${year} ${s.code}: ${k} missing from entries.json`);
+  }
+});
+
+test('reddit: the section folds from its heading', async () => {
+  const { redditSection } = await import('./lib/reddit.mjs');
+  const html = redditSection('CS135', [{ post: 'abc', t: 1.73e9, title: 'CS 135 help', score: 3, n: 2, in: 'post' }], { through: 1.74e9 }, { repo: 'u/r', slug: 'cs135' });
+  assert.match(html, /^<section class="reddit" aria-labelledby="reddit-h"><details class="rd-fold" open>\s*<summary><h2 id="reddit-h">Discussed on r\/uwaterloo<\/h2><\/summary>/);
+  assert.match(html, /<\/details><\/section>$/);
 });
 

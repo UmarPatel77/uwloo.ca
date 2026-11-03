@@ -6,6 +6,8 @@
 //   /2627/cs135, /2627/cs/135         → /2627/cs/#CS135
 //   /2223/cs   (9596 to 2324)         → ucalendar.uwaterloo.ca/2223/COURSE/course-CS.html
 //   /2223/cs135                       → …/course-CS.html#CS135
+//   /2223      (0708 to 2324)         → that year's front page in Waterloo's archive (academic-calendar-archive)
+//   /0506      (9596 to 0607)         → www.ucalendar.uwaterloo.ca/0506/
 //   /8889/cs   (6364 to 9495)         → /8889/cs/, the OCR text of the scanned calendar, when that year has it;
 //   /8889/cs134                         else ucalendar.uwaterloo.ca/6394/1988-89.pdf at the CS (or CS 134) page
 //   /1249, /1249/cs   (grad terms)    → /1249/cs/  Graduate Calendar for that term (Spring 2024 on)
@@ -21,6 +23,24 @@
 
 const UCAL = 'https://ucalendar.uwaterloo.ca';
 const PDF_ARCHIVE = 'http://www.ucalendar.uwaterloo.ca/6394';
+const UG_ARCHIVE = 'https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies';
+const LAST_ARCHIVED = 2023; // 2023–24; 2024–25 on are Kuali, on uwloo
+
+/**
+ * An undergraduate calendar from before Kuali (1995–96 to 2023–24): one subject's courses, or the year's
+ * front page. Subject pages are still on ucalendar (ucalendar.uwaterloo.ca/2324/COURSE/course-CS.html), but
+ * its year front pages are gone (ucalendar.uwaterloo.ca/2324/), so those go where Waterloo's archives page
+ * (uwaterloo.ca/academic-calendar/archives) sends them:
+ *   2007–08 to 2023–24  academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2023-2024/page/…
+ *   1995–96 to 2006–07  www.ucalendar.uwaterloo.ca/0506/
+ */
+export function ugArchiveUrl(start, subject, code) {
+  const yy = (n) => String(n % 100).padStart(2, '0');
+  const yc = `${yy(start)}${yy(start + 1)}`;
+  const S = subject?.toUpperCase();
+  if (S) return `${UCAL}/${yc}/COURSE/course-${S}.html${code ? `#${code}` : ''}`;
+  return start >= 2007 ? `${UG_ARCHIVE}/${start}-${start + 1}/page/uWaterloo-Undergraduate-Calendar-Access.html` : `http://www.ucalendar.uwaterloo.ca/${yc}/`;
+}
 const FIRST_ONLINE = 1963; // 1963–64, the oldest calendar UW has online
 const FIRST_HTML = 1995; // 1995–96; 1963–64 to 1994–95 are scanned PDFs
 
@@ -58,7 +78,7 @@ const OLD_LAST = 1241; // Winter 2024, the last before Kuali
 export function gradArchiveUrl(term) {
   const year = (Number(term[0]) + 19) * 100 + Number(term.slice(1, 3));
   const season = SEASONS[term[3]].toLowerCase();
-  const base = 'http://academic-calendar-archive.uwaterloo.ca/graduate-studies';
+  const base = 'https://academic-calendar-archive.uwaterloo.ca/graduate-studies'; // the archives page says http://, which doesn't answer
   return Number(term) <= 1161
     ? `${base}/${year}/${season}/gradcalendar.uwaterloo.ca/group/Gen-Info-Regs.html`
     : `${base}/archive-${season}-${year}/index.html`;
@@ -86,10 +106,7 @@ function yearTarget(y, meta, subject, number) {
     if (!S) return { type: 'redirect', to: `/${y.code}/` };
     return { type: 'redirect', to: `/${y.code}/${S.toLowerCase()}/${code ? `#${code}` : ''}` };
   }
-  if (y.start >= FIRST_HTML && y.start <= 2023) {
-    if (!S) return { type: 'redirect', to: `${UCAL}/${y.code}/` };
-    return { type: 'redirect', to: `${UCAL}/${y.code}/COURSE/course-${S}.html${code ? `#${code}` : ''}` };
-  }
+  if (y.start >= FIRST_HTML && y.start <= LAST_ARCHIVED) return { type: 'redirect', to: ugArchiveUrl(y.start, S, code) };
   if (y.start >= FIRST_ONLINE && y.start < FIRST_HTML) {
     // Page numbers come from data/archive/{year}.json when that year has been indexed:
     // the course's page, else its subject's, else the start of the course descriptions.
