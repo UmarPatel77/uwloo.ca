@@ -1,0 +1,28 @@
+#!/bin/sh
+# Refuses a commit that adds an API key or token. The repo is public, and keys belong in GitHub secrets
+# (Settings > Secrets and variables > Actions), never in files.
+#
+# Turn it on once per clone:     git config core.hooksPath .githooks
+# The deploy workflow also runs it over every tracked file (sh .githooks/pre-commit --all), which catches
+# files added through GitHub's web upload, where hooks don't run.
+# A false alarm? git commit --no-verify, then narrow the pattern below.
+
+edge='(^|[^0-9A-Za-z_])'
+end='([^0-9A-Za-z_]|$)'
+# Open Data keys (32 uppercase hex characters), GitHub tokens, and any long value set right after a
+# secret's name or the x-api-key header.
+pattern="${edge}[0-9A-F]{32}${end}|${edge}gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{22,}|(UW_API_KEY|CLOUDFLARE_API_TOKEN|PAGES_ADMIN_TOKEN|x-api-key)[\"' ]*[:=][\"' ]*[A-Za-z0-9_-]{20,}"
+
+if [ "$1" = "--all" ]; then
+  hits=$(git grep -nIE "$pattern" -- . ':!.githooks/pre-commit')
+else
+  hits=$(git diff --cached -U0 --no-color -- . ':!.githooks/pre-commit' | grep -E '^(\+\+\+ |\+)' | grep -vE '^\+\+\+ /dev/null' |
+    awk '/^\+\+\+ /{f=substr($0,7); next} {print f ": " substr($0,2)}' | grep -E "$pattern")
+fi
+
+if [ -n "$hits" ]; then
+  echo "This looks like an API key or token, so it wasn't committed:" >&2
+  echo "$hits" | cut -c1-200 >&2
+  echo "Put keys in GitHub secrets instead (Settings > Secrets and variables > Actions)." >&2
+  exit 1
+fi

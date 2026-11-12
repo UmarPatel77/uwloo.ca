@@ -33,7 +33,9 @@ export async function loadOfferings(terms, currentTerm) {
   for (const term of terms) {
     const path = `${CACHE}/offerings-${term}.json`;
     let hit = await readCache(path);
-    const frozen = Number(term) < Number(currentTerm);
+    // A past term is fetched once, unless its class schedule came back empty: that's a failed read, not a term
+    // where nothing ran, so it's asked again.
+    const frozen = Number(term) < Number(currentTerm) && hit?.scheduled?.length > 0;
     if (!hit || (!frozen && ageDays(hit.fetchedAt) > 0.5)) {
       try {
         const rows = (await od(`Courses/${term}`)) ?? [];

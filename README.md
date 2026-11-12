@@ -23,6 +23,7 @@ Waterloo course pages at short URLs. A GitHub Action pulls the university's own 
 | `uwloo.ca/courses.csv` | Every course: title, level, whether it's in the current calendars, the last term it ran (looking back 7 years), and its outline.uwaterloo.ca search link. Opens in Excel |
 | `uwloo.ca/1269/cs135` | Redirects to `acal.fast.uwaterloo.ca/course/1269/CS/135` whenever uwloo has no page for it (undergrad codes, and terms uwloo doesn't have) |
 | `uwloo.ca/1065` and earlier terms | Says the online Graduate Calendars start at Fall 2006 |
+| `uwloo.ca/cs421` (no such course) | "No page here", then the subject's nearest courses: same hundred first, closest number next (CS 418, 431, 440…), courses still offered before ones that aren't. The search box does the same |
 
 Every entry on a calendar page also links to its official entry and to acal for that year or term (the fall term for an undergrad year). A few codes are both a term and a year: `1011` (Winter 2001, or 2010–11), `1415` (Spring 2041, or 2014–15) and `1819` (Fall 2081, or 2018–19). None of those terms has a Graduate Calendar on uwloo, so the year wins.
 
@@ -62,8 +63,11 @@ uwloo./[2627≥YYyy≥5758]/[subj] uses new course index uwaterloo.ca/academic-c
 | --- | --- | --- |
 | Kuali catalog API (`uwaterloocm.kuali.co/api/v1/catalog`), the JSON behind `uwaterloo.ca/academic-calendar/undergraduate-studies/catalog` | Every undergraduate and graduate course, description, requisite, note, and cross-listing, for each calendar year (undergrad) and term (grad) | None |
 | UW Open Data API v3 (`openapi.data.uwaterloo.ca/v3`) | Which terms a course ran in, faculty, sections and seats for the current and next term | Free, optional |
+| UW Flow's GraphQL API (`uwflow.com/graphql`) | Ratings and the most helpful comments on course pages | None |
 
-Pages link out to the Schedule of Classes, Quest Class Search, acal, the official calendar entry, course outlines on outline.uwaterloo.ca, and UW Flow reviews. Those sites are linked, not scraped: the Schedule of Classes disallows automated access and is being retired, Quest needs a session, and outline.uwaterloo.ca needs a UW login and disallows automated access.
+"When it runs" (the term strip and "Ran in N of the last 7 terms") comes from `ClassSchedules/{term}`, the terms a course had sections scheduled. It doesn't use the terms field in the course catalog, which lists the terms a course could be offered, not the ones it ran: AMATH 343 is listed for Fall 2025 through Fall 2026 but ran only in Fall 2025. A term with no class schedule counts as unknown, never as "not offered": ahead, it says the schedule isn't out yet, and a past term whose schedule came back empty is asked for again on later builds.
+
+Pages link out to the Schedule of Classes, Quest Class Search, acal, the official calendar entry, course outlines on outline.uwaterloo.ca, and WClasses (wclasses.vercel.app: every section back to 2004, with instructors up to about 2022; it stopped updating in early 2026). Those sites are linked, not scraped: the Schedule of Classes disallows automated access and is being retired, Quest needs a session, and outline.uwaterloo.ca needs a UW login and disallows automated access.
 
 Open Data withholds instructor names and rooms and can trail Quest by up to two days, so the sections table says so and links to the Schedule of Classes for the live view.
 
@@ -90,6 +94,8 @@ Most of this is automatic. Every workflow run starts with `scripts/setup.mjs`, w
    ```
 
    The email you get has the key and a code; activate it with `POST /v3/account/confirm`, per the [getting started guide](https://github.com/uwaterloo/OpenData/wiki/Home---Getting-Started).
+
+   **Keys stay out of the repo.** It's public, so keys live only in these secrets. `git config core.hooksPath .githooks` (once per clone) turns on a check that refuses a commit containing an Open Data key, a GitHub token, or a long value after a secret's name. The deploy workflow runs the same check over every file, which catches web uploads. `gh secret list` shows the secrets' names and dates; GitHub never shows a saved value again.
 4. **Run it.** Actions → "Build and deploy uwloo.ca" → Run workflow. The first build fetches every course in every undergraduate and graduate calendar (about 30–60 minutes); later runs reuse the cache and take a few minutes.
 5. **Verify the domain, once.** GitHub has no API for this button. The workflow puts the TXT record in Cloudflare (the code is in `.github/workflows/deploy.yml`), then you click **Verify** at <https://github.com/settings/pages_verified_domains>.
 
@@ -132,6 +138,14 @@ u/someone      # everything by that account
 
 Reddit's API, which could check daily for deletions, now needs Reddit's approval for new keys, so removals are by request for now.
 
+## UW Flow reviews
+
+Course pages have a "Reviewed on UW Flow" section, folded like the r/uwaterloo one: the share of students who liked the course and found it easy and useful, how many ratings and comments that's from, and up to five comments, most found helpful first, with a link to the rest on UW Flow. Comments are quoted as written, clipped at 700 characters, without names.
+
+`scripts/lib/uwflow.mjs` reads UW Flow's public GraphQL API (the one its own site uses; its robots.txt allows everything), 1,000 rows a request with a pause between, at most once a week, into `.cache/uwflow/flow.json`. If UW Flow can't be reached, the build uses the last copy; with no copy, the section is left out. `UWFLOW=off` skips it.
+
+**Removals.** Each comment has a "Remove this" link that opens a GitHub issue with its review id. Add the id to `data/uwflow/removed.txt` and push.
+
 ## Course resources
 
 Course pages can list resources: PDFs that uwloo hosts with the author's permission, and links to notes, slides and past exams posted elsewhere. A resource can be one PDF or a set (chapters, lecture slides, a course site and its recordings), shown as one card. Each hosted PDF gets a page like `/cs341/1249-notes/` or `/cs341/1249-notes/3/`, with the notes about it (what it covers, page notes, how to cite it) and the rest of its set above the PDF itself. The PDF is drawn by PDF.js (`site/viewer.js`, `site/vendor/`), so it shows in the page on phones too instead of downloading.
@@ -145,6 +159,8 @@ Under each course's Resources, "Around the web" lists course websites, notes, sl
 ## Courses no longer offered
 
 A course that's in none of the current calendars uwloo has (2024–25 on) still gets a page if Waterloo ever listed it: `uwloo.ca/msci452`. It says when it was in the course catalog or the older Graduate Calendars, the terms it ran, its description and requirements as last listed, which of today's courses still mention it (usually as an antirequisite), its r/uwaterloo discussions, and links to its last calendar entry on ucalendar and to the scanned calendars it's in. Today's pages link to it too, greyed out.
+
+A course in the scanned calendars (1963–64 to 1994–95) gets its text from them, version by version. Years whose wording matches, give or take OCR misreads, are grouped and shown once, using the year whose text agrees best with the rest, so one bad scan doesn't stand in. A rewrite starts a new version, a title that changes completely is flagged as probably another course under the same number, and gaps between versions are named ("Not in the 1965–66 to 1973–74 calendars"). Each year links to its uwloo page and to its page of the scanned PDF. A course that's only in the scans uses its newest version as its description, with its terms offered, credit weight and requirements. If it was gone before 1994–95, the page leaves out course outlines, UW Flow and WClasses, which don't go back that far. The 1995–96 to 2021–22 calendars aren't read, because ucalendar's robots.txt asks programs to stay out, so a course that ran into those years shows only its scanned versions and a link to ucalendar.
 
 The history comes from UW Open Data: `Courses/{term}` (the catalog each term) and `ClassSchedules/{term}` (what ran), folded into `.cache/opendata/history.json` by `scripts/lib/history.mjs`. Past terms never change, so each is fetched once, newest first, `HISTORY_TERMS_PER_BUILD` (24, eight years) a build. Going back, four empty terms in a row mark where Open Data's records end, and the page says "since at least" that term. Older courses come from the scanned 1963–64 to 1994–95 calendars (seen in at least two years, so an OCR misread doesn't get a page).
 
@@ -201,6 +217,7 @@ Environment variables for `scripts/build.mjs`:
 | `HISTORY_TERMS_PER_BUILD` | 24 | Past terms of Open Data added to the course history each build |
 | `KUALI_MAX_AGE_DAYS` | 7 | How often the live calendar's course details are refetched |
 | `KUALI_CONCURRENCY` / `OPENDATA_CONCURRENCY` | 6 / 3 | Parallel requests; keep these low |
+| `UWFLOW` / `UWFLOW_MAX_AGE_DAYS` | on / 7 | `off` leaves out UW Flow reviews; how often they're refetched |
 
 ## Files
 
@@ -216,6 +233,8 @@ scripts/lib/terms.mjs          term codes (1269) and year codes (2627)
 scripts/test.mjs               unit tests, run before every build
 tools/reddit/index_dump.py     r/uwaterloo dump -> data/reddit/{SUBJ}.json
 data/reddit/removed.txt        quotes taken down on request
+scripts/lib/uwflow.mjs         UW Flow ratings and comments, and their section on course pages
+data/uwflow/removed.txt        UW Flow comments taken down on request
 site/reddit.js                 discussion cards, shared by the build and the browser
 data/archive/{year}.json       page numbers inside the 1963–64 to 1994–95 PDFs
 scripts/lib/history.mjs        every course Open Data's catalog has listed, and when each ran

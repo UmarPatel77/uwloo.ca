@@ -315,6 +315,9 @@ export async function crawlUcalYear(y, polite, { log = console } = {}) {
     const r = await polite.get(url);
     if (!r.html) {
       stats.failed++;
+      // What went wrong, tallied for report.json: "HTTP 403", "unreachable" (robots.txt didn't answer)…
+      const why = r.error ?? `HTTP ${r.status}`;
+      (stats.errors ??= {})[why] = (stats.errors[why] ?? 0) + 1;
       if (r.error === 'robots') return { error: `robots.txt doesn't allow ${new URL(url).pathname}`, stats };
       continue;
     }
@@ -427,7 +430,7 @@ export async function main(argv = process.argv.slice(2), opts = {}) {
         }
         const res = await crawlUcalYear(y, polite, { log });
         if (res.error || !res.subjects.length) {
-          log.warn(`  ! ${y.yearCode} ${y.label}: ${res.error ?? 'no courses read'}`);
+          log.warn(`  ! ${y.yearCode} ${y.label}: ${res.error ?? 'no courses read'}${res.stats?.errors ? ` (${Object.entries(res.stats.errors).map(([k, v]) => `${v}× ${k}`).join(', ')})` : ''}`);
           (report.ug ??= {})[y.yearCode] = { source: null, error: res.error ?? 'no courses read', ...(res.stats ?? {}) };
           changed++;
           continue;

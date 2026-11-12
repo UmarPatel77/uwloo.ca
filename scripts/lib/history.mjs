@@ -16,6 +16,7 @@ import { shiftTerm, termRange } from './terms.mjs';
 export const HISTORY_FLOOR = '0951'; // Winter 1995: no point asking for anything older
 const PATH = `${CACHE}/history-2.json`; // -2: refolds every term so PD 1 to PD 99 are in it
 const EMPTY_RUN = 4; // this many empty terms in a row, going back, and the records have ended
+const RECHECK = 2; // terms with a catalog but no class schedule, asked again each build
 const clip = (s, n) => {
   const t = String(s ?? '').replace(/\s+/g, ' ').trim();
   return t.length > n ? `${t.slice(0, n - 1)}…` : t || null;
@@ -65,6 +66,8 @@ async function fetchTerm(term) {
  */
 export async function loadHistory(curTerm, { maxNew = Number(process.env.HISTORY_TERMS_PER_BUILD ?? 24), fetch = fetchTerm, path = PATH, log = console } = {}) {
   const h = (await readCache(path)) ?? { version: 1, done: {}, codes: {}, floor: null };
+  h.unscheduled ??= [];
+  const fresh = new Set();
   const newest = shiftTerm(curTerm, -1);
   const terms = termRange(h.floor ?? HISTORY_FLOOR, newest).reverse();
   let added = 0;
@@ -77,6 +80,10 @@ export async function loadHistory(curTerm, { maxNew = Number(process.env.HISTORY
       if (!got) break; // Open Data trouble: try again next build
       h.done[t] = got.rows.length;
       addTerm(h, t, got.rows, got.scheduled);
+      if (got.rows.length && !got.scheduled.length) {
+        h.unscheduled.push(t);
+        fresh.add(t);
+      }
       added++;
     }
     if (h.done[t] > 0) {
@@ -87,8 +94,19 @@ export async function loadHistory(curTerm, { maxNew = Number(process.env.HISTORY
       break;
     }
   }
-  if (added) await writeCache(path, h);
+  // A catalog with no class schedule beside it means the schedule read failed (or Open Data has none that
+  // term), not that nothing ran. Those terms are asked again, a couple a build, until a schedule comes back.
+  let rechecked = 0;
+  for (const t of h.unscheduled.filter((x) => !fresh.has(x)).slice(0, RECHECK)) {
+    const got = await fetch(t);
+    if (!got) break;
+    rechecked++;
+    h.unscheduled = h.unscheduled.filter((x) => x !== t);
+    if (got.scheduled.length) addTerm(h, t, got.rows, got.scheduled);
+    else h.unscheduled.push(t); // to the back of the line
+  }
+  if (added || rechecked) await writeCache(path, h);
   const have = Object.entries(h.done).filter(([, n]) => n > 0).map(([t]) => t).sort();
-  log.log(`Course history: ${Object.keys(h.codes).length} courses, ${have.length} terms (${have[0] ?? '–'} to ${have.at(-1) ?? '–'})${h.floor ? `; Open Data starts at ${h.floor}` : ''}${added ? `; ${added} new this build` : ''}`);
+  log.log(`Course history: ${Object.keys(h.codes).length} courses, ${have.length} terms (${have[0] ?? '–'} to ${have.at(-1) ?? '–'})${h.floor ? `; Open Data starts at ${h.floor}` : ''}${added ? `; ${added} new this build` : ''}${h.unscheduled.length ? `; ${h.unscheduled.length} with no class schedule yet (${[...h.unscheduled].sort().join(', ')})` : ''}`);
   return h;
 }

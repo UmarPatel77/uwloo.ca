@@ -1,4 +1,4 @@
-import { normalizeCode } from '/route.js';
+import { nearby, normalizeCode } from '/route.js';
 
 let index = null;
 async function loadIndex() {
@@ -60,6 +60,7 @@ const list = document.getElementById('results');
 if (box && list) {
   let active = -1;
   let rows = [];
+  let near = false; // rows are the nearest courses to a code that doesn't exist
   const render = () => {
     if (!box.value.trim()) {
       list.innerHTML = '';
@@ -69,13 +70,16 @@ if (box && list) {
       list.innerHTML = `<li class="empty">No course matches “${esc(box.value.trim())}”. Try a subject like “math” or a title word like “calculus”.</li>`;
       return;
     }
-    list.innerHTML = rows
+    list.innerHTML = (near ? `<li class="empty">No ${esc(fmt(normalizeCode(box.value)?.toUpperCase() ?? box.value.trim()))}. Nearest:</li>` : '') + rows
       .map(([code, title, old], i) => `<li><a id="r${i}" role="option" href="/${code.toLowerCase()}/" aria-selected="${i === active}"><span class="cc">${esc(fmt(code))}</span><span>${esc(title)}${old ? ' <span class="t">· no longer offered</span>' : ''}</span></a></li>`)
       .join('');
   };
   const update = async () => {
-    rows = search(box.value, await loadIndex());
-    active = rows.length ? 0 : -1;
+    const idx = await loadIndex();
+    rows = search(box.value, idx);
+    near = !rows.length;
+    if (near) rows = nearby(box.value, idx, 8);
+    active = rows.length && !near ? 0 : -1; // Enter on a code that doesn't exist goes to its page, which says so
     render();
   };
   box.addEventListener('focus', loadIndex, { once: true });
@@ -105,8 +109,9 @@ const miss = document.getElementById('suggest');
 if (miss?.dataset.query) {
   loadIndex().then((rows) => {
     let hits = search(miss.dataset.query, rows, 8);
+    if (!hits.length) hits = nearby(miss.dataset.query, rows, 8); // cs421 → CS 420, 418, 431…
     const subject = /^[a-z]{2,8}/i.exec(miss.dataset.query)?.[0];
-    if (!hits.length && subject) hits = search(subject, rows, 8); // cs999 → other CS courses
+    if (!hits.length && subject) hits = search(subject, rows, 8);
     if (hits.length) {
       miss.innerHTML = `<h2>Closest courses</h2><ul class="results">${hits
         .map(([code, title, old]) => `<li><a href="/${code.toLowerCase()}/"><span class="cc">${esc(fmt(code))}</span><span>${esc(title)}${old ? ' <span class="t">· no longer offered</span>' : ''}</span></a></li>`)
@@ -115,15 +120,16 @@ if (miss?.dataset.query) {
   });
 }
 
-// r/uwaterloo on course pages: stays open or closed the way you last left it (this browser only).
-const fold = document.querySelector('.rd-fold');
-if (fold) {
+// Course page sections that fold (r/uwaterloo, UW Flow): each stays open or closed the way you last left
+// it (this browser only).
+for (const fold of document.querySelectorAll('details[data-fold]')) {
+  const key = `uwloo.${fold.dataset.fold}`;
   try {
-    if (localStorage.getItem('uwloo.reddit') === 'closed') fold.open = false;
+    if (localStorage.getItem(key) === 'closed') fold.open = false;
   } catch {}
   fold.addEventListener('toggle', () => {
     try {
-      localStorage.setItem('uwloo.reddit', fold.open ? 'open' : 'closed');
+      localStorage.setItem(key, fold.open ? 'open' : 'closed');
     } catch {}
   });
 }

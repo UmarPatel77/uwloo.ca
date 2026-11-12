@@ -190,3 +190,30 @@ export function resolve(pathname, meta) {
 
   return { type: 'notfound', query: segs.join(' ') };
 }
+
+/**
+ * A course code that doesn't exist (cs421): the same subject's courses nearest that number, in the same
+ * hundred first (CS 418, 431 before CS 100). Courses still offered come first; ones no longer offered
+ * (most from the 1960s to 90s calendars) only fill in after them.
+ */
+export function nearby(q, rows, limit = 8) {
+  const m = /^\s*([a-z]{2,8})[\s\-_.]*(\d{1,3})[a-z]{0,2}\s*$/i.exec(q);
+  if (!m) return [];
+  const S = m[1].toUpperCase();
+  const n = Number(m[2]);
+  const level = (x) => Math.floor(x / 100);
+  const away = (x) => [level(x) === level(n) ? 0 : 1, Math.abs(x - n)];
+  return rows
+    .map((row) => {
+      const c = /^([A-Z]+)(\d+)/.exec(row[0]);
+      return c && c[1] === S ? [row, Number(c[2])] : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      const [la, da] = away(a[1]);
+      const [lb, db] = away(b[1]);
+      return (a[0][2] ? 1 : 0) - (b[0][2] ? 1 : 0) || la - lb || da - db || a[1] - b[1];
+    })
+    .slice(0, limit)
+    .map((x) => x[0]);
+}

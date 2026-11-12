@@ -903,20 +903,27 @@ test('history: fetched newest first, a few terms per build, until Open Data runs
   const { loadHistory } = await import('./lib/history.mjs');
   const dir = await mkdtemp(`${tmpdir()}/hist-`);
   const asked = [];
-  // Open Data has 1199 (Fall 2019) to 1261; nothing older.
+  // Open Data has 1199 (Fall 2019) on; nothing older. CS 134 ran every term; 1249's schedule read fails once.
   const fetch = async (t) => {
     asked.push(t);
-    return Number(t) >= 1199 ? { rows: [{ courseId: '1', subjectCode: 'CS', catalogNumber: '134', title: 'Old CS' }], scheduled: t === '1201' ? ['1'] : [] } : { rows: [], scheduled: [] };
+    const glitch = t === '1249' && asked.filter((x) => x === t).length === 1;
+    return Number(t) >= 1199 ? { rows: [{ courseId: '1', subjectCode: 'CS', catalogNumber: '134', title: 'Old CS' }], scheduled: glitch ? [] : ['1'] } : { rows: [], scheduled: [] };
   };
   const log = { log() {} };
   const path = `${dir}/h.json`;
   let h = await loadHistory('1269', { maxNew: 10, fetch, path, log });
   assert.deepEqual(asked, ['1265', '1261', '1259', '1255', '1251', '1249', '1245', '1241', '1239', '1235']);
   assert.equal(h.floor, null);
-  for (let i = 0; i < 5; i++) h = await loadHistory('1269', { maxNew: 10, fetch, path, log });
+  assert.deepEqual(h.unscheduled, ['1249'], 'a catalog with no schedule is a failed read, kept to ask again');
+  assert.ok(!h.codes.CS134.ran.includes('1249'));
+  h = await loadHistory('1269', { maxNew: 10, fetch, path, log });
+  assert.equal(asked.filter((x) => x === '1249').length, 2, 'asked again the next build');
+  assert.ok(h.codes.CS134.ran.includes('1249'), 'and folded in once its schedule comes back');
+  assert.deepEqual(h.unscheduled, []);
+  for (let i = 0; i < 4; i++) h = await loadHistory('1269', { maxNew: 10, fetch, path, log });
   assert.equal(h.floor, '1199');
   assert.equal(h.codes.CS134.first, '1199');
-  assert.deepEqual(h.codes.CS134.ran, ['1201']);
+  assert.equal(h.codes.CS134.ran.length, 21, 'every term from 1199 to 1265');
   const n = asked.length;
   await loadHistory('1269', { maxNew: 10, fetch, path, log });
   assert.equal(asked.length, n, 'nothing is asked for again once the floor is known');
@@ -927,6 +934,52 @@ test('history: fetched newest first, a few terms per build, until Open Data runs
   // Open Data trouble stops the run without marking anything.
   const flaky = await loadHistory('1275', { maxNew: 10, fetch: async () => null, path, log });
   assert.equal(flaky.done['1271'], undefined);
+});
+
+test('retired: a scanned-only course shows its text, version by version, with each year’s scan', async () => {
+  const { archiveAppearances, retiredCourses, retiredPage, scanVersions, readSpec } = await import('./lib/retired.mjs');
+  assert.deepEqual(readSpec('W 3C,1T 0.5'), { terms: ['Winter'], hours: '3 class, 1 tutorial', weight: '0.5' });
+  assert.deepEqual(readSpec('F,S 3c 0.5'), { terms: ['Fall', 'Spring'], hours: '3 class', weight: '0.5' });
+  assert.equal(readSpec('Y 1.0 fidlab'), null, 'anything unclear: not decoded');
+  const energy = 'An analysis of the economics of conservation, especially the adequacy of the market mechanism as an allocator of resource use over time.';
+  const v1 = `${energy} The political economy of the world’s supply of and demand for energy resources and major issues in Canadian energy policy will be considered.`;
+  const v2 = `${energy} Issues concerning the economic behaviour of Canada’s fishery, forest, fuel and nonfuel mineral industries will be considered.`;
+  const year = (y, start, c) => [y, { year: y, label: `${start}–${String(start + 1).slice(2)}`, start, pdf: `http://example.test/${y}.pdf`, subjects: [{ code: 'ECON', slug: 'econ', courses: [{ id: 'ECON355', page: start - 1600, ...c }] }] }];
+  const docs = new Map([
+    year('6364', 1963, { title: 'International Economics', paras: ['Balance of payments statistics; the economic basis of trade and investment; foreign exchange rates and commercial policy.'] }),
+    year('6465', 1964, { title: 'International Economics', paras: ['Balance of payments statistics; the economic basis of trade and investment; foreign exchange rates and commercial policy.'] }),
+    year('7475', 1974, { title: 'Economics of Energy and Natural Resources', spec: 'W 3C 0.5', paras: [v1, 'Prereq: ECON 201'] }),
+    year('7576', 1975, { title: 'Economics of Energy and Natural Resources', spec: 'W 3C 0.5', paras: [v1.replace('world’s', 'worid’s').replace('policy', 'po1icy'), 'Prereq: ECON 201'] }),
+    year('7677', 1976, { title: 'Mechanics of Deformable Solids', paras: ['A general treatment of stress and strain in structural components, Mohr circle, beams and columns.'] }),
+    year('7778', 1977, { title: 'Economics of Energy and Natural Resources', spec: 'W 3C 0.5', paras: [v1, 'Prereq: ECON 201'] }),
+    year('7879', 1978, { title: 'Economics of Energy and National Resources', listed: 'COURSES NOT OFFERED 1978-79', paras: [] }),
+    year('8485', 1984, { title: 'Economics of Energy and Natural Resources', spec: 'W 3C 0.5', paras: [v2, 'Prereq: ECON 201'] }),
+    year('8586', 1985, { title: 'Economics of Energy and Natural', spec: 'W 3C 0.5', paras: [`Resources : ${v2.replace('concerning', 'conceming')}`, 'Prereq: ECON 201'] }),
+  ]);
+  const arch = archiveAppearances(docs);
+  const vs = scanVersions(arch.get('ECON355').years);
+  assert.deepEqual(vs.map((v) => v.years.map((y) => y.year)), [['6364', '6465'], ['7475', '7576', '7677', '7778', '7879'], ['8485', '8586']], 'OCR noise, a misread year and a year without text don’t split a version; a rewrite does');
+  assert.ok(!vs[1].desc.join(' ').includes('Mohr'), 'the misread year’s text isn’t the one shown');
+  assert.deepEqual(vs[2].reqs, ['Prereq: ECON 201']);
+  const retired = retiredCourses({ history: { codes: {} }, archive: arch, current: new Set(['ECON201']) });
+  const known = { has: (c) => c === 'ECON201', href: (c) => `/${c.toLowerCase()}/`, retired };
+  const page = retiredPage({ r: retired.get('ECON355'), known, mentions: new Map(), builtAt: new Date(), version: 'v' });
+  assert.match(page, /scanned calendars from 1974–75 to 1985–86 \(before that, 1963–64 to 1964–65 used the number for International Economics\)/);
+  assert.match(page, /<dt>Offered<\/dt><dd>Winter<\/dd>.*<dt>Credit<\/dt><dd>0\.5<\/dd>.*<dt>Last listed<\/dt><dd>1985–86<\/dd>/s);
+  assert.match(page, /<p class="desc">An analysis of the economics of conservation.*fishery/);
+  assert.match(page, /As printed in the 1984–85 to 1985–86 calendars, read by OCR; <a href="http:\/\/example\.test\/8485\.pdf#page=384">the scanned page<\/a>/);
+  assert.match(page, /Prereq: <a class="cc" href="\/econ201\/">ECON 201<\/a>/);
+  assert.match(page, /<a href="\/7879\/econ\/#ECON355" title="listed as not offered">1978–79<\/a>/);
+  assert.match(page, /<a class="pdf" href="http:\/\/example\.test\/7475\.pdf#page=374"/);
+  assert.match(page, /Another title:<\/b> International Economics, probably a different course/);
+  const scans = page.slice(page.indexOf('id="scan-h"'));
+  const order = ['1984–85 to 1985–86', '1974–75 to 1978–79', 'Not in the 1965–66 to 1973–74 calendars', '1963–64 to 1964–65'].map((t) => scans.indexOf(t));
+  assert.ok(order.every((i, n) => i > 0 && (n === 0 || i > order[n - 1])), `newest first, the gap between the versions it separates: ${order}`);
+  assert.ok(!page.includes('outline.uwaterloo.ca') || page.includes('1995–96'), 'outline links only when it may have run past 1994–95');
+  // No title read in any year: still a page.
+  const bare = archiveAppearances(new Map([year('9394', 1993, { id: 'ECON356', title: '', paras: [] }), year('9495', 1994, { id: 'ECON356', title: '', paras: [] })].map(([y, d]) => [y, { ...d, subjects: [{ ...d.subjects[0], courses: [{ ...d.subjects[0].courses[0], id: 'ECON356' }] }] }])));
+  const r2 = retiredCourses({ history: { codes: {} }, archive: bare, current: new Set() });
+  assert.match(retiredPage({ r: r2.get('ECON356'), known, mentions: new Map(), builtAt: new Date(), version: 'v' }), /scanned calendars from 1993–94 to 1994–95/);
 });
 
 test('retired: pages for courses no calendar has, linked from today’s calendar', async () => {
@@ -1308,7 +1361,87 @@ test('ug archive: data files are well-formed', async () => {
 test('reddit: the section folds from its heading', async () => {
   const { redditSection } = await import('./lib/reddit.mjs');
   const html = redditSection('CS135', [{ post: 'abc', t: 1.73e9, title: 'CS 135 help', score: 3, n: 2, in: 'post' }], { through: 1.74e9 }, { repo: 'u/r', slug: 'cs135' });
-  assert.match(html, /^<section class="reddit" aria-labelledby="reddit-h"><details class="rd-fold" open>\s*<summary><h2 id="reddit-h">Discussed on r\/uwaterloo<\/h2><\/summary>/);
+  assert.match(html, /^<section class="reddit" aria-labelledby="reddit-h"><details class="rd-fold" data-fold="reddit" open>\s*<summary><h2 id="reddit-h">Discussed on r\/uwaterloo<\/h2><\/summary>/);
   assert.match(html, /<\/details><\/section>$/);
+});
+
+test('not found: a code that doesn’t exist suggests its nearest neighbours, same hundred first', async () => {
+  const { nearby } = await import('../site/route.js');
+  const rows = ['CS100', 'CS135', 'CS341', 'CS418', 'CS431', 'CS432', 'CS440', 'CS480', 'CS486', 'CS499T', 'CS519', 'MATH421'].map((c) => [c, '']);
+  rows.push(['CS420', 'Old', 1]);
+  rows.push(['CS422', 'Current', 0]);
+  assert.deepEqual(nearby('cs421', rows, 6).map((r) => r[0]), ['CS422', 'CS418', 'CS431', 'CS432', 'CS440', 'CS480'], 'still offered first');
+  assert.equal(nearby('cs421', rows, 20).at(-1)[0], 'CS420', 'no longer offered: after every current one');
+  assert.deepEqual(nearby('CS 199', rows, 3).map((r) => r[0]), ['CS135', 'CS100', 'CS341']);
+  assert.deepEqual(nearby('cs-9', rows, 2).map((r) => r[0]), ['CS100', 'CS135']);
+  assert.deepEqual(nearby('database', rows), []);
+  assert.deepEqual(nearby('xyz421', rows), []);
+});
+
+// ---------------- UW Flow ----------------
+
+test('uwflow: ratings and comments from the GraphQL API, paged, cached a week, removals honoured', async () => {
+  const http = await import('node:http');
+  const { mkdtemp, writeFile: wf, rm: rmr } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const courses = Array.from({ length: 1001 }, (_, i) => ({ code: i === 0 ? 'cs135' : `zz${100 + (i % 800)}`, rating: i === 0 ? { liked: 0.781, easy: 0.452, useful: 0.8, filled_count: 1234, comment_count: 456 } : { liked: null, easy: null, useful: null, filled_count: 0, comment_count: 0 } }));
+  const reviews = [
+    { id: 1, created_at: '2019-01-05T10:00:00Z', liked: 1, course_easy: 0.5, course_useful: 1, course_comment: 'Old but helpful.', course: { code: 'cs135' }, course_review_rating: { upvote_count: 30 } },
+    { id: 2, created_at: '2025-03-02T10:00:00Z', liked: 0, course_easy: 0.25, course_useful: 0.5, course_comment: 'Racket   is\r\n\r\n\r\nfine', course: { code: 'cs135' }, course_review_rating: { upvote_count: 2 } },
+    { id: 3, created_at: '2025-04-02T10:00:00Z', liked: 1, course_easy: 1, course_useful: 1, course_comment: 'Take it.', course: { code: 'cs135' }, course_review_rating: null },
+    { id: 4, created_at: '2025-04-02T10:00:00Z', liked: 1, course_easy: 1, course_useful: 1, course_comment: 'Not rated course.', course: { code: 'zz999' }, course_review_rating: null },
+  ];
+  const calls = [];
+  const server = http.createServer(async (req, res) => {
+    let body = '';
+    for await (const ch of req) body += ch;
+    const { query, variables } = JSON.parse(body);
+    calls.push([query.includes('review(') ? 'review' : 'course', variables.offset]);
+    const all = query.includes('review(') ? reviews : courses;
+    const key = query.includes('review(') ? 'review' : 'course';
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ data: { [key]: all.slice(variables.offset, variables.offset + variables.limit) } }));
+  });
+  await new Promise((ok) => server.listen(0, '127.0.0.1', ok));
+  process.env.UWFLOW_GRAPHQL = `http://127.0.0.1:${server.address().port}/graphql`;
+  const dir = await mkdtemp(`${tmpdir()}/flow-`);
+  const quiet = { log() {}, warn() {} };
+  try {
+    const { loadFlow, flowSection, shape } = await import(`./lib/uwflow.mjs?${Date.now()}`);
+    const path = `${dir}/flow.json`;
+    await wf(`${dir}/removed.txt`, '# taken down\n3\n');
+    const now = Date.parse('2026-11-09T12:00:00Z');
+    const f = await loadFlow({ path, now, pause: 0, log: quiet, removedPath: `${dir}/removed.txt`, enabled: true });
+    assert.deepEqual(calls, [['course', 0], ['course', 1000], ['review', 0]], 'two pages of courses, one of comments');
+    assert.deepEqual(Object.keys(f.courses), ['CS135'], 'only courses someone rated');
+    const c = f.courses.CS135;
+    assert.equal(c.ratings, 1234);
+    assert.deepEqual(c.top.map((t) => t.id), [1, 2], 'most helpful first; a removed comment is dropped');
+    assert.equal(c.top[1].text, 'Racket is\n\nfine');
+    // A week later than the copy: fetched again. Within the week: not.
+    calls.length = 0;
+    await loadFlow({ path, now: now + 3 * 86_400_000, pause: 0, log: quiet, enabled: true });
+    assert.equal(calls.length, 0, 'cached for a week');
+    server.close();
+    const stale = await loadFlow({ path, now: now + 9 * 86_400_000, pause: 0, log: quiet, enabled: true });
+    assert.equal(stale.courses.CS135.ratings, 1234, 'UW Flow down: the last copy is used');
+    assert.equal(await loadFlow({ path: `${dir}/none.json`, now, pause: 0, log: quiet, enabled: true }), null, 'no copy and no UW Flow: nothing');
+
+    const html = flowSection('CS135', c, { repo: 'u/r' });
+    assert.match(html, /^<section class="uwflow" aria-labelledby="flow-h"><details class="rd-fold" data-fold="uwflow" open>\s*<summary><h2 id="flow-h">Reviewed on UW Flow<\/h2><\/summary>/);
+    assert.match(html, /<span><b>78%<\/b> liked it<\/span><span><b>45%<\/b> easy<\/span><span><b>80%<\/b> useful<\/span>/);
+    assert.match(html, /From 1,234 ratings and 456 comments on UW Flow\. The most helpful comments, quoted as written, without names\. <a href="https:\/\/uwflow\.com\/course\/cs135">Read them all on UW Flow<\/a>/);
+    assert.match(html, /<p class="rd-q flow-q">Old but helpful\.<\/p>\s*<p class="entry-links"><span class="t">Jan 2019 · liked it · 30 found this helpful<\/span>/);
+    assert.match(html, /Racket is<br>fine/);
+    assert.match(html, /didn’t like it/);
+    assert.match(html, /issues\/new\?title=Remove%20UW%20Flow%20comment%201%20\(CS%20135\)/);
+    assert.equal(flowSection('CS999', undefined, { repo: 'u/r' }), '');
+    const long = shape([{ code: 'x100', rating: { liked: 1, filled_count: 1, comment_count: 1 } }], [{ id: 9, created_at: '2024-01-01', course_comment: 'word '.repeat(300), course: { code: 'x100' } }]);
+    assert.match(flowSection('X100', long.X100, { repo: 'u/r' }), /word…<\/p>/, 'a long comment is clipped at a word');
+  } finally {
+    server.close();
+    delete process.env.UWFLOW_GRAPHQL;
+    await rmr(dir, { recursive: true, force: true });
+  }
 });
 

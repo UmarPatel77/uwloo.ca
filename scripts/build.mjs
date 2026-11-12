@@ -7,6 +7,7 @@ import { dirname, join } from 'node:path';
 import { archiveSubjectPage, archiveYearPage, loadArchiveText, textMap } from './lib/archive.mjs';
 import * as kuali from './lib/kuali.mjs';
 import { loadReddit, redditSection, SHOWN } from './lib/reddit.mjs';
+import { flowSection, loadFlow } from './lib/uwflow.mjs';
 import { available, entryPages, linksAboutPage, loadResources, publishFiles, resourcePage, resourcesSection, syncFiles } from './lib/resources.mjs';
 import { loadHistory } from './lib/history.mjs';
 import { archiveAppearances, mentionsOf, retiredCourses, retiredPage } from './lib/retired.mjs';
@@ -209,6 +210,7 @@ async function main() {
 
   // r/uwaterloo mentions (data/reddit/, see tools/reddit/). Pages show the newest; /reddit/{code}.json has the rest.
   const reddit = await loadReddit();
+  const flow = await loadFlow(); // UW Flow ratings and comments (scripts/lib/uwflow.mjs), refreshed weekly
   const repo = process.env.GITHUB_REPOSITORY || 'UmarPatel77/uwloo.ca';
   let redditPages = 0;
 
@@ -282,6 +284,7 @@ async function main() {
         curTerm,
         subjectHref: subjectHref(cat, course.subject, code).replace(/#.*$/, ''),
         ugFirst,
+        uwflow: flowSection(code, flow?.courses[code], { repo }),
         reddit: redditSection(code, reddit.map.get(code), reddit.meta, { repo, slug: slug(code), version }),
         resources: resourcesSection(code, resourcesFor.get(code), { known: linkable, repo, found: foundFor.get(code) }),
       }),
@@ -302,7 +305,7 @@ async function main() {
   for (const r of retired.values()) {
     const subject = /^[A-Z]+/.exec(r.code)[0];
     const mentions = reddit.map.get(r.code);
-    const extra = redditSection(r.code, mentions, reddit.meta, { repo, slug: slug(r.code), version }) + resourcesSection(r.code, [], { known: linkable, repo, found: foundFor.get(r.code) });
+    const extra = flowSection(r.code, flow?.courses[r.code], { repo }) + redditSection(r.code, mentions, reddit.meta, { repo, slug: slug(r.code), version }) + resourcesSection(r.code, [], { known: linkable, repo, found: foundFor.get(r.code) });
     pages.push([`${slug(r.code)}/index.html`, retiredPage({ ...ctxBase, r, known: linkable, mentions: stillMentioned, reddit: extra, floor: courseHistory.floor, oldHave, hosted: hostedUg, faculty: faculty(r.code, subject) })]);
     sitemap.push(`/${slug(r.code)}/`);
     if (mentions && groupThreads(mentions).length > SHOWN) pages.push([`reddit/${slug(r.code)}.json`, JSON.stringify(mentions)]);

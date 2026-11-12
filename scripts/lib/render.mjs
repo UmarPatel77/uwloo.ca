@@ -59,7 +59,8 @@ function stripHtml(strip, hint, sectionsByTerm) {
   if (strip?.length) {
     const cells = strip
       .map((s, i) => {
-        const label = s.state === 'on' ? 'ran' : s.state === 'tbd' ? 'schedule not published yet' : 'not offered';
+        // tbd: no class schedule from Open Data. Ahead, it isn't out yet; for a past term, the read came back empty.
+        const label = s.state === 'on' ? 'ran' : s.state === 'tbd' ? (s.future || s.now ? 'schedule not published yet' : 'no schedule data') : 'not offered';
         return `<li class="${s.state}${s.now ? ' now' : ''}" style="--i:${i}"><abbr title="${esc(termName(s.term))}: ${label}">${esc(termShort(s.term))}</abbr></li>`;
       })
       .join('');
@@ -135,6 +136,7 @@ function elsewhereLinks(c, cat, term, curTerm) {
     recent && [QUEST, 'Quest Class Search', 'Where you enrol'],
     [outlineUrl(c.subject, c.number), 'Course outlines', 'Syllabi from past terms (UW login)'],
     [`https://uwflow.com/course/${slug(c.code)}`, 'UW Flow', 'Student ratings and reviews'],
+    [`https://wclasses.vercel.app/course?subjectCode=${encodeURIComponent(c.subject.toLowerCase())}&catalogNumber=${encodeURIComponent(c.number)}`, 'WClasses', 'Past sections back to 2004, and who taught them'],
   ].filter(Boolean);
 }
 
@@ -215,6 +217,7 @@ ${desc ? `<p class="desc">${linkCodes(desc, known)}</p>` : ''}
 </div>
 ${sectionBlocks}
 ${version ? '' : ctx.resources ?? ''}
+${version ? '' : ctx.uwflow ?? ''}
 ${version ? '' : ctx.reddit ?? ''}
 <section aria-labelledby="out-h">
   <h2 id="out-h">Check it elsewhere for ${esc(termName(linkTerm))}</h2>

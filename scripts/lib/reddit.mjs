@@ -80,7 +80,7 @@ export function redditSection(code, entries, meta, { repo, slug, version = '' })
   const threads = groupThreads(entries).length;
   const s = (k, w) => `${k.toLocaleString('en-CA')} ${w}${k === 1 ? '' : 's'}`;
   // Folds away from its heading; app.js remembers whether you last left it open or closed.
-  return `<section class="reddit" aria-labelledby="reddit-h"><details class="rd-fold" open>
+  return `<section class="reddit" aria-labelledby="reddit-h"><details class="rd-fold" data-fold="reddit" open>
   <summary><h2 id="reddit-h">Discussed on r/uwaterloo</h2></summary>
   <p class="t">${n === 1 ? 'One post or comment' : `${n.toLocaleString('en-CA')} posts and comments`} in ${s(threads, 'thread')} ${n === 1 ? 'mentions' : 'mention'} ${fmtCode(code)}, ${monthYear(first)} to ${monthYear(through)}. Quoted word for word, newest first; each reply sits under the post and the comment that started its branch. <a href="${search}">Search r/uwaterloo for newer posts</a>.</p>
   <div id="reddit-list">${listHtml(entries, code, { repo, limit: SHOWN })}</div>

@@ -1,0 +1,2 @@
+# UW Flow comments people asked to take off uwloo, one review id per line (from the "Remove this" issue).
+# The build drops them from course pages; nothing else changes.
