@@ -1,1 +1,1 @@
-{"at":"2026-11-12T21:44:12.723Z","parser":1,"form":{"action":"https://classes.uwaterloo.ca/cgi-bin/cgiwrap/infocour/salook.pl","method":"get","fields":["sess(78)","level(2)","subject(265)","cournum="]},"canary":{"url":"https://classes.uwaterloo.ca/cgi-bin/cgiwrap/infocour/salook.pl?sess=1159&level=under&subject=ECON&cournum=","status":"error","why":"unreachable","econ355":null},"error":"check failed","saved":0,"left":0}
+{"at":"2026-11-12T21:59:06.194Z","source":"https://wclasses.vercel.app","probe":true,"saved":0,"left":0}
