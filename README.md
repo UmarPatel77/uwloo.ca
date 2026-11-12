@@ -156,6 +156,12 @@ The catalogue is `data/resources/{SUBJ}.json`; the PDFs are assets on a GitHub r
 
 Under each course's Resources, "Around the web" lists course websites, notes, slides, lecture videos and past exams that a weekly job finds: links posted on r/uwaterloo, the CS, SE and ECE webrings, students' link lists, professors' teaching pages (through department directories), course accounts like `student.cs.uwaterloo.ca/~cs341/`, and GitHub repositories of notes. Each page is checked to load and name the course; assignments and solutions are left out unless they're on the course's own site; dead links become Wayback Machine copies. It follows robots.txt and goes slowly; `/about/links/` explains it to site owners. `tools/links/README.md` has the details, and `data/links/removed.txt` takes links down.
 
+## Past class schedules
+
+`data/schedules/{term}.json` holds every past term's sections since Fall 2001: for each course, its sections with enrolment cap and total, times and instructor. They come from "Waterloo Class Schedules" (cs.uwaterloo.ca/cscf/teaching/schedule), the CS Computing Facility's copy of the Registrar's Schedule of Classes. Its robots.txt allows uwloo in; classes.uwaterloo.ca's doesn't.
+
+The "Past class schedules" workflow (`scripts/schedules.mjs`) reads one subject per level per term, a second apart, and carries on run after run until every past term is in, then once a term after each one ends. It finds the tool's form itself. Before reading anything, it asks for ECON 355 in Fall 2015 and checks the answer against WClasses (LEC 001, 60 of 60, Hongxiu Li); if that doesn't match, it saves nothing. A term is saved only when every subject came back as either classes for that subject or "no matches". A failed read, or a page answering for another subject, leaves the term for the next run instead of recording "no classes". Run it with "probe" ticked to only find the form and run the check.
+
 ## Courses no longer offered
 
 A course that's in none of the current calendars uwloo has (2024–25 on) still gets a page if Waterloo ever listed it: `uwloo.ca/msci452`. It says when it was in the course catalog or the older Graduate Calendars, the terms it ran, its description and requirements as last listed, which of today's courses still mention it (usually as an antirequisite), its r/uwaterloo discussions, and links to its last calendar entry on ucalendar and to the scanned calendars it's in. Today's pages link to it too, greyed out.
@@ -239,6 +245,7 @@ site/reddit.js                 discussion cards, shared by the build and the bro
 data/archive/{year}.json       page numbers inside the 1963–64 to 1994–95 PDFs
 scripts/lib/history.mjs        every course Open Data's catalog has listed, and when each ran
 scripts/lib/retired.mjs        pages for courses no longer offered (/msci452/)
+scripts/schedules.mjs          reads past class schedules into data/schedules/ (scripts/lib/schedules.mjs)
 scripts/grad-archive.mjs       reads the older calendars uwloo hosts (.github/workflows/grad-archive.yml)
 scripts/lib/gradarchive.mjs    where they are, how a course page is read and stored, their pages (/1109/co/)
 data/grad-archive/             those calendars, a report of each read, and sample pages

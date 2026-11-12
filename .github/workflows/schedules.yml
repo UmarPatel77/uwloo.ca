@@ -1,0 +1,75 @@
+name: Past class schedules
+
+# Reads every past term's class schedule since Fall 2001 from the CS Computing Facility's copy of the
+# Schedule of Classes (scripts/schedules.mjs) into data/schedules/. Past terms don't change, so each is read
+# once: each run starts the next while terms are left, then it stops. Again each January, May and September
+# for the term just finished; by hand from the Actions tab any time ("probe" checks the form and stops).
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: Time budget in minutes
+        default: "150"
+      terms:
+        description: Only these terms, e.g. 1159,1161 (blank for all not in yet)
+        default: ""
+      probe:
+        description: Just find the form and run the ECON 355 check
+        type: boolean
+        default: false
+  schedule:
+    - cron: "41 7 3 1,5,9 *"
+
+permissions:
+  contents: write # commit data/schedules
+  actions: write # start the next run
+
+concurrency:
+  group: schedules
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 200
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Restore page cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/schedules
+          key: uwloo-schedules-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: uwloo-schedules-
+
+      - name: Read the schedules
+        id: read
+        run: node scripts/schedules.mjs --minutes "${{ inputs.minutes || '150' }}" ${{ inputs.terms && format('--terms {0}', inputs.terms) || '' }} ${{ inputs.probe && '--probe' || '' }}
+
+      - name: Save page cache
+        if: always() && steps.read.outcome != 'skipped'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/schedules
+          key: uwloo-schedules-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Commit and carry on
+        if: always() && steps.read.outcome == 'success'
+        run: |
+          if [ -n "$(git status --porcelain -- data/schedules)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/schedules
+            git commit -m "Past class schedules: $(ls data/schedules | grep -c '^1.*json$') terms"
+            for i in 1 2 3; do git pull --rebase --quiet && git push && break; sleep 5; done
+          fi
+          if [ "${{ steps.read.outputs.more }}" = "true" ]; then
+            echo "Terms left: starting the next run."
+            gh workflow run schedules.yml --ref main -f minutes="${{ inputs.minutes || '150' }}"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
