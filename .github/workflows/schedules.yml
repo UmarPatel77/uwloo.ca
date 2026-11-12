@@ -1,24 +1,21 @@
 name: Past class schedules
 
-# Reads every past term's class schedule since Fall 2001 from the CS Computing Facility's copy of the
-# Schedule of Classes (scripts/schedules.mjs) into data/schedules/. Past terms don't change, so each is read
-# once: each run starts the next while terms are left, then it stops. Again each January, May and September
-# for the term just finished; by hand from the Actions tab any time ("probe" checks the form and stops).
+# Reads every course's past sections (Spring 2004 to early 2026) from WClasses (scripts/schedules.mjs) into
+# data/schedules/. WClasses no longer updates, so each course is read once: each run starts the next while
+# courses are left, then it stops. By hand from the Actions tab any time ("probe" runs the checks and stops).
 on:
   workflow_dispatch:
     inputs:
       minutes:
         description: Time budget in minutes
         default: "150"
-      terms:
-        description: Only these terms, e.g. 1159,1161 (blank for all not in yet)
+      only:
+        description: Only these courses, e.g. CS135,ECON355 (blank for all not in yet)
         default: ""
       probe:
-        description: Just find the form and run the ECON 355 check
+        description: Just run the checks (ECON 355 in Fall 2015, CS 135's page)
         type: boolean
         default: false
-  schedule:
-    - cron: "41 7 3 1,5,9 *"
 
 permissions:
   contents: write # commit data/schedules
@@ -39,23 +36,9 @@ jobs:
         with:
           node-version: 22
 
-      - name: Restore page cache
-        uses: actions/cache/restore@v4
-        with:
-          path: .cache/schedules
-          key: uwloo-schedules-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: uwloo-schedules-
-
       - name: Read the schedules
         id: read
-        run: node scripts/schedules.mjs --minutes "${{ inputs.minutes || '150' }}" ${{ inputs.terms && format('--terms {0}', inputs.terms) || '' }} ${{ inputs.probe && '--probe' || '' }}
-
-      - name: Save page cache
-        if: always() && steps.read.outcome != 'skipped'
-        uses: actions/cache/save@v4
-        with:
-          path: .cache/schedules
-          key: uwloo-schedules-${{ github.run_id }}-${{ github.run_attempt }}
+        run: node scripts/schedules.mjs --minutes "${{ inputs.minutes || '150' }}" ${{ inputs.only && format('--only {0}', inputs.only) || '' }} ${{ inputs.probe && '--probe' || '' }}
 
       - name: Commit and carry on
         if: always() && steps.read.outcome == 'success'
@@ -64,7 +47,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add data/schedules
-            git commit -m "Past class schedules: $(ls data/schedules | grep -c '^1.*json$') terms"
+            git commit -m "Past class schedules from WClasses: $(ls data/schedules | grep -c '^[A-Z]*\.json$') subjects"
             for i in 1 2 3; do git pull --rebase --quiet && git push && break; sleep 5; done
           fi
           if [ "${{ steps.read.outputs.more }}" = "true" ]; then

@@ -1446,57 +1446,52 @@ test('uwflow: ratings and comments from the GraphQL API, paged, cached a week, r
 });
 
 
-test('schedules: finds the form in a frame, checks ECON 355 first, saves only terms read in full', async () => {
-  const { createServer } = await import('node:http');
+test('schedules: WClasses pages for current courses, its API for gone ones, checks first, failures asked again', async () => {
   const { mkdtemp } = await import('node:fs/promises');
   const { tmpdir } = await import('node:os');
-  const { Polite } = await import('./grad-archive.mjs');
   const { main } = await import('./schedules.mjs');
-  const { parseResult, loadSchedules } = await import('./lib/schedules.mjs');
-  const sec = (num, s, cap, tot, time, inst) => `<tr><td>${num}</td><td>${s}</td><td>UW U</td><td></td><td></td><td></td><td>${cap}</td><td>${tot}</td><td>0</td><td>0</td><td>${time}</td><td>AL 116</td><td>${inst}</td></tr>`;
-  const page = (subj, courses) => `<html><body><p>Your selection was: Term: x, Subject: ${subj}</p><table border=2><tbody>
-    <tr><th>Subject</th><th>Catalog</th><th>Units</th><th>Title</th></tr>
-    ${courses.map(([n, title, secs]) => `<tr><td>${subj}</td><td>${n}</td><td>0.50</td><td>${title}</td></tr>
-    <tr><td></td><td><table><tr><th>Class</th><th>Comp Sec</th><th>Camp Loc</th><th>Assoc Class</th><th>Rel 1</th><th>Rel 2</th><th>Enrl Cap</th><th>Enrl Tot</th><th>Wait Cap</th><th>Wait Tot</th><th>Time Days/Date</th><th>Bldg Room</th><th>Instructor</th></tr>
-    ${secs.join('')}</table></td></tr>`).join('')}</tbody></table></body></html>`;
-  const none = '<html><body>Sorry, but your query had no matches.</body></html>';
-  let flaky = 1;
+  const { loadSchedules, mainSections } = await import('./lib/schedules.mjs');
+  const cls = (type, num, cap, tot, inst, start = 10) => ({ section: { type, num }, enrolCap: cap, enrolTotal: tot, instructor: inst, time: { startTime: { hours: start, mins: 0 }, endTime: { hours: start + 1, mins: 20 }, days: ['T', 'Th'] } });
+  assert.deepEqual(mainSections([cls('TUT', '101', 30, 20, ''), cls('LEC', '002', 90, 80, 'B'), cls('LEC', '001', 90, 85, 'A')]).map((r) => r[0]), ['LEC 001', 'LEC 002']);
+  assert.deepEqual(mainSections([cls('SEM', '001', 15, 12, 'C', 13)]), [['SEM 001', 15, 12, '13:00-14:20 TTh', 'C']]);
+  const nextPage = (schedule) => `<html><script id="__NEXT_DATA__" type="application/json">${JSON.stringify({ props: { pageProps: { schedule: JSON.stringify(schedule) } } })}</script></html>`;
   const asked = [];
-  const srv = createServer((req, res) => {
-    const u = new URL(req.url, 'http://x');
-    if (u.pathname === '/robots.txt') return res.writeHead(404).end();
-    if (u.pathname === '/expert') return res.end('<frameset><frame src="expert/select"><frame name="results" src="about:blank"></frameset>');
-    if (u.pathname === '/expert/select') return res.end(`<form action="/cgi/query" method="get" target="results">
-      <select name="sess"><option value="1161">Winter 2016<option value="1159" selected>Fall 2015<option value="1271">Winter 2027</select>
-      <select name="level"><option value="under">Undergraduate<option value="grad">Graduate</select>
-      <select name="subject"><option value="">--<option value="CS">CS<option value="ECON">ECON</select>
-      <input type="text" name="cournum" value=""><input type="submit" value="Search"></form>`);
+  let flaky = 3; // every retry in one run
+  const fetchImpl = async (url) => {
+    const u = new URL(url);
+    asked.push(u.pathname + u.search);
     const q = u.searchParams;
-    asked.push(`${q.get('sess')} ${q.get('level')} ${q.get('subject')}`);
-    if (q.get('level') === 'grad') return res.end(none);
-    if (q.get('subject') === 'ECON' && q.get('sess') === '1159') return res.end(page('ECON', [['355', 'Econ of Energy', [sec('4321', 'LEC 001', 60, 60, '10:00-11:20TTh', 'Li,Hongxiu')]], ['101', 'Intro Micro', [sec('4000', 'LEC 001', 300, 280, '08:30-09:50MW', 'Smith,Ann'), sec('4001', 'TUT 101', 50, 45, '', '')]]]));
-    if (q.get('subject') === 'CS' && q.get('sess') === '1161' && flaky-- > 0) return res.end('<html><body>Service unavailable</body></html>');
-    if (q.get('subject') === 'CS') return res.end(page('CS', [['135', 'Functional', [sec('5000', 'LEC 001', 100, 99, '10:30-11:20MWF', 'Doe,Jane')]]]));
-    if (q.get('subject') === 'ECON' && q.get('sess') === '1161') return res.end(page('CS', [['135', 'Functional', []]]));
-    res.end(none);
-  });
-  await new Promise((r) => srv.listen(0, '127.0.0.1', r));
-  const base = `http://127.0.0.1:${srv.address().port}`;
-  try {
-    const dir = await mkdtemp(`${tmpdir()}/sched-`);
-    const log = { log() {}, warn() {} };
-    const polite = () => new Polite({ delay: 0, cacheDir: `${dir}/cache`, log });
-    const now = new Date('2026-11-12T12:00:00Z');
-    let out = await main([], { polite: polite(), log, dir: `${dir}/data`, now, tool: `${base}/expert` });
-    assert.equal(asked[0], '1159 under ECON', 'the ECON 355 check comes first');
-    assert.ok(!asked.some((x) => x.startsWith('1271')), 'not a term that hasn’t finished');
-    assert.deepEqual([out.saved, out.left], [1, 1], '1159 read; 1161 not: its CS read failed (and its ECON page answered for CS)');
-    assert.ok(out.failed.some((f) => f.startsWith('1161 under CS')), out.failed.join('; '));
-    const sched = await loadSchedules(`${dir}/data`);
-    assert.deepEqual(sched.get('ECON355'), [{ term: '1159', level: 'under', title: 'Econ of Energy', sections: [['LEC 001', 60, 60, '10:00-11:20TTh', 'Li,Hongxiu']] }]);
-    assert.deepEqual(sched.get('ECON101')[0].sections.map((s) => s[0]), ['LEC 001', 'TUT 101']);
-    assert.ok(!sched.has('CS135') || !sched.get('CS135').some((x) => x.term === '1161'), 'a term with a failed read isn’t saved');
-  } finally {
-    srv.close();
-  }
+    const res = (status, body) => ({ status, text: async () => body });
+    if (u.pathname === '/api/get-schedule') {
+      if (q.get('subjectCode') === 'ECON' && q.get('catalogNumber') === '355' && q.get('term') === '1159') return res(200, JSON.stringify({ 1159: [cls('LEC', '001', 60, 60, 'Li, Hongxiu')] }));
+      if (q.get('catalogNumber') === '355' && q.get('term') === '1079') return res(200, JSON.stringify({ 1079: [cls('LEC', '001', 60, 60, 'Insley, Margaret')] }));
+      if (q.get('term') === '1089' && flaky-- > 0) return res(500, 'oops');
+      return res(200, '{}');
+    }
+    if (q.get('subjectCode') === 'cs' && q.get('catalogNumber') === '135') return res(200, nextPage({ 1159: [cls('LEC', '001', 100, 99, 'Doe, Jane'), cls('TUT', '101', 50, 40, '')], 1161: [] }));
+    return res(404, 'not found');
+  };
+  const dir = await mkdtemp(`${tmpdir()}/sched-`);
+  const log = { log() {}, warn() {} };
+  const opts = { fetchImpl, log, dir, pause: 0, workers: 1, currentCodes: new Set(['CS135']) };
+  let out = await main(['--only', 'CS135,ECON355'], opts);
+  assert.ok(asked[0].includes('ECON') && asked[0].includes('1159'), 'the checks come first');
+  let s = await loadSchedules(dir);
+  assert.deepEqual(s.get('CS135'), { via: 'page', read: s.get('CS135').read, terms: { 1159: [['LEC 001', 100, 99, '10:00-11:20 TTh', 'Doe, Jane']] } });
+  assert.deepEqual(s.get('ECON355').terms, { 1079: [['LEC 001', 60, 60, '10:00-11:20 TTh', 'Insley, Margaret']], 1159: [['LEC 001', 60, 60, '10:00-11:20 TTh', 'Li, Hongxiu']] });
+  assert.ok(!s.get('ECON355').asked.includes('1089'), 'a failed request isn’t "nothing that term"');
+  assert.ok(s.get('ECON355').asked.includes('1091'), 'an empty answer is recorded as asked');
+  assert.equal(out.failed, 1);
+  const before = asked.length;
+  out = await main(['--only', 'ECON355'], opts);
+  assert.ok(asked.slice(before).some((x) => x.includes('term=1089')), 'asked again next run');
+  assert.ok(!asked.slice(before).some((x) => x.includes('term=1091')), 'not the ones already answered');
+  // Checks failing: nothing saved, the run fails.
+  const bad = await mkdtemp(`${tmpdir()}/sched-`);
+  const prev = process.exitCode;
+  out = await main([], { ...opts, dir: bad, fetchImpl: async () => ({ status: 200, text: async () => '{}' }) });
+  assert.equal(out.error, 'checks failed');
+  assert.equal(process.exitCode, 1);
+  process.exitCode = prev;
+  assert.equal((await loadSchedules(bad)).size, 0);
 });

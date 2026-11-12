@@ -158,9 +158,13 @@ Under each course's Resources, "Around the web" lists course websites, notes, sl
 
 ## Past class schedules
 
-`data/schedules/{term}.json` holds every past term's sections since Fall 2001: for each course, its sections with enrolment cap and total, times and instructor. They come from "Waterloo Class Schedules" (cs.uwaterloo.ca/cscf/teaching/schedule), the CS Computing Facility's copy of the Registrar's Schedule of Classes. Its robots.txt allows uwloo in; classes.uwaterloo.ca's doesn't.
+`data/schedules/{SUBJ}.json` holds each course's past main sections (lectures, or seminars or labs when it has none) from Spring 2004 to early 2026, with enrolment cap and total, times and instructor. They come from WClasses (wclasses.vercel.app), whose author agreed to uwloo reading it; WClasses read them from the Registrar's Schedule of Classes, which uwloo can't read itself because its robots.txt says no.
 
-The "Past class schedules" workflow (`scripts/schedules.mjs`) reads one subject per level per term, a second apart, and carries on run after run until every past term is in, then once a term after each one ends. It finds the tool's form itself. Before reading anything, it asks for ECON 355 in Fall 2015 and checks the answer against WClasses (LEC 001, 60 of 60, Hongxiu Li); if that doesn't match, it saves nothing. A term is saved only when every subject came back as either classes for that subject or "no matches". A failed read, or a page answering for another subject, leaves the term for the next run instead of recording "no classes". Run it with "probe" ticked to only find the form and run the check.
+The "Past class schedules" workflow (`scripts/schedules.mjs`) reads them in two ways:
+- **Today's courses** (from uwloo.ca/courses.csv): one request each, for the course's WClasses page, which has every term.
+- **Courses that are gone:** WClasses' API, one request per term, but only over terms they could have run. For undergrad courses in the 1994–95 scanned calendar or the 2020–21 to 2023–24 calendars, that's Spring 2004 to Winter 2020. For grad courses, it's the terms they were listed in the older Graduate Calendars.
+
+It runs three requests at a time and carries on run after run until everything is in. First it checks two answers against what WClasses shows by hand: ECON 355 in Fall 2015 is LEC 001, 60 of 60, Hongxiu Li, and CS 135's page has Fall 2015 lectures. If either check fails, it saves nothing and the run fails. A request that fails is asked again next run; only an empty answer is recorded as asked. A term missing from WClasses means unknown, not "didn't run", since its own scraper skipped failed reads silently.
 
 ## Courses no longer offered
 
@@ -245,7 +249,7 @@ site/reddit.js                 discussion cards, shared by the build and the bro
 data/archive/{year}.json       page numbers inside the 1963–64 to 1994–95 PDFs
 scripts/lib/history.mjs        every course Open Data's catalog has listed, and when each ran
 scripts/lib/retired.mjs        pages for courses no longer offered (/msci452/)
-scripts/schedules.mjs          reads past class schedules into data/schedules/ (scripts/lib/schedules.mjs)
+scripts/schedules.mjs          reads past class schedules from WClasses into data/schedules/
 scripts/grad-archive.mjs       reads the older calendars uwloo hosts (.github/workflows/grad-archive.yml)
 scripts/lib/gradarchive.mjs    where they are, how a course page is read and stored, their pages (/1109/co/)
 data/grad-archive/             those calendars, a report of each read, and sample pages
