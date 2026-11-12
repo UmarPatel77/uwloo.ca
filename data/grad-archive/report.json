@@ -758,7 +758,7 @@
    ]
   ]
  },
- "updated": "2026-11-03T01:09:30.082Z",
+ "updated": "2026-11-12T19:54:31.900Z",
  "ug": {
   "2021": {
    "source": "opendata",
@@ -780,7 +780,10 @@
    "courses": 0,
    "ids": 0,
    "failed": 115,
-   "missed": []
+   "missed": [],
+   "errors": {
+    "unreachable": 115
+   }
   },
   "2324": {
    "source": null,
@@ -790,7 +793,10 @@
    "courses": 0,
    "ids": 0,
    "failed": 120,
-   "missed": []
+   "missed": [],
+   "errors": {
+    "unreachable": 120
+   }
   }
  }
 }
