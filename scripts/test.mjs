@@ -1453,7 +1453,10 @@ test('schedules: WClasses pages for current courses, its API for gone ones, chec
   const { loadSchedules, mainSections } = await import('./lib/schedules.mjs');
   const cls = (type, num, cap, tot, inst, start = 10) => ({ section: { type, num }, enrolCap: cap, enrolTotal: tot, instructor: inst, time: { startTime: { hours: start, mins: 0 }, endTime: { hours: start + 1, mins: 20 }, days: ['T', 'Th'] } });
   assert.deepEqual(mainSections([cls('TUT', '101', 30, 20, ''), cls('LEC', '002', 90, 80, 'B'), cls('LEC', '001', 90, 85, 'A')]).map((r) => r[0]), ['LEC 001', 'LEC 002']);
-  assert.deepEqual(mainSections([cls('SEM', '001', 15, 12, 'C', 13)]), [['SEM 001', 15, 12, '13:00-14:20 TTh', 'C']]);
+  const { row } = await import('./lib/schedules.mjs');
+  assert.deepEqual(row({ ...cls('LEC', '001', 60, 61, 'Insley,Margaret'), time: { startTime: { hours: 10, mins: 30 }, endTime: { hours: 11, mins: 20 }, days: ['MWFRCH'] } }).slice(3), ['10:30-11:20 MWF', 'Insley,Margaret', 'RCH'], 'a building read into the days moves to the room');
+  assert.deepEqual(row({ ...cls('LEC', '001', 60, 60, 'Li'), buildingCode: 'AL', roomNumber: '116' }).at(-1), 'AL 116');
+  assert.deepEqual(mainSections([cls('SEM', '001', 15, 12, 'C', 13)]), [['SEM 001', 15, 12, '13:00-14:20 TTh', 'C', '']]);
   const nextPage = (schedule) => `<html><script id="__NEXT_DATA__" type="application/json">${JSON.stringify({ props: { pageProps: { schedule: JSON.stringify(schedule) } } })}</script></html>`;
   const asked = [];
   let flaky = 3; // every retry in one run
@@ -1477,8 +1480,8 @@ test('schedules: WClasses pages for current courses, its API for gone ones, chec
   let out = await main(['--only', 'CS135,ECON355'], opts);
   assert.ok(asked[0].includes('ECON') && asked[0].includes('1159'), 'the checks come first');
   let s = await loadSchedules(dir);
-  assert.deepEqual(s.get('CS135'), { via: 'page', read: s.get('CS135').read, terms: { 1159: [['LEC 001', 100, 99, '10:00-11:20 TTh', 'Doe, Jane']] } });
-  assert.deepEqual(s.get('ECON355').terms, { 1079: [['LEC 001', 60, 60, '10:00-11:20 TTh', 'Insley, Margaret']], 1159: [['LEC 001', 60, 60, '10:00-11:20 TTh', 'Li, Hongxiu']] });
+  assert.deepEqual(s.get('CS135'), { v: 2, via: 'page', read: s.get('CS135').read, terms: { 1159: [['LEC 001', 100, 99, '10:00-11:20 TTh', 'Doe, Jane', '']] } });
+  assert.deepEqual(s.get('ECON355').terms, { 1079: [['LEC 001', 60, 60, '10:00-11:20 TTh', 'Insley, Margaret', '']], 1159: [['LEC 001', 60, 60, '10:00-11:20 TTh', 'Li, Hongxiu', '']] });
   assert.ok(!s.get('ECON355').asked.includes('1089'), 'a failed request isn’t "nothing that term"');
   assert.ok(s.get('ECON355').asked.includes('1091'), 'an empty answer is recorded as asked');
   assert.equal(out.failed, 1);

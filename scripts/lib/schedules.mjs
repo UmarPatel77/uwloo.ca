@@ -6,7 +6,7 @@
 // page's data is in its __NEXT_DATA__). A course that's gone (that page says "not found"): WClasses' API,
 // one request per term, only over the terms it could have run.
 //
-// Kept in data/schedules/{SUBJ}.json: {CS135: {via, read, asked?, terms: {1159: [[sec, cap, tot, time, inst]]}}}.
+// Kept in data/schedules/{SUBJ}.json: {CS135: {v, via, read, asked?, terms: {1159: [[sec, cap, tot, time, inst, room]]}}}.
 // Only a course's main sections are kept (lectures; seminars or labs when it has no lectures), to keep it small.
 // A term WClasses doesn't have is unknown, not "didn't run": its scraper skipped failed reads silently.
 import { readdir, readFile } from 'node:fs/promises';
@@ -15,14 +15,24 @@ export const DIR = 'data/schedules';
 export const BASE = process.env.WCLASSES ?? 'https://wclasses.vercel.app';
 export const FIRST = '1045'; // Spring 2004, WClasses' first term
 export const LAST = '1265'; // Spring 2026, its last
+export const VERSION = 2; // 2: with building and room; anything older is read again
 
 const pad = (n) => String(n).padStart(2, '0');
 const hm = (t) => (t && Number.isFinite(t.hours) ? `${t.hours}:${pad(t.mins ?? 0)}` : '');
-/** A WClasses class → [sec, cap, tot, time, instructor]. */
+const DAYS = new Set(['M', 'T', 'W', 'Th', 'F', 'Sa', 'Su']); // WClasses' own day names
+/**
+ * A WClasses class → [sec, cap, tot, time, instructor, room]. Its scraper sometimes read the building into
+ * the days ("M W F AL" for Arts Lecture): days keep only weekdays, and a stray building fills in the room
+ * when the class has none of its own.
+ */
 export function row(c) {
   const sec = c.section ? `${c.section.type} ${c.section.num}` : '';
-  const time = c.time?.startTime ? `${hm(c.time.startTime)}-${hm(c.time.endTime)} ${(c.time.days ?? []).join('')}`.trim() : '';
-  return [sec, Number.isFinite(c.enrolCap) ? c.enrolCap : null, Number.isFinite(c.enrolTotal) ? c.enrolTotal : null, time, (c.instructor ?? '').trim()];
+  const raw = (c.time?.days ?? []).flatMap((d) => String(d).match(/Th|Sa|Su|[A-Z][a-z]*/g) ?? []);
+  const days = raw.filter((d) => DAYS.has(d));
+  const stray = raw.filter((d) => !DAYS.has(d)).join('');
+  const time = c.time?.startTime ? `${hm(c.time.startTime)}-${hm(c.time.endTime)} ${days.join('')}`.trim() : '';
+  const room = [c.buildingCode || stray, c.roomNumber].filter(Boolean).join(' ').trim();
+  return [sec, Number.isFinite(c.enrolCap) ? c.enrolCap : null, Number.isFinite(c.enrolTotal) ? c.enrolTotal : null, time, (c.instructor ?? '').trim(), room];
 }
 const MAIN = ['LEC', 'SEM', 'LAB', 'STU', 'CLN', 'PRJ', 'RDG', 'TST'];
 /** One term's classes → its main sections (lectures, or the first kind it has), as rows. */

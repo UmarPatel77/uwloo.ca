@@ -1,0 +1,28 @@
+name: Probe old archives
+
+# One-off: what the Wayback Machine kept of the Registrar's 1995–2002 web Schedule of Classes, and what
+# Waterloo's own calendar archive has for 2007–08 to 2022–23 (scripts/probe-archives.mjs). Reads a few dozen
+# pages, commits data/probes/archives.json, and stops.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: node scripts/probe-archives.mjs
+      - name: Commit the findings
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/probes
+          git commit -m "Probe of old archives" || exit 0
+          for i in 1 2 3; do git pull --rebase --quiet && git push && break; sleep 5; done
