@@ -81,8 +81,9 @@ export async function plan({ fetchImpl, current }) {
   return gone;
 }
 
-export async function main(argv = process.argv.slice(2), { fetchImpl = fetch, log = console, dir = DIR, now = new Date(), workers = 3, pause = 250, currentCodes } = {}) {
+export async function main(argv = process.argv.slice(2), { fetchImpl = fetch, log = console, dir = DIR, now = new Date(), workers, pause = 250, currentCodes } = {}) {
   const a = args(argv);
+  workers ??= Number(a.workers ?? process.env.WCLASSES_WORKERS ?? 10); // the site's owner is fine with low double digits
   const deadline = Date.now() + Number(a.minutes ?? 150) * 60_000;
   const today = now.toISOString().slice(0, 10);
   const finish = async (out) => {

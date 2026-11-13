@@ -9,6 +9,9 @@ on:
       minutes:
         description: Time budget in minutes
         default: "150"
+      workers:
+        description: Requests at a time
+        default: "10"
       only:
         description: Only these courses, e.g. CS135,ECON355 (blank for all not in yet)
         default: ""
@@ -38,7 +41,7 @@ jobs:
 
       - name: Read the schedules
         id: read
-        run: node scripts/schedules.mjs --minutes "${{ inputs.minutes || '150' }}" ${{ inputs.only && format('--only {0}', inputs.only) || '' }} ${{ inputs.probe && '--probe' || '' }}
+        run: node scripts/schedules.mjs --minutes "${{ inputs.minutes || '150' }}" --workers "${{ inputs.workers || '10' }}" ${{ inputs.only && format('--only {0}', inputs.only) || '' }} ${{ inputs.probe && '--probe' || '' }}
 
       - name: Commit and carry on
         if: always() && steps.read.outcome == 'success'
@@ -52,7 +55,7 @@ jobs:
           fi
           if [ "${{ steps.read.outputs.more }}" = "true" ]; then
             echo "Terms left: starting the next run."
-            gh workflow run schedules.yml --ref main -f minutes="${{ inputs.minutes || '150' }}"
+            gh workflow run schedules.yml --ref main -f minutes="${{ inputs.minutes || '150' }}" -f workers="${{ inputs.workers || '10' }}"
           fi
         env:
           GH_TOKEN: ${{ github.token }}
