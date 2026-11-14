@@ -1,0 +1,505 @@
+{
+ "at": "2026-11-14T02:50:50.732Z",
+ "wayback": [
+  {
+   "prefix": "www.adm.uwaterloo.ca/infocour/",
+   "status": 200,
+   "error": null,
+   "pages": 94,
+   "byYear": {
+    "1997": 54,
+    "1999": 18,
+    "2000": 4,
+    "2001": 13,
+    "2002": 5
+   },
+   "scheduleLike": 94,
+   "sample": [
+    "19970201213102 200 text/html http://www.adm.uwaterloo.ca:80/infocour/",
+    "19970713152649 200 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/",
+    "19970713222604 200 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/de.html",
+    "19970713222556 200 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/grad.html",
+    "20020219130850 200 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/SA/",
+    "20020909230503 404 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/SA/grad.htm",
+    "20010423041457 200 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/SA/grad.html",
+    "20020909230601 404 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/SA/index.htm",
+    "20010411000613 200 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/SA/index.html",
+    "20020622171042 404 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/SA/under.htm",
+    "20010406021824 200 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/SA/under.html",
+    "20010724050404 404 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/SA/under.html%22target=%22_top",
+    "20010502015724 404 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/under.htm",
+    "19970713204112 200 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/under.html",
+    "20010430235556 404 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/under.html%22target=%22_top",
+    "19970713152709 200 text/html http://www.adm.uwaterloo.ca:80/infocour/COL/",
+    "20020224044058 200 text/html http://www.adm.uwaterloo.ca:80/infocour/COL/index.html",
+    "19970201214620 200 text/html http://www.adm.uwaterloo.ca:80/infocour/de.html",
+    "19970713152454 200 text/html http://www.adm.uwaterloo.ca:80/infocour/EXAM/",
+    "20010722230106 404 text/html http://www.adm.uwaterloo.ca:80/infocour/EXAM/%22target=",
+    "20010423044115 404 text/html http://www.adm.uwaterloo.ca:80/infocour/EXAM/%22target=%22_top",
+    "19970714073218 200 text/html http://www.adm.uwaterloo.ca:80/infocour/EXAM/ACC.html",
+    "19970714073226 200 text/html http://www.adm.uwaterloo.ca:80/infocour/EXAM/ACTSC.html",
+    "20011223172146 404 text/html http://www.adm.uwaterloo.ca:80/infocour/EXAM/ACTSC.shtml",
+    "19970714073234 200 text/html http://www.adm.uwaterloo.ca:80/infocour/EXAM/AM.html"
+   ],
+   "snapshot": {
+    "url": "https://web.archive.org/web/19970201213102/http://www.adm.uwaterloo.ca:80/infocour/",
+    "status": 200,
+    "start": "<!-- This page has been generated automatically from the scriptcirindex. Do no attempt to change this page manually. --> <HTML> <HEAD> <TITLE>Course Information Report</TITLE> </HEAD> <BODY> <IMG ALT=\"The University of Waterloo\" SRC=\"http://www.uwaterloo.ca/images/uwcrest.gif\"> <H1>Course Information Report</H1> <A HREF=\"/infosche/cir_notice.html\">Course Information Report (CIR) Notices</A> - including posting dates for future sessions<p> What kind of courses are you looking for?<P> <A HREF=\"under.html\">Undergraduate</A><BR> <A HREF=\"grad.html\">Graduate</A><BR> <A HREF=\"de.html\">Distance Education</A><BR> <HR> Page last generated: 1997/07/12 03:32:46 <BR> <ADDRESS>Infocour <A HREF=\"mailto:infocour@www.adm.uwaterloo.ca\">(infocour@www.adm.uwaterloo.ca)</A></ADDRESS> </BODY> </HTML> "
+   }
+  },
+  {
+   "prefix": "adm.uwaterloo.ca/infocour/",
+   "status": 200,
+   "error": null,
+   "pages": 94,
+   "byYear": {
+    "1997": 54,
+    "1999": 18,
+    "2000": 4,
+    "2001": 13,
+    "2002": 5
+   },
+   "scheduleLike": 94,
+   "sample": [
+    "19970201213102 200 text/html http://www.adm.uwaterloo.ca:80/infocour/",
+    "19970713152649 200 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/",
+    "19970713222604 200 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/de.html",
+    "19970713222556 200 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/grad.html",
+    "20020219130850 200 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/SA/",
+    "20020909230503 404 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/SA/grad.htm",
+    "20010423041457 200 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/SA/grad.html",
+    "20020909230601 404 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/SA/index.htm",
+    "20010411000613 200 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/SA/index.html",
+    "20020622171042 404 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/SA/under.htm",
+    "20010406021824 200 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/SA/under.html",
+    "20010724050404 404 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/SA/under.html%22target=%22_top",
+    "20010502015724 404 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/under.htm",
+    "19970713204112 200 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/under.html",
+    "20010430235556 404 text/html http://www.adm.uwaterloo.ca:80/infocour/CIR/under.html%22target=%22_top",
+    "19970713152709 200 text/html http://www.adm.uwaterloo.ca:80/infocour/COL/",
+    "20020224044058 200 text/html http://www.adm.uwaterloo.ca:80/infocour/COL/index.html",
+    "19970201214620 200 text/html http://www.adm.uwaterloo.ca:80/infocour/de.html",
+    "19970713152454 200 text/html http://www.adm.uwaterloo.ca:80/infocour/EXAM/",
+    "20010722230106 404 text/html http://www.adm.uwaterloo.ca:80/infocour/EXAM/%22target=",
+    "20010423044115 404 text/html http://www.adm.uwaterloo.ca:80/infocour/EXAM/%22target=%22_top",
+    "19970714073218 200 text/html http://www.adm.uwaterloo.ca:80/infocour/EXAM/ACC.html",
+    "19970714073226 200 text/html http://www.adm.uwaterloo.ca:80/infocour/EXAM/ACTSC.html",
+    "20011223172146 404 text/html http://www.adm.uwaterloo.ca:80/infocour/EXAM/ACTSC.shtml",
+    "19970714073234 200 text/html http://www.adm.uwaterloo.ca:80/infocour/EXAM/AM.html"
+   ],
+   "snapshot": {
+    "url": "https://web.archive.org/web/19970201213102/http://www.adm.uwaterloo.ca:80/infocour/",
+    "status": 200,
+    "start": "<!-- This page has been generated automatically from the scriptcirindex. Do no attempt to change this page manually. --> <HTML> <HEAD> <TITLE>Course Information Report</TITLE> </HEAD> <BODY> <IMG ALT=\"The University of Waterloo\" SRC=\"http://www.uwaterloo.ca/images/uwcrest.gif\"> <H1>Course Information Report</H1> <A HREF=\"/infosche/cir_notice.html\">Course Information Report (CIR) Notices</A> - including posting dates for future sessions<p> What kind of courses are you looking for?<P> <A HREF=\"under.html\">Undergraduate</A><BR> <A HREF=\"grad.html\">Graduate</A><BR> <A HREF=\"de.html\">Distance Education</A><BR> <HR> Page last generated: 1997/07/12 03:32:46 <BR> <ADDRESS>Infocour <A HREF=\"mailto:infocour@www.adm.uwaterloo.ca\">(infocour@www.adm.uwaterloo.ca)</A></ADDRESS> </BODY> </HTML> "
+   }
+  },
+  {
+   "prefix": "www.registrar.uwaterloo.ca/",
+   "status": 200,
+   "error": null,
+   "pages": 104,
+   "byYear": {
+    "2001": 61,
+    "2002": 43
+   },
+   "scheduleLike": 7,
+   "sample": [
+    "20010821233630 200 image/gif http://www.registrar.uwaterloo.ca:80/images/index_menu_courses.gif",
+    "20020307231246 200 image/gif http://registrar.uwaterloo.ca:80/interface/bottom/images/inter_bot_course.gif",
+    "20010709022933 200 text/html http://www.registrar.uwaterloo.ca:80/interface/courses.htm",
+    "20010709023828 200 text/html http://www.registrar.uwaterloo.ca:80/interface/main/courses.htm",
+    "20010823072846 200 text/html http://www.registrar.uwaterloo.ca:80/interface/top/courses.htm",
+    "20020331045913 200 image/gif http://registrar.uwaterloo.ca:80/interface/top/images/inter_top_title_courses.gif",
+    "20020331051837 404 text/html http://registrar.uwaterloo.ca:80/interface/top/sched.gif"
+   ],
+   "snapshot": {
+    "url": "https://web.archive.org/web/20010709022933/http://www.registrar.uwaterloo.ca:80/interface/courses.htm",
+    "status": 200,
+    "start": "<html> <head> <title>University of Waterloo - Admissions</title> </head> <frameset border=\"0\" frameborder=\"0\" marginwidth=\"0\" marginheight=\"0\" framespacing=\"0\" rows=\"88,*,39\"> <frame frameborder=\"no\" marginwidth=\"0\" marginheight=\"0\" name=\"title\" noresize scrolling=\"no\" src=\"top/courses.htm\"> <frameset border=\"0\" frameborder=\"0\" marginwidth=\"0\" marginheight=\"0\" framespacing=\"0\" cols=\"70,*\"> <frameset border=\"0\" frameborder=\"0\" marginwidth=\"0\" marginheight=\"0\" framespacing=\"0\" rows=\"18,*,21\"> <frame frameborder=\"no\" marginwidth=\"0\" marginheight=\"0\" name=\"left_top\" noresize scrolling=\"no\" src=\"left/top_spacer.htm\"> <frame frameborder=\"no\" marginwidth=\"0\" marginheight=\"0\" name=\"left\" noresize scrolling=\"no\" src=\"left/menu.htm\"> <frame frameborder=\"no\" marginwidth=\"0\" marginheight=\"0\" name=\"left_bottom\" noresize scrolling=\"no\" src=\"left/bottom_spacer.htm\"> </frameset> <frame frameborder=\"no\" marginwidth=\"0\" marginheight=\"0\" name=\"main\" noresize scrolling=\"auto\" src=\"main/courses.htm\"> </frameset> <frame frameborder=\"no\" marginwidth=\"0\" marginheight=\"0\" name=\"bottom\" noresize scrolling=\"no\" src=\"bottom/bottom.htm\"> <noframes> <body bgcolor=\"black\" topmargin=\"0\" leftmargin=\"0\" marginheight=\"0\" marginwidth=\"0\"> <p>This page uses frames, but your browser doesn't support them.</p> </body> </noframes> </frameset> <frameset> <noframes> </noframes> </frameset> </html> "
+   }
+  },
+  {
+   "prefix": "registrar.uwaterloo.ca/",
+   "status": 200,
+   "error": null,
+   "pages": 104,
+   "byYear": {
+    "2001": 61,
+    "2002": 43
+   },
+   "scheduleLike": 7,
+   "sample": [
+    "20010821233630 200 image/gif http://www.registrar.uwaterloo.ca:80/images/index_menu_courses.gif",
+    "20020307231246 200 image/gif http://registrar.uwaterloo.ca:80/interface/bottom/images/inter_bot_course.gif",
+    "20010709022933 200 text/html http://www.registrar.uwaterloo.ca:80/interface/courses.htm",
+    "20010709023828 200 text/html http://www.registrar.uwaterloo.ca:80/interface/main/courses.htm",
+    "20010823072846 200 text/html http://www.registrar.uwaterloo.ca:80/interface/top/courses.htm",
+    "20020331045913 200 image/gif http://registrar.uwaterloo.ca:80/interface/top/images/inter_top_title_courses.gif",
+    "20020331051837 404 text/html http://registrar.uwaterloo.ca:80/interface/top/sched.gif"
+   ],
+   "snapshot": {
+    "url": "https://web.archive.org/web/20010709022933/http://www.registrar.uwaterloo.ca:80/interface/courses.htm",
+    "status": 200,
+    "start": "<html> <head> <title>University of Waterloo - Admissions</title> </head> <frameset border=\"0\" frameborder=\"0\" marginwidth=\"0\" marginheight=\"0\" framespacing=\"0\" rows=\"88,*,39\"> <frame frameborder=\"no\" marginwidth=\"0\" marginheight=\"0\" name=\"title\" noresize scrolling=\"no\" src=\"top/courses.htm\"> <frameset border=\"0\" frameborder=\"0\" marginwidth=\"0\" marginheight=\"0\" framespacing=\"0\" cols=\"70,*\"> <frameset border=\"0\" frameborder=\"0\" marginwidth=\"0\" marginheight=\"0\" framespacing=\"0\" rows=\"18,*,21\"> <frame frameborder=\"no\" marginwidth=\"0\" marginheight=\"0\" name=\"left_top\" noresize scrolling=\"no\" src=\"left/top_spacer.htm\"> <frame frameborder=\"no\" marginwidth=\"0\" marginheight=\"0\" name=\"left\" noresize scrolling=\"no\" src=\"left/menu.htm\"> <frame frameborder=\"no\" marginwidth=\"0\" marginheight=\"0\" name=\"left_bottom\" noresize scrolling=\"no\" src=\"left/bottom_spacer.htm\"> </frameset> <frame frameborder=\"no\" marginwidth=\"0\" marginheight=\"0\" name=\"main\" noresize scrolling=\"auto\" src=\"main/courses.htm\"> </frameset> <frame frameborder=\"no\" marginwidth=\"0\" marginheight=\"0\" name=\"bottom\" noresize scrolling=\"no\" src=\"bottom/bottom.htm\"> <noframes> <body bgcolor=\"black\" topmargin=\"0\" leftmargin=\"0\" marginheight=\"0\" marginwidth=\"0\"> <p>This page uses frames, but your browser doesn't support them.</p> </body> </noframes> </frameset> <frameset> <noframes> </noframes> </frameset> </html> "
+   }
+  },
+  {
+   "prefix": "www.infocour.uwaterloo.ca/",
+   "status": 200,
+   "error": null
+  },
+  {
+   "prefix": "infocour.uwaterloo.ca/",
+   "status": 200,
+   "error": null
+  },
+  {
+   "prefix": "classes.uwaterloo.ca/",
+   "status": 503,
+   "error": null
+  },
+  {
+   "prefix": "www.adm.uwaterloo.ca/",
+   "status": 0,
+   "error": "The operation was aborted due to timeout"
+  }
+ ],
+ "calendarArchive": [
+  {
+   "year": "2007-2008",
+   "front": 200,
+   "courseLinks": [
+    "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2007-2008/page/Course-Descriptions-Index.html"
+   ],
+   "econ": [
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2007-2008/COURSE/course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    },
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2007-2008/page/COURSE-course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    }
+   ]
+  },
+  {
+   "year": "2008-2009",
+   "front": 200,
+   "courseLinks": [
+    "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2008-2009/page/Course-Descriptions-Index.html"
+   ],
+   "econ": [
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2008-2009/COURSE/course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    },
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2008-2009/page/COURSE-course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    }
+   ]
+  },
+  {
+   "year": "2009-2010",
+   "front": 200,
+   "courseLinks": [
+    "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2009-2010/page/Course-Descriptions-Index.html"
+   ],
+   "econ": [
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2009-2010/COURSE/course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    },
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2009-2010/page/COURSE-course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    }
+   ]
+  },
+  {
+   "year": "2010-2011",
+   "front": 200,
+   "courseLinks": [
+    "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2010-2011/page/Course-Descriptions-Index.html"
+   ],
+   "econ": [
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2010-2011/COURSE/course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    },
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2010-2011/page/COURSE-course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    }
+   ]
+  },
+  {
+   "year": "2011-2012",
+   "front": 200,
+   "courseLinks": [
+    "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2011-2012/page/Course-Descriptions-Index.html"
+   ],
+   "econ": [
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2011-2012/COURSE/course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    },
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2011-2012/page/COURSE-course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    }
+   ]
+  },
+  {
+   "year": "2012-2013",
+   "front": 200,
+   "courseLinks": [
+    "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2012-2013/page/Course-Descriptions-Index.html"
+   ],
+   "econ": [
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2012-2013/COURSE/course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    },
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2012-2013/page/COURSE-course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    }
+   ]
+  },
+  {
+   "year": "2013-2014",
+   "front": 200,
+   "courseLinks": [
+    "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2013-2014/page/Course-Descriptions-Index.html"
+   ],
+   "econ": [
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2013-2014/COURSE/course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    },
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2013-2014/page/COURSE-course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    }
+   ]
+  },
+  {
+   "year": "2014-2015",
+   "front": 200,
+   "courseLinks": [
+    "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2014-2015/page/Course-Descriptions-Index.html"
+   ],
+   "econ": [
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2014-2015/COURSE/course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    },
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2014-2015/page/COURSE-course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    }
+   ]
+  },
+  {
+   "year": "2015-2016",
+   "front": 200,
+   "courseLinks": [
+    "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2015-2016/page/Course-Descriptions-Index.html"
+   ],
+   "econ": [
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2015-2016/COURSE/course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    },
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2015-2016/page/COURSE-course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    }
+   ]
+  },
+  {
+   "year": "2016-2017",
+   "front": 200,
+   "courseLinks": [
+    "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2016-2017/page/Course-Descriptions-Index.html"
+   ],
+   "econ": [
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2016-2017/COURSE/course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    },
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2016-2017/page/COURSE-course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    }
+   ]
+  },
+  {
+   "year": "2017-2018",
+   "front": 200,
+   "courseLinks": [
+    "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2017-2018/page/Course-Descriptions-Index.html"
+   ],
+   "econ": [
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2017-2018/COURSE/course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    },
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2017-2018/page/COURSE-course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    }
+   ]
+  },
+  {
+   "year": "2018-2019",
+   "front": 200,
+   "courseLinks": [
+    "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2018-2019/page/Course-Descriptions-Index.html"
+   ],
+   "econ": [
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2018-2019/COURSE/course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    },
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2018-2019/page/COURSE-course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    }
+   ]
+  },
+  {
+   "year": "2019-2020",
+   "front": 200,
+   "courseLinks": [
+    "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2019-2020/page/Course-Descriptions-Index.html"
+   ],
+   "econ": [
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2019-2020/COURSE/course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    },
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2019-2020/page/COURSE-course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    }
+   ]
+  },
+  {
+   "year": "2020-2021",
+   "front": 200,
+   "courseLinks": [
+    "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2020-2021/page/Course-Descriptions-Index.html"
+   ],
+   "econ": [
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2020-2021/COURSE/course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    },
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2020-2021/page/COURSE-course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    }
+   ]
+  },
+  {
+   "year": "2021-2022",
+   "front": 200,
+   "courseLinks": [
+    "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2021-2022/page/Course-Descriptions-Index.html"
+   ],
+   "econ": [
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2021-2022/COURSE/course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    },
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2021-2022/page/COURSE-course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    }
+   ]
+  },
+  {
+   "year": "2022-2023",
+   "front": 200,
+   "courseLinks": [
+    "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2022-2023/page/Course-Descriptions-Index.html"
+   ],
+   "econ": [
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2022-2023/COURSE/course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    },
+    {
+     "url": "https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2022-2023/page/COURSE-course-ECON.html",
+     "status": 404,
+     "hasEcon355": null,
+     "length": 0
+    }
+   ]
+  }
+ ]
+}
