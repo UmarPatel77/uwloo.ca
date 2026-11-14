@@ -15,7 +15,7 @@
 // Hongxiu Li; CS 135's page has Fall 2015 lectures. If either fails, it saves nothing.
 import { appendFile, mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
-import { apiUrl, BASE, DIR, FIRST, LAST, pageUrl, readApi, readPage, termsBetween, VERSION } from './lib/schedules.mjs';
+import { apiUrl, BASE, DIR, FIRST, LAST, pageUrl, readApi, readPage, termsBetween } from './lib/schedules.mjs';
 
 const UA = 'uwloo (+https://uwloo.ca)';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -128,7 +128,7 @@ export async function main(argv = process.argv.slice(2), { fetchImpl = fetch, lo
   for (const j of jobs) {
     if (only && !only.has(j.code)) continue;
     const have = (await fileOf(j.code))[j.code];
-    if (have?.v === VERSION && !only && (j.how === 'page' || j.terms.every((t) => have.asked?.includes(t) || have.terms?.[t]))) continue;
+    if (have && !only && (j.how === 'page' || j.terms.every((t) => have.asked?.includes(t) || have.terms?.[t]))) continue;
     todo.push(j);
   }
   log.log(`WClasses: ${current.size} current courses, ${gone.size} gone; ${todo.length} to read.`);
@@ -150,7 +150,7 @@ export async function main(argv = process.argv.slice(2), { fetchImpl = fetch, lo
         const r = await get(pageUrl(j.code), fetchImpl, { pause });
         await sleep(pause);
         if (r.status === 200 && readPage(r.text)) {
-          file[j.code] = { v: VERSION, via: 'page', read: today, terms: readPage(r.text).terms };
+          file[j.code] = { via: 'page', read: today, terms: readPage(r.text).terms };
         } else if (r.status === 404) {
           // In the catalog but not on WClasses' list (new since early 2026, say): the API, over every term it has.
           j.how = 'api';
@@ -162,7 +162,7 @@ export async function main(argv = process.argv.slice(2), { fetchImpl = fetch, lo
           continue;
         }
       } else {
-        const c = file[j.code]?.v === VERSION ? file[j.code] : { v: VERSION, via: 'api', read: today, asked: [], terms: {} };
+        const c = file[j.code] ?? { via: 'api', read: today, asked: [], terms: {} };
         let ok = true;
         for (const t of j.terms) {
           if (c.asked.includes(t) || c.terms[t] || Date.now() > deadline) continue;
