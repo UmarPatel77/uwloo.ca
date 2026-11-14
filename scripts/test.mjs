@@ -1498,3 +1498,39 @@ test('schedules: WClasses pages for current courses, its API for gone ones, chec
   process.exitCode = prev;
   assert.equal((await loadSchedules(bad)).size, 0);
 });
+
+test('offerings: every term since 2001, clickable, Taught by, one-student sections with their professor', async () => {
+  const { summarize, offeringsSection, personName, termsWithData } = await import('./lib/offerings.mjs');
+  const { calendarInstructor } = await import('./lib/retired.mjs');
+  assert.equal(personName('Insley,Margaret Caren'), 'Margaret Insley');
+  assert.equal(personName('Li,Hongxiu'), 'Hongxiu Li');
+  const e = {
+    v: 2,
+    terms: {
+      1051: [['LEC 001', 60, 61, '10:30-11:20 MWF', 'Insley,Margaret', 'AL']],
+      1105: [['LEC 001', 1, 1, '', 'Insley,Margaret Caren', '']],
+      1109: [['LEC 001', 60, 59, '13:00-14:20 TTh', 'Insley,Margaret Caren', 'AL 116'], ['LEC 002', 1, 1, '', '', '']],
+      1129: [['LEC 001', 60, 42, '13:00-14:20 TTh', 'Jefferson,Robert', '']],
+      1159: [['LEC 001', 60, 60, '10:00-11:20 TTh', 'Li,Hongxiu', 'AL 116']],
+    },
+  };
+  const s = summarize(e);
+  assert.deepEqual(s.ran.map((t) => t.term), ['1051', '1109', '1129', '1159'], 'a term with only a one-student section isn’t "ran"');
+  assert.deepEqual(s.taughtBy, [['Margaret Insley', 2], ['Hongxiu Li', 1], ['Robert Jefferson', 1]]);
+  assert.equal(s.usual, '3 Fall, 1 Winter');
+  const html = offeringsSection('ECON355', e, { current: false });
+  assert.match(html, /Ran in 4 terms, Winter 2005 to Fall 2015: 3 Fall, 1 Winter\./);
+  assert.match(html, /<a class="og on" href="#t1159"[^>]*>1<\/a>/);
+  assert.match(html, /<a class="og solo" href="#t1105"/);
+  assert.match(html, /Individual arrangements \(one student\): <a href="#t1105">S10<\/a> with Margaret Insley · <a href="#t1109">F10<\/a>\./);
+  assert.match(html, /id="t1109"[\s\S]*LEC 002[\s\S]*individual arrangement, 1 student/);
+  assert.match(html, /<td>TTh 10:00–11:20<\/td><td>AL 116<\/td><td>Hongxiu Li/);
+  assert.ok(html.indexOf('og-y">2015') < html.indexOf('og-y">2005'), 'newest year first');
+  assert.ok(!html.includes('og-y">2016'), 'a course that’s gone stops at its last year');
+  assert.ok(offeringsSection('CS135', e).includes('og-y">2026'), 'a current course runs to now');
+  assert.equal(offeringsSection('X', { terms: {} }), '');
+  assert.deepEqual([...termsWithData(e)].sort(), ['1051', '1105', '1109', '1129', '1159']);
+  assert.equal(calendarInstructor(['3 hours per week (Winter term) Instructor: Dutt, Schuster Purpose: To understand how to sim']), 'Dutt, Schuster');
+  assert.equal(calendarInstructor(['3 hours per week, Fall term Instructor: to be announced']), null);
+  assert.equal(calendarInstructor(['Prereq: Consent of Instructor']), null);
+});

@@ -11,6 +11,8 @@ import { flowSection, loadFlow } from './lib/uwflow.mjs';
 import { available, entryPages, linksAboutPage, loadResources, publishFiles, resourcePage, resourcesSection, syncFiles } from './lib/resources.mjs';
 import { loadHistory } from './lib/history.mjs';
 import { archiveAppearances, mentionsOf, retiredCourses, retiredPage } from './lib/retired.mjs';
+import { offeringsSection, termsWithData, yearOfTerm } from './lib/offerings.mjs';
+import { loadSchedules } from './lib/schedules.mjs';
 import { gradAppearances, loadGradArchive, oldTermIndexPage, oldTermSubjectPage, oldTerms } from './lib/gradarchive.mjs';
 import { loadUgArchive, ugOldSubjectPage, ugOldYearPage } from './lib/ugarchive.mjs';
 import { groupThreads } from '../site/reddit.js';
@@ -220,7 +222,22 @@ async function main() {
   const courseHistory = await loadHistory(curTerm, opendata.enabled() ? {} : { maxNew: 0 });
   const archiveText = await loadArchiveText();
   const gradOld = gradAppearances(oldCats);
-  const retired = retiredCourses({ history: courseHistory, archive: archiveAppearances(archiveText), current: known, grad: gradOld });
+  const archive = archiveAppearances(archiveText);
+  const retired = retiredCourses({ history: courseHistory, archive, current: known, grad: gradOld });
+  // Past sections, Fall 2001 to Spring 2026 (data/schedules, from WClasses).
+  const schedules = await loadSchedules();
+  console.log(`Past class schedules: ${schedules.size} courses, ${[...schedules.values()].filter((e) => Object.keys(e.terms ?? {}).length).length} with sections`);
+  // Undergraduate calendars a course was likely in that uwloo doesn't host: from 1995–96 if the 1994–95 scan
+  // has it, else from the year it first ran, to 2023–24.
+  const hostedStarts = new Set(ugNav.map((k) => k.start));
+  const ugOlderFor = (code) => {
+    const ranTerms = Object.keys(schedules.get(code)?.terms ?? {}).sort();
+    const start = archive.get(code)?.years.some((y) => y.year === '9495') ? 1995 : ranTerms.length ? Math.max(1995, yearOfTerm(ranTerms[0])) : null;
+    if (start == null) return [];
+    const out = [];
+    for (let y = start; y <= 2023; y++) if (!hostedStarts.has(y)) out.push(y);
+    return out;
+  };
   const linkable = { has: (c) => known.has(c) || retired.has(c), href: (c) => (known.has(c) || retired.has(c) ? `/${slug(c)}/` : null), retired };
 
   // Course resources (data/resources/, see tools/resources/). Hosted PDFs come from the "files" release;
@@ -284,6 +301,9 @@ async function main() {
         curTerm,
         subjectHref: subjectHref(cat, course.subject, code).replace(/#.*$/, ''),
         ugFirst,
+        ugOlder: cat.level === 'grad' ? [] : ugOlderFor(code),
+        offerings: offeringsSection(code, schedules.get(code)),
+        offeredTerms: termsWithData(schedules.get(code)),
         uwflow: flowSection(code, flow?.courses[code], { repo }),
         reddit: redditSection(code, reddit.map.get(code), reddit.meta, { repo, slug: slug(code), version }),
         resources: resourcesSection(code, resourcesFor.get(code), { known: linkable, repo, found: foundFor.get(code) }),
@@ -306,7 +326,7 @@ async function main() {
     const subject = /^[A-Z]+/.exec(r.code)[0];
     const mentions = reddit.map.get(r.code);
     const extra = flowSection(r.code, flow?.courses[r.code], { repo }) + redditSection(r.code, mentions, reddit.meta, { repo, slug: slug(r.code), version }) + resourcesSection(r.code, [], { known: linkable, repo, found: foundFor.get(r.code) });
-    pages.push([`${slug(r.code)}/index.html`, retiredPage({ ...ctxBase, r, known: linkable, mentions: stillMentioned, reddit: extra, floor: courseHistory.floor, oldHave, hosted: hostedUg, faculty: faculty(r.code, subject) })]);
+    pages.push([`${slug(r.code)}/index.html`, retiredPage({ ...ctxBase, r, known: linkable, mentions: stillMentioned, reddit: extra, offerings: offeringsSection(r.code, schedules.get(r.code), { current: false }), floor: courseHistory.floor, oldHave, hosted: hostedUg, faculty: faculty(r.code, subject) })]);
     sitemap.push(`/${slug(r.code)}/`);
     if (mentions && groupThreads(mentions).length > SHOWN) pages.push([`reddit/${slug(r.code)}.json`, JSON.stringify(mentions)]);
     if (mentions?.length) redditPages++;

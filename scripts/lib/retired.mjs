@@ -183,6 +183,17 @@ export function readSpec(spec) {
   return i === toks.length && (out.terms || out.hours || out.weight) ? out : null;
 }
 
+/**
+ * The instructor a scanned calendar names for a course ("Instructor: Dutt, Schuster"), common from about
+ * 1972 to 1983. null when it names none, or says "to be announced".
+ */
+export function calendarInstructor(paras) {
+  const m = /\bInstructors?\s*:\s*(.+?)(?=\s+(?:Purpose|Prereq|Coreq|Antireq|Note|Text|Course|Offered|Also|Hours|Lecture|\d)\b|[.;)(]|$)/i.exec((paras ?? []).join(' '));
+  const who = m?.[1].replace(/\s+/g, ' ').trim();
+  if (!who || who.length < 3 || /to be announced|^tba$|^staff$|^various$|^see /i.test(who) || !/[a-z]{2}/i.test(who)) return null;
+  return who.slice(0, 80);
+}
+
 const range = (ys) => (ys.length === 1 ? ys[0].label : `${ys[0].label} to ${ys.at(-1).label}`);
 
 function yearChip(y) {
@@ -206,12 +217,22 @@ function scansHtml(arch, known) {
       const spec = readSpec(v.rep.spec);
       const bits = spec ? [spec.terms && `Offered ${spec.terms.join(', ')}`, spec.hours && `${spec.hours} hours a week`, spec.weight && `${spec.weight} credit`].filter(Boolean) : [];
       const starred = v.years.some((y) => y.listed);
+      // Who the calendar names as the instructor, year by year (runs of the same name grouped).
+      const named = [];
+      for (const y of v.years) {
+        const who = calendarInstructor(y.paras);
+        if (!who) continue;
+        const last = named.at(-1);
+        if (last?.who === who) last.years.push(y);
+        else named.push({ who, years: [y] });
+      }
       return `<section class="scan-ver">
   <h3>${esc(range(v.years))} <span class="t">${plural(v.years.length, 'calendar')}</span></h3>
   ${other ? `<p class="t"><b>Another title:</b> ${esc(v.rep.title)}, probably a different course under the same number (or a misread scan).</p>` : v.rep.title && overlap(words(v.rep.title), now) < 0.99 ? `<p class="t">Titled ${esc(v.rep.title)}.</p>` : ''}
   ${v.desc.map((p) => `<p>${linkCodes(p, known)}</p>`).join('')}
   ${v.reqs.map((p) => `<p class="t">${linkCodes(p, known)}</p>`).join('')}
   ${bits.length ? `<p class="t">${esc(bits.join(' · '))}</p>` : ''}
+  ${named.length ? `<p class="scan-who">Instructor, as the calendar names it: ${named.map((n) => `${esc(n.who)} <span class="t">(${esc(range(n.years))})</span>`).join(' · ')}</p>` : ''}
   <ul class="versions scan-years">${v.years.map(yearChip).join('')}</ul>
   ${starred ? '<p class="t"><small>* Listed that year without a description, or as not offered.</small></p>' : ''}
 </section>${gap}`;
@@ -238,7 +259,7 @@ function ranHtml(ran, first, last) {
 
 /** `oldHave`: the older Graduate Calendar terms uwloo has (a Set), to say when a course's trail goes cold. */
 /** `hosted(start, code)`: uwloo's page for the course in an older undergrad year it hosts (/2324/cs/#CS135), or null. */
-export function retiredPage({ r, known, mentions, reddit, floor, faculty: fac, oldHave = new Set(), hosted = () => null, builtAt, version }) {
+export function retiredPage({ r, known, mentions, reddit, offerings = '', floor, faculty: fac, oldHave = new Set(), hosted = () => null, builtAt, version }) {
   const { code, od, arch, ga } = r;
   const S = /^[A-Z]+/.exec(code)[0];
   const N = code.slice(S.length);
@@ -345,6 +366,7 @@ ${description ? `<p class="desc">${linkCodes(description, known)}</p>` : ''}
 ${od?.requirements ? `<section aria-labelledby="req-h"><h2 id="req-h">Requirements, as last listed</h2><p>${linkCodes(od.requirements, known)}</p></section>` : ''}
 ${gaNotes ? `<section aria-labelledby="req-h"><h2 id="req-h">Notes, as last listed</h2><div class="notes">${gaNotes.map((n) => `<p><i>${linkCodes(n, known)}</i></p>`).join('')}</div></section>` : ''}
 ${scanOnly ? scanDesc || `<p class="desc t">The scanned calendars list it without a description; see each year below.</p>` : ''}
+${offerings}
 ${mentionHtml}
 ${reddit ?? ''}
 <section aria-labelledby="out-h">

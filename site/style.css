@@ -421,3 +421,25 @@ footer p { margin: 0.25rem 0; }
 .scan-years .pdf { font-size: 0.8rem; color: var(--muted); }
 .scan-years sup { color: var(--muted); }
 .scan-gap { margin: 0.4rem 0 1rem; font-style: italic; }
+
+/* Every term since 2001: a year per row (Winter, Spring, Fall); a term that ran opens its sections under its row */
+.strip a { color: inherit; text-decoration: none; display: block; }
+.og-sum { margin: 0.2rem 0 0.35rem; font-weight: 600; }
+.og-by { margin: 0 0 0.35rem; }
+.ogrid { margin: 0.8rem 0 0.4rem; max-width: 40rem; }
+.og-row { display: grid; grid-template-columns: 3.2rem repeat(3, minmax(0, 1fr)); gap: 5px; margin-bottom: 5px; align-items: center; }
+.og-head span { font-size: 0.8rem; color: var(--muted); text-align: center; }
+.og-y { font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.og { display: block; text-align: center; padding: 0.3rem 0; border: 1px solid var(--rule); border-radius: 4px; font-size: 0.85rem; font-variant-numeric: tabular-nums; color: var(--muted); text-decoration: none; }
+.og.on { background: var(--fac); border-color: var(--fac); color: var(--paper); font-weight: 700; }
+.og.solo { border-color: var(--fac); color: var(--fac); border-style: dashed; }
+.og.na { border-style: dotted; opacity: 0.55; }
+a.og:hover, a.og:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+.og-term { display: none; margin: 0.2rem 0 0.8rem; padding: 0.6rem 0.75rem; border: 1px solid var(--fac); border-radius: 6px; overflow-x: auto; scroll-margin-top: 6rem; }
+.og-term:target { display: block; }
+.og-term h3 { margin: 0 0 0.4rem; font-size: 1rem; display: flex; justify-content: space-between; }
+.og-x { text-decoration: none; font-size: 1.2rem; line-height: 1; }
+.og-term table { font-size: 0.88rem; }
+.og-src { margin-top: 0.4rem; font-size: 0.85rem; }
+.scan-who { margin: 0.35rem 0; font-size: 0.93rem; }
+.ver-older { margin: 0.6rem 0 0.2rem; }

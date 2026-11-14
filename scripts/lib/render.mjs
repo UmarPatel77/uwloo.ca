@@ -55,13 +55,15 @@ ${body}
 
 // ---------------- course page ----------------
 
-function stripHtml(strip, hint, sectionsByTerm) {
+function stripHtml(strip, hint, sectionsByTerm, linked = new Set()) {
   if (strip?.length) {
     const cells = strip
       .map((s, i) => {
         // tbd: no class schedule from Open Data. Ahead, it isn't out yet; for a past term, the read came back empty.
         const label = s.state === 'on' ? 'ran' : s.state === 'tbd' ? (s.future || s.now ? 'schedule not published yet' : 'no schedule data') : 'not offered';
-        return `<li class="${s.state}${s.now ? ' now' : ''}" style="--i:${i}"><abbr title="${esc(termName(s.term))}: ${label}">${esc(termShort(s.term))}</abbr></li>`;
+        // A term with saved sections (data/schedules) links down to them in "Every term since 2001".
+        const abbr = `<abbr title="${esc(termName(s.term))}: ${label}">${esc(termShort(s.term))}</abbr>`;
+        return `<li class="${s.state}${s.now ? ' now' : ''}" style="--i:${i}">${linked.has(s.term) ? `<a href="#t${s.term}">${abbr}</a>` : abbr}</li>`;
       })
       .join('');
     const known = strip.filter((s) => s.state !== 'tbd' && !s.future);
@@ -140,6 +142,24 @@ function elsewhereLinks(c, cat, term, curTerm) {
   ].filter(Boolean);
 }
 
+/**
+ * The undergraduate calendars a course was likely in that uwloo doesn't host (on ucalendar), each as its
+ * own uwloo address (/1920/afm322, which goes to that year's ucalendar entry). A short run is listed; a long
+ * one folds.
+ */
+function olderYears(years, code) {
+  if (!years.length) return '';
+  const items = [...years]
+    .sort((a, b) => b - a)
+    .map((y) => `<li><a href="/${String(y % 100).padStart(2, '0')}${String((y + 1) % 100).padStart(2, '0')}/${slug(code)}">${esc(yearLabel(y))}</a></li>`)
+    .join('');
+  const span = years.length === 1 ? yearLabel(years[0]) : `${yearLabel(Math.min(...years))} to ${yearLabel(Math.max(...years))}`;
+  const why = 'From the first year it ran or was listed. These aren’t on uwloo; each opens that year’s entry on ucalendar.';
+  return years.length <= 4
+    ? `<p class="t ver-older">On ucalendar: </p><ul class="versions">${items}</ul><p class="t">${why}</p>`
+    : `<details class="ver-old"><summary>${esc(span)} <span class="t">on ucalendar, ${years.length} calendars</span></summary><ul class="versions">${items}</ul><p class="t">${why}</p></details>`;
+}
+
 export function coursePage(ctx) {
   const { course: c, cat, known, leadsTo, history, faculty, strip, hint, sectionsByTerm, curTerm, subjectHref } = ctx;
   // Version pages (/1249/math631) show one calendar's entry; links and "Check it elsewhere" follow its term.
@@ -178,7 +198,7 @@ export function coursePage(ctx) {
   const old = history.old ?? [];
   const versions = [
     history.ug.length &&
-      `<h3 class="ver-h">Undergraduate Calendar</h3><ul class="versions">${verItems(history.ug)}<li><a href="${ugArchiveUrl((ctx.ugFirst ?? 2024) - 1, S, c.code)}">${yearLabel((ctx.ugFirst ?? 2024) - 1)} and earlier</a> <span class="t">on ucalendar</span></li></ul>`,
+      `<h3 class="ver-h">Undergraduate Calendar</h3><ul class="versions">${verItems(history.ug)}</ul>${olderYears(ctx.ugOlder ?? [], c.code)}`,
     history.grad.length &&
       `<h3 class="ver-h">Graduate Calendar</h3><ul class="versions">${verItems(history.grad)}${old.length ? '' : `<li><a href="${ARCHIVES}">Winter 2024 and earlier</a> <span class="t">in the calendar archives</span></li>`}</ul>`,
     old.length &&
@@ -204,7 +224,7 @@ export function coursePage(ctx) {
   <dl class="facts">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
   ${note ? `<p class="gone-note">${note}</p>` : ''}
 </header>
-${version ? '' : stripHtml(strip, hint, sectionsByTerm)}
+${version ? '' : stripHtml(strip, hint, sectionsByTerm, ctx.offeredTerms)}
 ${desc ? `<p class="desc">${linkCodes(desc, known)}</p>` : ''}
 <div class="reqs">
   <div>
@@ -216,6 +236,7 @@ ${desc ? `<p class="desc">${linkCodes(desc, known)}</p>` : ''}
   <section aria-labelledby="leads-h"><h2 id="leads-h">Leads to</h2>${leads}</section>
 </div>
 ${sectionBlocks}
+${version ? '' : ctx.offerings ?? ''}
 ${version ? '' : ctx.resources ?? ''}
 ${version ? '' : ctx.uwflow ?? ''}
 ${version ? '' : ctx.reddit ?? ''}
