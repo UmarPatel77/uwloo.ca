@@ -758,7 +758,7 @@
    ]
   ]
  },
- "updated": "2026-11-15T14:35:34.932Z",
+ "updated": "2026-11-15T15:48:52.569Z",
  "ug": {
   "2021": {
    "source": "opendata",
@@ -782,7 +782,7 @@
    "failed": 115,
    "missed": [],
    "errors": {
-    "unreachable": 115
+    "unreachable (robots.txt: UNABLE_TO_VERIFY_LEAF_SIGNATURE)": 115
    }
   },
   "2324": {
@@ -795,7 +795,7 @@
    "failed": 120,
    "missed": [],
    "errors": {
-    "unreachable": 120
+    "unreachable (robots.txt: UNABLE_TO_VERIFY_LEAF_SIGNATURE)": 120
    }
   }
  }
