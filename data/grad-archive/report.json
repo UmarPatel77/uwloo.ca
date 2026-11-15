@@ -758,7 +758,7 @@
    ]
   ]
  },
- "updated": "2026-11-15T15:49:26.324Z",
+ "updated": "2026-11-15T16:03:06.271Z",
  "ug": {
   "2021": {
    "source": "opendata",
@@ -773,30 +773,24 @@
    "missed": []
   },
   "2223": {
-   "source": null,
-   "error": "no courses read",
+   "source": "calendar",
+   "courses": 3936,
+   "subjects": 115,
    "pages": 1,
-   "coursePages": 0,
-   "courses": 0,
-   "ids": 0,
-   "failed": 115,
-   "missed": [],
-   "errors": {
-    "unreachable (robots.txt: UNABLE_TO_VERIFY_LEAF_SIGNATURE)": 115
-   }
+   "coursePages": 115,
+   "ids": 4011,
+   "failed": 0,
+   "missed": []
   },
   "2324": {
-   "source": null,
-   "error": "no courses read",
+   "source": "calendar",
+   "courses": 4092,
+   "subjects": 120,
    "pages": 1,
-   "coursePages": 0,
-   "courses": 0,
-   "ids": 0,
-   "failed": 120,
-   "missed": [],
-   "errors": {
-    "unreachable (robots.txt: UNABLE_TO_VERIFY_LEAF_SIGNATURE)": 120
-   }
+   "coursePages": 120,
+   "ids": 4165,
+   "failed": 0,
+   "missed": []
   }
  }
 }
