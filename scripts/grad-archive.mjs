@@ -65,6 +65,7 @@ export class Polite {
   constructor({ delay = 1000, timeout = 30_000, deadline = Infinity, cacheDir = '.cache/grad-archive', log = console } = {}) {
     Object.assign(this, { delay, timeout, deadline, cacheDir, log });
     this.robotsBy = new Map();
+    this.robotsWhy = new Map(); // origin → why its robots.txt gave no answer ("HTTP 503", "ETIMEDOUT"), for the report
     this.wait = new Map();
     this.stats = { fetched: 0, cached: 0, blocked: 0, failed: 0 };
   }
@@ -102,9 +103,11 @@ export class Polite {
           }
           const text = res.status === 200 ? await res.text() : (await res.arrayBuffer().catch(() => {}), '');
           hit = res.status === 200 || (res.status >= 400 && res.status < 500) ? { t: Date.now(), text, status: res.status } : null;
+          if (!hit) this.robotsWhy.set(u.origin, `HTTP ${res.status}`);
         } catch (err) {
           if (err.message === 'out of time') throw err;
           hit = null;
+          this.robotsWhy.set(u.origin, err.cause?.code ?? err.name ?? err.message);
         }
         if (hit) {
           await mkdir(`${this.cacheDir}/robots`, { recursive: true });
@@ -135,7 +138,8 @@ export class Polite {
       const ok = await this.allowed(cur);
       if (ok !== 'ok') {
         this.stats.blocked++;
-        return { status: 0, error: ok, url: cur };
+        const why = ok === 'unreachable' ? this.robotsWhy.get(new URL(cur).origin) : null;
+        return { status: 0, error: why ? `unreachable (robots.txt: ${why})` : ok, url: cur };
       }
       let res;
       try {

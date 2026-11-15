@@ -1,0 +1,42 @@
+name: Term archive
+
+# Keeps each term's sections from UW Open Data before it drops them (scripts/term-archive.mjs) in
+# data/terms-od/, so "Every term since 2001" carries on past WClasses. Weekly, and by hand any time.
+on:
+  workflow_dispatch:
+    inputs:
+      terms:
+        description: Only these terms, e.g. 1265,1269 (blank for the ones that need reading)
+        default: ""
+  schedule:
+    - cron: "23 8 * * 1" # Mondays, ~4 a.m. in Waterloo
+
+permissions:
+  contents: write # commit data/terms-od
+
+concurrency:
+  group: term-archive
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Read the terms
+        run: node scripts/term-archive.mjs ${{ inputs.terms && format('--terms {0}', inputs.terms) || '' }}
+        env:
+          UW_API_KEY: ${{ secrets.UW_API_KEY }}
+      - name: Commit
+        run: |
+          if [ -n "$(git status --porcelain -- data/terms-od)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/terms-od
+            git commit -m "Term archive: $(ls data/terms-od | tr '\n' ' ')"
+            for i in 1 2 3; do git pull --rebase --quiet && git push && break; sleep 5; done
+          fi

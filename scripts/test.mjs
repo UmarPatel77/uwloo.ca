@@ -1534,3 +1534,40 @@ test('offerings: every term since 2001, clickable, Taught by, one-student sectio
   assert.equal(calendarInstructor(['3 hours per week, Fall term Instructor: to be announced']), null);
   assert.equal(calendarInstructor(['Prereq: Consent of Instructor']), null);
 });
+
+test('term archive: Open Data terms saved like data/schedules, finished terms once, the grid carries on past WClasses', async () => {
+  const { mkdtemp } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { main, toRows, loadOdTerms } = await import('./term-archive.mjs');
+  const { offeringsSection } = await import('./lib/offerings.mjs');
+  const sec = (comp, s, cap, enrl, start, end, days) => ({ comp, sec: s, cap, enrl, meets: start ? [{ days, start, end, date: null }] : [] });
+  assert.deepEqual(toRows([sec('TUT', '101', 30, 20, '13:30', '14:20', 'F'), sec('LEC', '002', 90, 80, '08:30', '09:50', 'TTh'), sec('LEC', '001', 90, 88, '10:00', '11:20', 'TTh')]), [
+    ['LEC 001', 90, 88, '10:00-11:20 TTh', '', ''],
+    ['LEC 002', 90, 80, '8:30-9:50 TTh', '', ''],
+  ]);
+  const dir = await mkdtemp(`${tmpdir()}/tod-`);
+  const offerings = { terms: { 1265: { published: true }, 1269: { published: true }, 1259: { published: false } }, rows: { 1265: [{ subject: 'CS', number: '135' }], 1269: [{ subject: 'CS', number: '135' }, { subject: 'CS', number: '136' }] } };
+  const asked = [];
+  const fetchClasses = async (term, r) => {
+    asked.push(`${term} ${r.number}`);
+    return r.number === '135' ? [{ courseComponent: 'LEC', classSection: 1, maxEnrollmentCapacity: 100, enrolledStudents: term === '1265' ? 97 : 60, scheduleData: [{ classMeetingStartTime: '2026-01-01T10:30:00', classMeetingEndTime: '2026-01-01T11:20:00', classMeetingWeekPatternCode: 'YNYNYNN' }] }] : null;
+  };
+  const log = { log() {}, warn() {} };
+  const now = new Date('2026-11-16T12:00:00Z');
+  await main(['--terms', '1265,1269'], { now, dir, fetchClasses, offerings, log });
+  const od = await loadOdTerms(dir);
+  assert.deepEqual(od.get('1265'), { term: '1265', read: '2026-11-16', final: true, source: 'UW Open Data', courses: { CS135: [['LEC 001', 100, 97, '10:30-11:20 MWF', '', '']] } });
+  assert.equal(od.get('1269').final, false, 'the term in progress');
+  asked.length = 0;
+  await main([], { now, dir, fetchClasses, offerings: { ...offerings, terms: { ...offerings.terms } }, log });
+  assert.ok(!asked.some((x) => x.startsWith('1265')), 'a finished term already read isn’t read again');
+  assert.ok(asked.some((x) => x.startsWith('1269')), 'the term in progress is');
+  // The grid: an Open Data Spring 2026 replaces WClasses’ early read, and Fall 2026 is a term like any other.
+  const entry = { terms: { 1261: [['LEC 001', 100, 99, '', 'Doe,Jane', '']], 1265: [['LEC 001', 100, 97, '10:30-11:20 MWF', '', '']], 1269: [['LEC 001', 100, 60, '10:30-11:20 MWF', '', '']] }, od: ['1265', '1269'] };
+  const html = offeringsSection('CS135', entry, { through: '1269', now });
+  assert.match(html, /href="#t1269"/);
+  assert.ok(!html.includes('before enrolment settled'), 'no "not final" note when the term came from Open Data');
+  assert.match(html, /href="#t1261"/);
+  const older = offeringsSection('CS135', { ...entry, terms: { ...entry.terms, 1259: [['LEC 001', 100, 98, '', '', '']] } }, { through: '1269', now });
+  assert.match(older, /aria-label="Winter 2025: nothing on WClasses"/, 'before the last term read: "nothing", not "no data"');
+});

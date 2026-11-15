@@ -177,6 +177,12 @@ Above the grid: how many terms it ran and in which seasons, and "Taught by" with
 
 "Calendar versions" lists each older undergraduate calendar a course was likely in, as its own uwloo address (`/1920/afm322`, which opens that year's ucalendar entry). The list starts from 1995–96 if the 1994–95 scan has the course, or else from the year it first ran.
 
+### From Fall 2025 on: kept from Open Data
+
+WClasses stopped in early 2026, and Open Data deletes a term's sections about a year after it ends. So the "Term archive" workflow (`scripts/term-archive.mjs`) runs weekly. It saves every term Open Data still has, from Fall 2025 to the term in progress, into `data/terms-od/{term}.json`, shaped like `data/schedules`. A finished term is read once more after it ends and then left alone. The term in progress is read each week, since its enrolment still moves. If more than 5% of a term's requests fail, that term is left as it was, and the next week tries again.
+
+The build lays these terms over WClasses' copy, so Open Data's Spring 2026, with final enrolment, replaces WClasses' early read. Open Data withholds instructors and rooms, so from Fall 2025 on those cells are blank.
+
 ## Courses no longer offered
 
 A course that's in none of the current calendars uwloo has (2024–25 on) still gets a page if Waterloo ever listed it: `uwloo.ca/msci452`. It says when it was in the course catalog or the older Graduate Calendars, the terms it ran, its description and requirements as last listed, which of today's courses still mention it (usually as an antirequisite), its r/uwaterloo discussions, and links to its last calendar entry on ucalendar and to the scanned calendars it's in. Today's pages link to it too, greyed out.
@@ -261,6 +267,7 @@ data/archive/{year}.json       page numbers inside the 1963–64 to 1994–95 PD
 scripts/lib/history.mjs        every course Open Data's catalog has listed, and when each ran
 scripts/lib/retired.mjs        pages for courses no longer offered (/msci452/)
 scripts/schedules.mjs          reads past class schedules from WClasses into data/schedules/
+scripts/term-archive.mjs       keeps each term's sections from Open Data in data/terms-od/ (weekly)
 scripts/grad-archive.mjs       reads the older calendars uwloo hosts (.github/workflows/grad-archive.yml)
 scripts/lib/gradarchive.mjs    where they are, how a course page is read and stored, their pages (/1109/co/)
 data/grad-archive/             those calendars, a report of each read, and sample pages

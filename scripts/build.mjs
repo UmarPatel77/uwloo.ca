@@ -13,6 +13,7 @@ import { loadHistory } from './lib/history.mjs';
 import { archiveAppearances, mentionsOf, retiredCourses, retiredPage } from './lib/retired.mjs';
 import { offeringsSection, termsWithData, yearOfTerm } from './lib/offerings.mjs';
 import { loadSchedules } from './lib/schedules.mjs';
+import { loadOdTerms } from './term-archive.mjs';
 import { gradAppearances, loadGradArchive, oldTermIndexPage, oldTermSubjectPage, oldTerms } from './lib/gradarchive.mjs';
 import { loadUgArchive, ugOldSubjectPage, ugOldYearPage } from './lib/ugarchive.mjs';
 import { groupThreads } from '../site/reddit.js';
@@ -226,6 +227,18 @@ async function main() {
   const retired = retiredCourses({ history: courseHistory, archive, current: known, grad: gradOld });
   // Past sections, Fall 2001 to Spring 2026 (data/schedules, from WClasses).
   const schedules = await loadSchedules();
+  // From Fall 2025 on, terms kept from UW Open Data (data/terms-od) take over: WClasses stopped in early 2026,
+  // and its Spring 2026 is from before enrolment settled.
+  const odTerms = await loadOdTerms();
+  for (const [term, doc] of odTerms) {
+    for (const [code, rows] of Object.entries(doc.courses)) {
+      const e = schedules.get(code) ?? { terms: {} };
+      e.terms = { ...e.terms, [term]: rows };
+      (e.od ??= []).push(term);
+      schedules.set(code, e);
+    }
+  }
+  const through = [...odTerms.keys()].sort().at(-1);
   console.log(`Past class schedules: ${schedules.size} courses, ${[...schedules.values()].filter((e) => Object.keys(e.terms ?? {}).length).length} with sections`);
   // Undergraduate calendars a course was likely in that uwloo doesn't host: from 1995–96 if the 1994–95 scan
   // has it, else from the year it first ran, to 2023–24.
@@ -302,7 +315,7 @@ async function main() {
         subjectHref: subjectHref(cat, course.subject, code).replace(/#.*$/, ''),
         ugFirst,
         ugOlder: cat.level === 'grad' ? [] : ugOlderFor(code),
-        offerings: offeringsSection(code, schedules.get(code)),
+        offerings: offeringsSection(code, schedules.get(code), { through }),
         offeredTerms: termsWithData(schedules.get(code)),
         uwflow: flowSection(code, flow?.courses[code], { repo }),
         reddit: redditSection(code, reddit.map.get(code), reddit.meta, { repo, slug: slug(code), version }),
@@ -326,7 +339,7 @@ async function main() {
     const subject = /^[A-Z]+/.exec(r.code)[0];
     const mentions = reddit.map.get(r.code);
     const extra = flowSection(r.code, flow?.courses[r.code], { repo }) + redditSection(r.code, mentions, reddit.meta, { repo, slug: slug(r.code), version }) + resourcesSection(r.code, [], { known: linkable, repo, found: foundFor.get(r.code) });
-    pages.push([`${slug(r.code)}/index.html`, retiredPage({ ...ctxBase, r, known: linkable, mentions: stillMentioned, reddit: extra, offerings: offeringsSection(r.code, schedules.get(r.code), { current: false }), floor: courseHistory.floor, oldHave, hosted: hostedUg, faculty: faculty(r.code, subject) })]);
+    pages.push([`${slug(r.code)}/index.html`, retiredPage({ ...ctxBase, r, known: linkable, mentions: stillMentioned, reddit: extra, offerings: offeringsSection(r.code, schedules.get(r.code), { current: false, through }), floor: courseHistory.floor, oldHave, hosted: hostedUg, faculty: faculty(r.code, subject) })]);
     sitemap.push(`/${slug(r.code)}/`);
     if (mentions && groupThreads(mentions).length > SHOWN) pages.push([`reddit/${slug(r.code)}.json`, JSON.stringify(mentions)]);
     if (mentions?.length) redditPages++;

@@ -53,11 +53,11 @@ const when = (r) => {
   return m ? `${m[3]} ${m[1]}–${m[2]}`.trim() : r[3] || '';
 };
 
-function termTable(t) {
+function termTable(t, od) {
   const row = (r, note) =>
     `<tr><th scope="row">${esc(r[0])}</th><td>${r[2] ?? '?'} / ${r[1] ?? '?'}</td><td>${esc(when(r)) || '<span class="t">—</span>'}</td><td>${esc(r[5] ?? '') || '<span class="t">—</span>'}</td><td>${esc(personName(r[4])) || '<span class="t">not listed</span>'}${note ? ` <span class="t">${note}</span>` : ''}</td></tr>`;
   const rows = [...t.classes.map((r) => row(r)), ...t.solo.map((r) => row(r, 'individual arrangement, 1 student'))].join('');
-  const late = t.term === LAST_TERM ? '<p class="t">WClasses’ last read, from before enrolment settled: the numbers may not be final.</p>' : '';
+  const late = t.term === LAST_TERM && !od.has(t.term) ? '<p class="t">WClasses’ last read, from before enrolment settled: the numbers may not be final.</p>' : '';
   return `<section class="og-term" id="t${t.term}" aria-label="${esc(termName(t.term))}">
   <h3>${esc(termName(t.term))} <a class="t og-x" href="#offer-h" aria-label="Close">×</a></h3>
   <table class="sec"><thead><tr><th scope="col">Section</th><th scope="col">Enrolled / cap</th><th scope="col">When</th><th scope="col">Where</th><th scope="col">Instructor</th></tr></thead><tbody>${rows}</tbody></table>${late}
@@ -68,10 +68,12 @@ function termTable(t) {
  * "Every term since 2001": the summary, then one row per year (newest first) of Winter, Spring, Fall boxes.
  * A box that ran links to #t1159, whose sections open under its row (CSS :target, no script needed).
  */
-export function offeringsSection(code, entry, { current = true, now = new Date() } = {}) {
+export function offeringsSection(code, entry, { current = true, now = new Date(), through = null } = {}) {
   const s = summarize(entry);
   if (!s) return '';
   const byTerm = new Map(s.terms.map((t) => [t.term, t]));
+  const od = new Set(entry.od ?? []);
+  const lastKnown = through && Number(through) > Number(LAST_TERM) ? through : LAST_TERM;
   const firstYear = Math.max(FIRST, 2000 + Number(s.terms[0].term.slice(1, 3)));
   const lastYear = current ? Math.max(2026, now.getUTCFullYear()) : 2000 + Number(s.terms.at(-1).term.slice(1, 3));
   const rows = [];
@@ -80,7 +82,7 @@ export function offeringsSection(code, entry, { current = true, now = new Date()
     const cells = SEASONS.map(([m, season]) => {
       const term = `1${yy}${m}`;
       const t = byTerm.get(term);
-      const outside = Number(term) > Number(LAST_TERM) || Number(term) < 1019;
+      const outside = Number(term) > Number(lastKnown) || Number(term) < 1019;
       if (t?.classes.length) {
         const n = t.classes.length;
         return `<a class="og on" href="#t${term}" title="${esc(termName(term))}: ${plural(n, t.classes[0][0].split(' ')[0] === 'LEC' ? 'lecture' : 'section')}">${n}</a>`;
@@ -90,7 +92,7 @@ export function offeringsSection(code, entry, { current = true, now = new Date()
     }).join('');
     const details = SEASONS.map(([m]) => byTerm.get(`1${yy}${m}`))
       .filter(Boolean)
-      .map(termTable)
+      .map((t) => termTable(t, od))
       .join('');
     rows.push(`<div class="og-row"><span class="og-y">${y}</span>${cells}</div>${details}`);
   }
@@ -114,7 +116,7 @@ export function offeringsSection(code, entry, { current = true, now = new Date()
     <div class="og-row og-head" aria-hidden="true"><span></span><span>Winter</span><span>Spring</span><span>Fall</span></div>
     ${rows.join('\n    ')}
   </div>
-  <p class="t og-src">A number is how many lectures (or seminars or labs) it had; click it for that term’s sections. “·” means WClasses has nothing that term, which isn’t proof it didn’t run. From <a href="https://wclasses.vercel.app/">WClasses</a>’ copy of the Registrar’s Schedule of Classes, Fall 2001 to Spring 2026.</p>
+  <p class="t og-src">A number is how many lectures (or seminars or labs) it had; click it for that term’s sections. “·” means WClasses has nothing that term, which isn’t proof it didn’t run. From <a href="https://wclasses.vercel.app/">WClasses</a>’ copy of the Registrar’s Schedule of Classes (Fall 2001 to Spring 2026), and from Fall 2025 on, UW Open Data, which doesn’t give instructors or rooms.</p>
 </details></section>`;
 }
 
