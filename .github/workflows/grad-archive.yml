@@ -52,6 +52,31 @@ jobs:
           key: uwloo-grad-archive-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: uwloo-grad-archive-
 
+      # ucalendar.uwaterloo.ca doesn't send the intermediate certificate between its own and the root.
+      # Browsers fetch it themselves; Node doesn't, so every request failed with
+      # UNABLE_TO_VERIFY_LEAF_SIGNATURE. This fetches the missing intermediates from the address each
+      # certificate names ("CA Issuers") and adds them to what Node trusts. Checking stays on: the chain must
+      # still end at a root Node already trusts, and a root fetched this way is never added.
+      - name: Complete ucalendar's certificate chain
+        run: |
+          out="$RUNNER_TEMP/extra-ca.pem"; : > "$out"
+          cert=$(echo | openssl s_client -connect ucalendar.uwaterloo.ca:443 -servername ucalendar.uwaterloo.ca 2>/dev/null | openssl x509 2>/dev/null || true)
+          [ -n "$cert" ] || { echo "No certificate from ucalendar; leaving it."; exit 0; }
+          for i in 1 2 3; do
+            url=$(echo "$cert" | openssl x509 -noout -text 2>/dev/null | grep -o 'CA Issuers - URI:[^ ,]*' | head -1 | sed 's/^CA Issuers - URI://' || true)
+            [ -n "$url" ] || break
+            curl -fsSL "$url" -o "$RUNNER_TEMP/issuer.crt" || break
+            next=$(openssl x509 -inform DER -in "$RUNNER_TEMP/issuer.crt" 2>/dev/null || openssl x509 -in "$RUNNER_TEMP/issuer.crt" 2>/dev/null || true)
+            [ -n "$next" ] || break
+            subject=$(echo "$next" | openssl x509 -noout -subject | sed 's/^subject= *//')
+            issuer=$(echo "$next" | openssl x509 -noout -issuer | sed 's/^issuer= *//')
+            [ "$subject" = "$issuer" ] && break # a root: never added
+            echo "$next" >> "$out"
+            echo "Added intermediate: $subject"
+            cert="$next"
+          done
+          if [ -s "$out" ]; then echo "NODE_EXTRA_CA_CERTS=$out" >> "$GITHUB_ENV"; else echo "Nothing to add."; fi
+
       - name: Read the calendars
         id: read
         run: node scripts/grad-archive.mjs --minutes "${{ inputs.minutes || '150' }}" ${{ inputs.terms && format('--terms {0}', inputs.terms) || '' }} ${{ inputs.redo && '--redo' || '' }}
