@@ -2,6 +2,7 @@ name: Term archive
 
 # Keeps each term's sections from UW Open Data before it drops them (scripts/term-archive.mjs) in
 # data/terms-od/, so "Every term since 2001" carries on past WClasses. Weekly, and by hand any time.
+# When a term changed, it rebuilds the site so the grids show it the same day.
 on:
   workflow_dispatch:
     inputs:
@@ -13,6 +14,7 @@ on:
 
 permissions:
   contents: write # commit data/terms-od
+  actions: write # start the site rebuild
 
 concurrency:
   group: term-archive
@@ -39,4 +41,7 @@ jobs:
             git add data/terms-od
             git commit -m "Term archive: $(ls data/terms-od | tr '\n' ' ')"
             for i in 1 2 3; do git pull --rebase --quiet && git push && break; sleep 5; done
+            gh workflow run deploy.yml --ref main
           fi
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -46,7 +46,7 @@ jobs:
 
       # Every page fetched so far, so a rerun (after a parser fix, say) fetches nothing twice.
       - name: Restore page cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: .cache/grad-archive
           key: uwloo-grad-archive-${{ github.run_id }}-${{ github.run_attempt }}
@@ -85,7 +85,7 @@ jobs:
 
       - name: Save page cache
         if: always() && steps.read.outcome != 'skipped'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .cache/grad-archive
           key: uwloo-grad-archive-${{ github.run_id }}-${{ github.run_attempt }}

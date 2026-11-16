@@ -46,7 +46,7 @@ jobs:
       # Kuali and Open Data responses are cached between runs, so a normal day
       # only refetches changed courses and this term's seats.
       - name: Restore data cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: .cache
           key: uwloo-data-${{ github.run_id }}-${{ github.run_attempt }}
@@ -65,12 +65,12 @@ jobs:
       # Saved even if a later step fails, so downloaded data is never thrown away.
       - name: Save data cache
         if: always() && steps.build.outcome != 'skipped'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .cache
           key: uwloo-data-${{ github.run_id }}-${{ github.run_attempt }}
 
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
@@ -82,4 +82,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

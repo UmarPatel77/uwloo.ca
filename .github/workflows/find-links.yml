@@ -41,7 +41,7 @@ jobs:
 
       # Pages fetched on earlier runs, so a weekly run only refetches what's stale.
       - name: Restore page cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: .cache/links
           key: uwloo-links-${{ github.run_id }}-${{ github.run_attempt }}
@@ -55,7 +55,7 @@ jobs:
 
       - name: Save page cache
         if: always() && steps.find.outcome != 'skipped'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .cache/links
           key: uwloo-links-${{ github.run_id }}-${{ github.run_attempt }}
