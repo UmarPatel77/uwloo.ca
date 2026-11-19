@@ -284,6 +284,7 @@ h2 { font-size: 1.05rem; font-weight: 700; font-stretch: 87.5%; margin: 2.25rem 
 
 footer { max-width: 62rem; margin: 0 auto; padding: 1.25rem var(--pad) 3rem; color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--rule); }
 footer p { margin: 0.25rem 0; }
+footer .support { margin-top: 0.6rem; }
 
 @media (max-width: 34rem) {
   .jump span { display: none; }

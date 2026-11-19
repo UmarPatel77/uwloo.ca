@@ -145,6 +145,7 @@ tr.pl-flash td, tr.pl-flash th { background: color-mix(in srgb, var(--gold) 30%,
 }
 .pl-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 1.1rem 0 0.4rem; }
 .pl-actions button { border: 1px solid var(--ink); background: none; border-radius: 8px; padding: 0.45rem 0.85rem; font-weight: 600; cursor: pointer; }
+.pl-thanks { margin: 0.2rem 0 0; }
 .pl-actions button:first-child { background: var(--ink); color: var(--paper); }
 
 /* other timetables, as thumbnails */

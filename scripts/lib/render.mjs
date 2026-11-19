@@ -47,6 +47,7 @@ ${body}
 <footer>
   <p>Unofficial. The <a href="${CALENDAR_PAGE}">Undergraduate</a> and <a href="${GRAD_CALENDAR_PAGE}">Graduate</a> Calendars are the authority on requirements.</p>
   <p>Course data from Waterloo’s Academic Calendar; offerings and seats from <a href="https://openapi.data.uwaterloo.ca/api-docs">UW Open Data</a>. Rebuilt ${esc(fmtStamp(builtAt).replace(/\.?$/, '.'))}</p>
+  <p class="support">uwloo is free and has no ads. If it’s useful to you: <a href="${BMC}">Buy me a coffee</a> · <a href="${SPONSORS}">Sponsor on GitHub</a></p>
 </footer>
 <script type="module" src="/app.js?v=${version}"></script>
 </body>
@@ -165,6 +166,9 @@ function olderYears(years, code) {
  * "Add to your Winter 2027 timetable" (app.js makes it a toggle that saves to this browser's plans). Without
  * JavaScript, a link to the planner with the course added. plan: [{t, n, f, h}] (term, name, first day, has it).
  */
+export const BMC = 'https://buymeacoffee.com/umarhq';
+export const SPONSORS = 'https://github.com/sponsors/UmarPatel77';
+
 export function planButton(code, plan) {
   const has = plan?.filter((p) => p.h) ?? [];
   if (!has.length) return '';

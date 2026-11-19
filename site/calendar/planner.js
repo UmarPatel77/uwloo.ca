@@ -516,6 +516,7 @@ ${m.tests.length ? `<div class="pl-tests"><h3>Tests</h3><ul>${m.tests.map((t) =>
   <button type="button" data-act="link">Copy link</button>
   <span class="t" id="pl-done" role="status"></span>
 </div>
+<p class="t pl-thanks" id="pl-thanks" hidden>Saved you some time? <a href="https://buymeacoffee.com/umarhq">Buy me a coffee</a></p>
 <p class="t">${esc(scope)} In Quest, add the class numbers to your shopping cart; a lecture can bring its tutorial with it, so check what Quest picks. ${esc(stamp)}</p>
 ${others.length > 1 ? `<h3 class="pl-oh">Other good timetables</h3><ol class="pl-others">${others.map((s, i) => `<li><button type="button" data-view="${i}" aria-current="${!state.edit && i === state.view}" aria-label="Timetable ${i + 1}">${gridHtml(picksOf(s), { mini: true })}<span>#${i + 1} · ${esc(summaryShort(S.metrics(picksOf(s))))}</span></button></li>`).join('')}</ol>` : ''}`;
 }
@@ -613,6 +614,7 @@ async function action(act) {
     a.click();
     a.remove();
     done.textContent = `Saved uwloo-${state.term}.ics: open it to add the classes to your calendar. It doesn’t skip holidays or reading week.${skipped ? ` ${skipped} meetings had no dates and were left out.` : ''}`;
+    $('pl-thanks').hidden = false;
   }
   setTimeout(() => (done.textContent = ''), 8000);
 }

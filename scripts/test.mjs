@@ -1795,4 +1795,5 @@ test('planner: saved plans per term; the course page button; the header link', a
   assert.match(btn, /data-plan="\[\{&quot;term&quot;:&quot;1269&quot;,&quot;name&quot;:&quot;Fall 2026&quot;,&quot;from&quot;:&quot;2026-09-08&quot;,&quot;has&quot;:true\}/);
   const page = plannerPage({ terms: [{ term: '1271', name: 'Winter 2027', asOf: null, from: '2027-01-11', courses: 1 }], builtAt: new Date(), version: 'v1' });
   assert.match(page, /<a class="nav-plan" href="\/calendar\/" aria-current="page">Timetable<span class="nav-count" aria-hidden="true"><\/span><\/a>/);
+  assert.match(page, /<p class="support">uwloo is free and has no ads\. If it’s useful to you: <a href="https:\/\/buymeacoffee\.com\/umarhq">Buy me a coffee<\/a> · <a href="https:\/\/github\.com\/sponsors\/UmarPatel77">Sponsor on GitHub<\/a><\/p>/);
 });
