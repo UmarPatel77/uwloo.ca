@@ -35,6 +35,7 @@ ${head}
 <body${faculty ? ` class="f-${faculty}"` : ''}>
 <header class="bar">
   <a class="mark" href="/">uwloo</a>
+  <a class="nav-plan" href="/calendar/"${path === '/calendar/' ? ' aria-current="page"' : ''}>Timetable<span class="nav-count" aria-hidden="true"></span></a>
   <form class="jump" action="/" role="search">
     <label class="vh" for="q">Go to a course code</label>
     <span aria-hidden="true">uwloo.ca/</span><input id="q" name="q" placeholder="cs135" autocomplete="off" autocapitalize="none" spellcheck="false">
@@ -114,7 +115,6 @@ function sectionsHtml(term, list, course) {
     <thead><tr><th scope="col">Section</th><th scope="col">Class</th><th scope="col">Enrolled</th><th scope="col">Meets</th></tr></thead>
     <tbody>${rows}</tbody>
   </table></div>
-  <p class="plan-link"><a href="/calendar/?t=${term}&amp;c=${esc(course.subject)}${esc(course.number)}">Plan a ${esc(termName(term))} timetable with ${esc(course.subject)} ${esc(course.number)}</a></p>
 </section>`;
 }
 
@@ -159,6 +159,18 @@ function olderYears(years, code) {
   return years.length <= 4
     ? `<p class="t ver-older">On ucalendar: </p><ul class="versions">${items}</ul><p class="t">${why}</p>`
     : `<details class="ver-old"><summary>${esc(span)} <span class="t">on ucalendar, ${years.length} calendars</span></summary><ul class="versions">${items}</ul><p class="t">${why}</p></details>`;
+}
+
+/**
+ * "Add to your Winter 2027 timetable" (app.js makes it a toggle that saves to this browser's plans). Without
+ * JavaScript, a link to the planner with the course added. plan: [{t, n, f, h}] (term, name, first day, has it).
+ */
+export function planButton(code, plan) {
+  const has = plan?.filter((p) => p.h) ?? [];
+  if (!has.length) return '';
+  const t = has.at(-1);
+  const terms = plan.map((p) => ({ term: p.t, name: p.n, from: p.f, has: Boolean(p.h) }));
+  return `<div class="plan-add" data-code="${esc(code)}" data-name="${esc(fmtCode(code))}" data-plan="${esc(JSON.stringify(terms))}"><span class="plan-ctl"><a class="plan-btn" href="/calendar/?t=${esc(t.t)}&amp;c=${esc(code)}">Plan a ${esc(t.n)} timetable with ${esc(fmtCode(code))}</a></span><span class="t plan-note" role="status"></span></div>`;
 }
 
 export function coursePage(ctx) {
@@ -224,6 +236,7 @@ export function coursePage(ctx) {
   <h1><span class="code">${esc(fmtCode(c.code))}</span><span class="title">${esc(c.title)}</span></h1>
   <dl class="facts">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
   ${note ? `<p class="gone-note">${note}</p>` : ''}
+  ${version ? '' : planButton(c.code, ctx.plan)}
 </header>
 ${version ? '' : stripHtml(strip, hint, sectionsByTerm, ctx.offeredTerms)}
 ${desc ? `<p class="desc">${linkCodes(desc, known)}</p>` : ''}

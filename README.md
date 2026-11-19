@@ -188,14 +188,16 @@ The build lays these terms over WClasses' copy, so Open Data's Spring 2026, with
 
 Add up to 8 courses and uwloo tries every combination of their sections, then shows the timetables that fit, best first. It covers the terms Open Data has sections for (this term, and next term once it's published). It opens on next term, unless this term started under three weeks ago.
 
-- **What counts as a timetable:** one section of each kind a course has (lecture, tutorial, lab, test…). A tutorial or lab goes with the lecture that has the same associated-class number, or with any lecture when its number is 99, the same rule Quest uses. Weekly classes can't overlap; classes in different weeks of the term (a lab in the first half, say) can. A test that overlaps a class or another test is allowed but ranked lower and flagged, since instructors arrange another sitting.
+- **What counts as a timetable:** one section of each kind a course has (lecture, tutorial, lab, test…). A tutorial or lab goes with the lecture that has the same associated-class number, or with any lecture when its number is 99, the same rule Quest uses. Open Data gives 0 for every section (checked for Winter 2027), so for now any tutorial goes with any lecture; Quest has the final say. Classes can't overlap; ones in different weeks (a lab in the first half of the term, or labs on given dates) can. A test that overlaps a class or another test is allowed but ranked lower and flagged, since instructors arrange another sitting.
 - **Best first:** fewer early and late classes (or none before/after the times you pick), the days you want off, short gaps, a free 45 minutes for lunch if you ask, fewer days on campus if you ask, and sections with seats left. Full sections are skipped unless a kind has nothing else.
 - **Busy times:** "Block off time", then drag down a day on the timetable, or pick a day and times. No section that meets in a busy time is used.
 - **Swap and lock:** each section in the table has a menu of the others that fit (ones that would clash say what with). "Lock" keeps a section in every timetable.
-- **Out:** "Copy class numbers" for Quest's shopping cart, an `.ics` file for Google, Apple or Outlook calendars (weekly classes repeat over their weeks; it doesn't skip holidays), and a link. Everything you pick is in the address (`/calendar/?t=1271&c=CS136,MATH138&off=16`), so the link opens the same timetables. The browser also remembers your last plan.
+- **Out:** "Copy class numbers" for Quest's shopping cart, an `.ics` file for Google, Apple or Outlook calendars (weekly classes repeat over their weeks; it doesn't skip holidays), and a link. Everything you pick is in the address (`/calendar/?t=1271&c=CS136,MATH138&off=16`), so the link opens the same timetables.
 
-The build writes one file per term, `/calendar/{term}.json`, from the same Open Data sections the course pages show, so seats are as of the last build. The search runs in the browser (`site/calendar/solve.js`, in a worker), so nothing about anyone's plan is sent anywhere. Course pages link to the planner from their sections, with the course already added.
+- **Finding it:** "Timetable" in every page's header, with how many courses are in your plan. Each course page with sections has "+ Add to Winter 2027 timetable" under its title, which adds it without leaving the page (or says it isn't scheduled that term, and offers the term it is in). The home page links it too.
+- **Saved in your browser:** one plan per term (`site/calendar/plans.js`, localStorage `uwloo.plans`). A link to someone else's timetable is shown as it is, and only replaces your plan for that term once you change something.
 
+The build writes one file per term, `/calendar/{term}.json`, from the same Open Data sections the course pages show, so seats are as of the last build. The search runs in the browser (`site/calendar/solve.js`, in a worker), so nothing about anyone's plan is sent anywhere. 
 ## Courses no longer offered
 
 A course that's in none of the current calendars uwloo has (2024–25 on) still gets a page if Waterloo ever listed it: `uwloo.ca/msci452`. It says when it was in the course catalog or the older Graduate Calendars, the terms it ran, its description and requirements as last listed, which of today's courses still mention it (usually as an antirequisite), its r/uwaterloo discussions, and links to its last calendar entry on ucalendar and to the scanned calendars it's in. Today's pages link to it too, greyed out.
@@ -295,7 +297,7 @@ scripts/lib/links.mjs          its rules: course codes in pages and addresses, r
 tools/links/                   reddit_links.py (r/uwaterloo dump → data/links/seeds/) and how the finder works
 data/links/                    where the finder looks, what it found, and what's been removed
 scripts/lib/planner.mjs        the timetable planner's page and its per-term data files
-site/calendar/                 the planner in the browser: solve.js (the search), planner.js (the page), ics.js
+site/calendar/                 the planner in the browser: solve.js (the search), planner.js (the page), ics.js, plans.js (saved plans)
 site/                          CSS, client JS, the URL router used by 404.html
 ```
 

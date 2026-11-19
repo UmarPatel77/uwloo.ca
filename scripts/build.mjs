@@ -289,6 +289,17 @@ async function main() {
     }
   }
 
+  // The timetable planner (/calendar/): one file of sections per term that has them. Course pages get an
+  // "Add to timetable" button for these terms.
+  const planTerms = [];
+  for (const term of Object.keys(sections).sort((a, b) => Number(a) - Number(b))) {
+    if (!Object.keys(sections[term]).length) continue;
+    const file = plannerData(term, sections[term], { asOf: opendata.sectionsAsOf[term] ?? null, titleOf: (c) => primary.get(c)?.course.title ?? '' });
+    pages.push([`calendar/${term}.json`, JSON.stringify(file)]);
+    planTerms.push({ term, name: file.name, asOf: file.asOf, from: file.from, courses: Object.keys(file.c).length, has: new Set(Object.keys(file.c)) });
+  }
+  const planFor = (code) => (planTerms.some((t) => t.has.has(code)) ? planTerms.map((t) => ({ t: t.term, n: t.name, f: t.from, h: t.has.has(code) ? 1 : 0 })) : null);
+
   for (const [code, { cat, course }] of primary) {
     const history = historyFor(code);
     const strip = offerings
@@ -315,6 +326,7 @@ async function main() {
         hint: offeredHint(course.description, course.notesHtml),
         sectionsByTerm,
         curTerm,
+        plan: planFor(code),
         subjectHref: subjectHref(cat, course.subject, code).replace(/#.*$/, ''),
         ugFirst,
         ugOlder: cat.level === 'grad' ? [] : ugOlderFor(code),
@@ -534,14 +546,6 @@ async function main() {
     : [{ key: 'all', name: 'Subjects', subjects: homeSubjects }];
   const liveCount = new Set([...current.courses.keys(), ...(gradCurrent?.courses.keys() ?? [])]).size;
 
-  // The timetable planner (/calendar/): one file of sections per term that has them.
-  const planTerms = [];
-  for (const term of Object.keys(sections).sort((a, b) => Number(a) - Number(b))) {
-    if (!Object.keys(sections[term]).length) continue;
-    const file = plannerData(term, sections[term], { asOf: opendata.sectionsAsOf[term] ?? null, titleOf: (c) => primary.get(c)?.course.title ?? '' });
-    pages.push([`calendar/${term}.json`, JSON.stringify(file)]);
-    planTerms.push({ term, name: file.name, asOf: file.asOf, from: file.from, courses: Object.keys(file.c).length });
-  }
   pages.push(['calendar/index.html', plannerPage({ ...ctxBase, terms: planTerms })]);
   sitemap.push('/calendar/');
   console.log(`Planner: ${planTerms.map((t) => `${t.name} (${t.courses} courses)`).join(', ') || 'no terms with sections'}`);

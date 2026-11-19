@@ -133,3 +133,83 @@ for (const fold of document.querySelectorAll('details[data-fold]')) {
     } catch {}
   });
 }
+
+// The timetable planner: the header's "Timetable" link shows how many courses are in the plan, and a course
+// page's button adds the course to it without leaving the page (site/calendar/plans.js keeps the plans).
+import(`/calendar/plans.js${new URL(import.meta.url).search}`)
+  .then((Plans) => {
+    Plans.paintCount();
+    const box = document.querySelector('.plan-add');
+    if (box && Plans.readPlans()) planButton(box, Plans);
+    addEventListener('storage', (e) => {
+      if (e.key !== 'uwloo.plans') return;
+      Plans.paintCount();
+      if (box) box.repaint?.();
+    });
+    // Back from the planner (the page may come from the browser's back-forward cache).
+    addEventListener('pageshow', (e) => {
+      if (!e.persisted) return;
+      Plans.paintCount();
+      box?.repaint?.();
+    });
+  })
+  .catch(() => {});
+
+function planButton(box, Plans) {
+  const code = box.dataset.code;
+  const name = box.dataset.name;
+  const terms = JSON.parse(box.dataset.plan);
+  const ctl = box.querySelector('.plan-ctl');
+  const note = box.querySelector('.plan-note');
+  let term = null;
+  let quiet = 0;
+  const open = (t, label) => `<a class="plan-open" href="/calendar/?t=${t}">${label}</a>`;
+  box.repaint = (focus = false) => {
+    const all = Plans.readPlans();
+    if (!all) return;
+    term = Plans.chooseTerm(all, terms);
+    let t = terms.find((x) => x.term === term);
+    let codes = Plans.codesOf(all.terms[term]);
+    // Nothing planned yet and the course isn't in that term: offer the term it is in.
+    if (!t?.has && !codes.length) {
+      const other = [...terms].reverse().find((x) => x.has);
+      if (other) {
+        t = other;
+        term = other.term;
+        codes = Plans.codesOf(all.terms[term]);
+      }
+    }
+    const n = codes.length;
+    const so = n ? open(term, `${n} course${n === 1 ? '' : 's'} so far →`) : '';
+    let html;
+    if (codes.includes(code)) {
+      html = `<button type="button" class="plan-btn" aria-pressed="true">✓ In your ${esc(t.name)} timetable</button>${open(term, 'See timetables →')}`;
+    } else if (!t.has) {
+      const other = [...terms].reverse().find((x) => x.has);
+      html = `<span class="plan-no">Not scheduled in ${esc(t.name)}</span>${other ? `<a class="plan-open" href="/calendar/?t=${other.term}&amp;c=${code}">Plan ${esc(other.name)} with ${esc(name)} →</a>` : ''}`;
+    } else if (n >= 8) {
+      html = `<span class="plan-no">Your ${esc(t.name)} timetable has 8 courses, the most it takes</span>${open(term, 'Open it →')}`;
+    } else {
+      html = `<button type="button" class="plan-btn" aria-pressed="false">+ Add to ${esc(t.name)} timetable</button>${so}`;
+    }
+    ctl.innerHTML = html;
+    if (focus) ctl.querySelector('.plan-btn')?.focus();
+  };
+  box.addEventListener('click', (e) => {
+    if (!e.target.closest('.plan-btn')) return;
+    const all = Plans.readPlans();
+    if (!all || !term) return;
+    const t = terms.find((x) => x.term === term);
+    const codes = Plans.toggleCourse(all, term, code);
+    if (!codes || !Plans.writePlans(all)) return;
+    const n = codes.length;
+    note.textContent = codes.includes(code)
+      ? `Added. ${n} course${n === 1 ? '' : 's'} in your ${t.name} timetable.`
+      : `Taken out of your ${t.name} timetable.`;
+    clearTimeout(quiet);
+    quiet = setTimeout(() => (note.textContent = ''), 6000);
+    Plans.paintCount(all);
+    box.repaint(true);
+  });
+  box.repaint();
+}

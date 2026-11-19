@@ -2,7 +2,8 @@
 // the tests (scripts/test.mjs). No DOM here.
 //
 // A course needs one section of each kind it has (LEC, TUT, LAB, TST…). A tutorial or lab goes with the lecture
-// whose associated-class number it shares, or with any lecture when its number is 99. Sections that meet at the
+// whose associated-class number it shares, or with any lecture when its number is 99 (or 0 or missing: unknown;
+// Open Data gives 0 for every section as of Winter 2027). Sections that meet at the
 // same times are one choice ("LEC 002 or LEC 006"), so the search doesn't try the same timetable twice.
 //
 // The search is depth-first with a bound: every cost below only grows as classes are added, so a partial
@@ -28,24 +29,46 @@ export const maskText = (mask) => DAYS.filter((_, i) => mask & (1 << i)).join(''
 /**
  * One section from a term file, [comp, sec, assoc, class, cap, enrolled, meets], with meets as
  * [days, start, end] (weekly, the term's usual weeks), [days, start, end, from, to] (weekly, other weeks) or
- * [days, start, end, date] (one day: a test, say). Times are minutes after midnight.
+ * [days, start, end, date] (one day). Times are minutes after midnight.
+ *
+ * A test's one-day meeting becomes {one: true}: it may overlap a class, at a cost. Other one-day meetings (labs
+ * on given dates, say) are gathered by weekday and time into {dates: [...]}: they're classes, on those dates only.
  */
 export function readSection(row, term = {}) {
   const [comp, sec, assoc = null, cls = null, cap = null, enrl = null, raw = []] = row;
-  const meets = raw
-    .map((m) =>
-      m.length === 4
-        ? { mask: dayBit(m[3]), s: m[1], e: m[2], from: m[3], to: m[3], one: true }
-        : { mask: m[0], s: m[1], e: m[2], from: m[3] ?? term.from ?? null, to: m[4] ?? term.to ?? null, one: false },
-    )
-    .filter((m) => Number.isFinite(m.s) && Number.isFinite(m.e) && m.mask);
+  const meets = [];
+  const dated = new Map();
+  for (const m of raw) {
+    if (!Number.isFinite(m[1]) || !Number.isFinite(m[2]) || m[2] <= m[1]) continue;
+    if (m.length === 4) {
+      const mask = dayBit(m[3]);
+      if (comp === 'TST') {
+        meets.push({ mask, s: m[1], e: m[2], from: m[3], to: m[3], one: true });
+        continue;
+      }
+      const k = `${mask},${m[1]},${m[2]}`;
+      if (!dated.has(k)) dated.set(k, { mask, s: m[1], e: m[2], dates: [], from: null, to: null, one: false });
+      dated.get(k).dates.push(m[3]);
+    } else if (m[0]) meets.push({ mask: m[0], s: m[1], e: m[2], from: m[3] ?? term.from ?? null, to: m[4] ?? term.to ?? null, one: false });
+  }
+  for (const d of dated.values()) {
+    d.dates = [...new Set(d.dates)].sort();
+    d.from = d.dates[0];
+    d.to = d.dates.at(-1);
+    meets.push(d);
+  }
   const full = Number.isFinite(cap) && cap > 0 && Number.isFinite(enrl) && enrl >= cap;
   return { comp, sec, assoc, cls, cap, enrl, meets, full, online: !meets.length };
 }
 
-/** Two meetings at the same time on a shared day, in weeks that overlap. */
+/** Two meetings at the same time on a shared day, in weeks that overlap (on a shared date, for dated ones). */
 export function clash(a, b) {
-  return a.s < b.e && b.s < a.e && (a.mask & b.mask) !== 0 && (!a.from || !b.to || a.from <= b.to) && (!b.from || !a.to || b.from <= a.to);
+  if (!(a.s < b.e && b.s < a.e && (a.mask & b.mask) !== 0)) return false;
+  if ((a.from && b.to && a.from > b.to) || (b.from && a.to && b.from > a.to)) return false;
+  if (a.dates && b.dates) return a.dates.some((d) => b.dates.includes(d));
+  if (a.dates) return a.dates.some((d) => (!b.from || d >= b.from) && (!b.to || d <= b.to));
+  if (b.dates) return b.dates.some((d) => (!a.from || d >= a.from) && (!a.to || d <= a.to));
+  return true;
 }
 // Weekly classes can't overlap. A one-day meeting (a midterm, say) overlapping a class costs instead of ruling the
 // timetable out: Waterloo arranges another sitting for a test that clashes with a class or another test.
@@ -55,7 +78,8 @@ const testOverlaps = (meets, placed) => {
   for (const m of meets) for (const p of placed) if ((m.one || p.one) && clash(m, p)) n++;
   return n;
 };
-const compatible = (a, b) => a == null || b == null || a === ANY || b === ANY || a === b;
+const known = (x) => x != null && x !== 0 && x !== ANY;
+const compatible = (a, b) => !known(a) || !known(b) || a === b;
 
 export const DEFAULTS = { start: null, end: null, off: 0, fewerDays: false, compact: true, lunch: false, skipFull: true, blocks: [], locks: [] };
 

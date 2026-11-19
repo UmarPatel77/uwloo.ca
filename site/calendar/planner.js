@@ -1,12 +1,14 @@
 // uwloo.ca/calendar: add up to 8 courses, see the timetables that fit, best first.
 // Data: /calendar/{term}.json (scripts/lib/planner.mjs). Search: solve.js, in a worker (worker.js).
-// Everything the person picks is in the address (?t=1271&c=CS136,MATH138…), so a timetable can be shared.
+// Everything the person picks is in the address (?t=1271&c=CS136,MATH138…), so a timetable can be shared, and in
+// this browser's saved plans, one per term (plans.js), which course pages add to.
 const root = document.getElementById('planner');
 const V = root.dataset.v;
 const TERMS = JSON.parse(root.dataset.terms);
 const S = await import(`/calendar/solve.js?v=${V}`);
 const { run } = await import(`/calendar/run.js?v=${V}`);
 const { icsFile } = await import(`/calendar/ics.js?v=${V}`);
+const Plans = await import(`/calendar/plans.js?v=${V}`);
 
 const MAX = 8;
 const KEEP = 60;
@@ -26,14 +28,10 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
 // ---------------- state, kept in the address ----------------
 
-// The term to plan: the next one once its schedule is out, unless the current one started under 3 weeks ago
-// (people are still changing classes then).
-const DEFAULT_TERM = (() => {
-  const [a, b] = TERMS.slice(-2);
-  if (!b) return a?.term ?? root.dataset.default;
-  const started = a.from ? Date.parse(`${a.from}T12:00:00Z`) : NaN;
-  return Date.now() < started + 21 * 86_400_000 ? a.term : b.term;
-})();
+const DEFAULT_TERM = Plans.defaultTerm(TERMS) ?? root.dataset.default;
+// Whether changes are saved to this browser's plans. A timetable opened from a link is shown as it is and saved
+// only once the person changes something, so opening someone's link doesn't replace their own plan.
+let persist = false;
 const state = {
   term: DEFAULT_TERM,
   courses: [],
@@ -46,15 +44,8 @@ const state = {
   blocking: false,
 };
 
-function load() {
-  const q = new URLSearchParams(location.search);
-  let src = q;
-  if (![...q.keys()].length) {
-    try {
-      src = new URLSearchParams(localStorage.getItem('uwloo.planner') ?? '');
-    } catch {}
-  }
-  if (TERMS.some((t) => t.term === src.get('t'))) state.term = src.get('t');
+/** Courses and preferences from a planner address (or a saved plan, which is the same without t). */
+function apply(src) {
   state.courses = [...new Set((src.get('c') ?? '').split(',').map(norm).filter((c) => /^[A-Z]{2,8}\d/.test(c)))].slice(0, MAX);
   const p = state.prefs;
   const num = (k) => (src.has(k) && Number.isFinite(Number(src.get(k))) ? Number(src.get(k)) : null);
@@ -74,10 +65,24 @@ function load() {
   p.locks = (src.get('l') ?? '').split('_').map(Number).filter((n) => n > 0);
 }
 
+function load() {
+  const q = new URLSearchParams(location.search);
+  const linked = TERMS.some((t) => t.term === q.get('t')) ? q.get('t') : null;
+  if (q.has('c')) {
+    state.term = linked ?? DEFAULT_TERM;
+    apply(q);
+    return;
+  }
+  // /calendar/ or /calendar/?t=1271: the saved plan for that term (or the term being planned).
+  const all = Plans.readPlans();
+  state.term = linked ?? Plans.chooseTerm(all, TERMS) ?? DEFAULT_TERM;
+  apply(new URLSearchParams(all?.terms[state.term] ?? ''));
+  persist = true;
+}
+
 function save() {
   const p = state.prefs;
   const q = new URLSearchParams();
-  q.set('t', state.term);
   if (state.courses.length) q.set('c', state.courses.join(','));
   if (p.start != null) q.set('s', p.start);
   if (p.end != null) q.set('e', p.end);
@@ -86,11 +91,15 @@ function save() {
   if (f !== 'g') q.set('f', f);
   if (p.blocks.length) q.set('b', p.blocks.map((b) => `${b.mask}-${b.s}-${b.e}`).join('_'));
   if (p.locks.length) q.set('l', p.locks.join('_'));
-  const qs = q.toString().replace(/%2C/g, ',');
-  history.replaceState(null, '', `${location.pathname}?${qs}`);
-  try {
-    localStorage.setItem('uwloo.planner', qs);
-  } catch {}
+  const qs = Plans.tidy(q);
+  history.replaceState(null, '', `${location.pathname}?t=${state.term}${qs ? `&${qs}` : ''}`);
+  if (!persist) return;
+  const all = Plans.readPlans();
+  if (!all) return;
+  all.terms[state.term] = qs;
+  all.last = state.term;
+  Plans.writePlans(all);
+  Plans.paintCount(all);
 }
 
 // ---------------- data and search ----------------
@@ -157,7 +166,8 @@ function compute(term, entries, prefs) {
 
 let timer = 0;
 let busyTimer = 0;
-function update({ keepView = false } = {}) {
+function update({ keepView = false, initial = false } = {}) {
+  if (!initial) persist = true;
   save();
   renderChips();
   clearTimeout(timer);
@@ -315,8 +325,11 @@ function syncControls() {
 root.addEventListener('click', (e) => {
   const t = e.target.closest('[data-term]');
   if (t && t.dataset.term !== state.term) {
+    // The other term's own plan if there is one; otherwise these courses, tried in that term.
+    const saved = Plans.readPlans()?.terms[t.dataset.term];
     state.term = t.dataset.term;
-    state.prefs.locks = [];
+    if (saved && Plans.codesOf(saved).length) apply(new URLSearchParams(saved));
+    else state.prefs.locks = [];
     termFile(state.term).then((d) => (files.get(state.term).done = d)).catch(() => {});
     syncControls();
     update();
@@ -386,7 +399,7 @@ function gridHtml(picks, { mini = false, blocks = [] } = {}) {
       (picks ?? []).forEach((pk, k) => {
         for (const m of pk.opt.meets) {
           if (m.one || !(m.mask & bit)) continue;
-          const weeks = m.from && m.to && (m.from !== state.data?.from || m.to !== state.data?.to) ? `${fmtDate(m.from)}–${fmtDate(m.to)}` : '';
+          const weeks = weeksText(m);
           const label = `${fmtCode(pk.code)} ${pk.comp} ${pk.opt.section.sec}, ${range(m.s, m.e)}${weeks ? `, ${weeks}` : ''}`;
           items.push(
             mini
@@ -413,7 +426,16 @@ function seatsText(s) {
   if (s.full) return `<span class="pl-full">Full</span> <span class="t">${s.enrl}/${s.cap}</span>`;
   return `${s.cap - s.enrl} left <span class="t">of ${s.cap}</span>`;
 }
-const meetText = (m) => (m.one ? `${fmtDate(m.from, { weekday: 'short', month: 'short', day: 'numeric' })}, ${range(m.s, m.e)}` : `${S.maskText(m.mask)} ${range(m.s, m.e)}`);
+// Which weeks a class meets, when that isn't the whole term: "Jan 11–Feb 12", "5 dates, Jan 19–Mar 30", "Jan 19 only".
+function weeksText(m) {
+  if (m.dates) return m.dates.length === 1 ? `${fmtDate(m.dates[0])} only` : `${m.dates.length} dates, ${fmtDate(m.from)}–${fmtDate(m.to)}`;
+  return m.from && m.to && (m.from !== state.data?.from || m.to !== state.data?.to) ? `${fmtDate(m.from)}–${fmtDate(m.to)}` : '';
+}
+const meetText = (m) => {
+  if (m.one) return `${fmtDate(m.from, { weekday: 'short', month: 'short', day: 'numeric' })}, ${range(m.s, m.e)}`;
+  const w = m.dates ? weeksText(m) : '';
+  return `${S.maskText(m.mask)} ${range(m.s, m.e)}${w ? ` (${w})` : ''}`;
+};
 const optText = (o) => (o.meets.filter((m) => !m.one).map(meetText).join(', ') || (o.meets.length ? o.meets.map(meetText).join(', ') : 'Online or no set time'));
 
 function tableHtml(picks) {
@@ -486,7 +508,7 @@ function renderOut() {
 </div>
 ${gridHtml(picks, { blocks })}
 ${online.length ? `<p class="t pl-online">Online or no set time: ${online.map((p) => `${esc(fmtCode(p.code))} ${esc(p.comp)} ${esc(p.opt.section.sec)}`).join(', ')}</p>` : ''}
-${m.tests.length ? `<div class="pl-tests"><h3>Tests and one-day meetings</h3><ul>${m.tests.map((t) => `<li><span class="pl-dot c${colour(t.pick.code)}" aria-hidden="true"></span>${esc(fmtCode(t.pick.code))} ${esc(t.pick.comp)}: ${esc(meetText(t))}${t.over ? ` <span class="pl-warn">overlaps ${esc(fmtCode(t.over.code))} ${esc(t.over.comp)}</span>` : ''}</li>`).join('')}</ul>${m.overlaps ? '<p class="t">A test that overlaps a class or another test doesn’t stop you enrolling: ask the instructors about writing it at another time.</p>' : ''}</div>` : ''}
+${m.tests.length ? `<div class="pl-tests"><h3>Tests</h3><ul>${m.tests.map((t) => `<li><span class="pl-dot c${colour(t.pick.code)}" aria-hidden="true"></span>${esc(fmtCode(t.pick.code))} ${esc(t.pick.comp)}: ${esc(meetText(t))}${t.over ? ` <span class="pl-warn">overlaps ${esc(fmtCode(t.over.code))} ${esc(t.over.comp)}</span>` : ''}</li>`).join('')}</ul>${m.overlaps ? '<p class="t">A test that overlaps a class or another test doesn’t stop you enrolling: ask the instructors about writing it at another time.</p>' : ''}</div>` : ''}
 <div class="scroll"><table class="pl-table"><caption>Sections in this timetable. Swap one to try another, or lock it to keep it while you look at others.</caption><thead><tr><th scope="col">Course</th><th scope="col">Section</th><th scope="col">Class</th><th scope="col">When</th><th scope="col">Seats</th><th scope="col">Swap</th><th scope="col"><span class="vh">Lock</span></th></tr></thead><tbody>${tableHtml(picks)}</tbody></table></div>
 <div class="pl-actions">
   <button type="button" data-act="copy">Copy class numbers</button>
@@ -660,5 +682,5 @@ termFile(state.term)
   .then((d) => (files.get(state.term).done = d))
   .catch(() => {});
 for (const t of TERMS) if (t.term !== state.term) termFile(t.term).then((d) => (files.get(t.term).done = d)).catch(() => {});
-update();
+update({ initial: true });
 root.classList.add('pl-ready');

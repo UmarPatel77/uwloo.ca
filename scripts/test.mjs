@@ -1734,3 +1734,65 @@ test('planner: term file from Open Data sections; calendar file; page', () => {
   assert.match(html, /<button type="button" data-term="1271" aria-pressed="true">Winter 2027<\/button>/);
   assert.doesNotMatch(plannerPage({ terms: [], builtAt: new Date(), version: 'x' }), /planner\.js/);
 });
+
+test('planner: an associated-class number of 0 (Open Data’s, for now) pairs with anything; dated labs are classes', () => {
+  const entries = {
+    ECE106: ['', [lec('001', 0, 1, MWF, 510, 560), lec('002', 0, 2, MWF, 630, 680), tut('101', 0, 3, 1, 870, 920)]],
+  };
+  assert.equal(plan(entries).schedules.length, 2, 'either lecture with the tutorial');
+  // A lab on three Tuesdays: it clashes with a weekly Tuesday class at that time, but not with one on other weeks.
+  const lab = P.readSection(['LAB', '201', 0, 9, 48, 0, [[0, 510, 680, '2027-01-19'], [0, 510, 680, '2027-02-02'], [0, 510, 680, '2027-02-16']]], TERM);
+  assert.equal(lab.meets.length, 1);
+  assert.deepEqual(lab.meets[0].dates, ['2027-01-19', '2027-02-02', '2027-02-16']);
+  assert.equal(lab.meets[0].one, false);
+  const weekly = P.readSection(['LEC', '001', 0, 10, 50, 0, [[2, 540, 590]]], TERM);
+  const later = P.readSection(['LEC', '001', 0, 11, 50, 0, [[2, 540, 590, '2027-03-01', '2027-04-06']]], TERM);
+  const otherLab = P.readSection(['LAB', '202', 0, 12, 48, 0, [[0, 510, 680, '2027-01-26']]], TERM);
+  assert.equal(P.clash(lab.meets[0], weekly.meets[0]), true);
+  assert.equal(P.clash(weekly.meets[0], lab.meets[0]), true);
+  assert.equal(P.clash(lab.meets[0], later.meets[0]), false, 'the lecture starts after the last lab');
+  assert.equal(P.clash(lab.meets[0], otherLab.meets[0]), false, 'different Tuesdays');
+  const res = plan({ ECE124: ['', [['LAB', '201', 0, 9, 48, 0, [[0, 510, 680, '2027-01-19'], [0, 510, 680, '2027-02-02']]]]], X1: ['', [lec('001', 0, 20, 2, 540, 590), lec('002', 0, 21, 4, 540, 590)]] });
+  assert.equal(res.schedules.length, 1, 'only the Wednesday lecture fits around the lab');
+  const built = [P.buildCourse('ECE124', [['LAB', '201', 0, 9, 48, 0, [[0, 510, 680, '2027-01-19'], [0, 510, 680, '2027-02-02']]]], TERM, P.DEFAULTS)];
+  const { text } = icsFile([{ code: 'ECE124', comp: 'LAB', opt: built[0].opts.LAB[0] }], 'Winter 2027', { dayBit: P.dayBit });
+  assert.equal(text.match(/BEGIN:VEVENT/g).length, 2, 'one event per date');
+  assert.doesNotMatch(text, /RRULE:FREQ=WEEKLY/);
+  assert.equal(P.metrics([{ code: 'ECE124', comp: 'LAB', opt: built[0].opts.LAB[0] }]).days, 1, 'a dated lab is a day on campus');
+});
+
+test('planner: saved plans per term; the course page button; the header link', async () => {
+  const Plans = await import('../site/calendar/plans.js');
+  const terms = [
+    { term: '1269', from: '2026-09-08' },
+    { term: '1271', from: '2027-01-11' },
+  ];
+  assert.equal(Plans.defaultTerm(terms), '1271', 'Fall started long ago: plan Winter');
+  assert.equal(Plans.defaultTerm([{ term: '1271', from: new Date(Date.now() - 5 * 86_400_000).toISOString().slice(0, 10) }, { term: '1275', from: null }]), '1271', 'Winter started 5 days ago: still Winter');
+  assert.equal(Plans.defaultTerm([{ term: '1271', from: '2027-01-11' }]), '1271');
+  assert.equal(Plans.chooseTerm({ last: '1269', terms: {} }, terms), '1271', 'a plan for a past term isn’t picked up');
+  assert.equal(Plans.chooseTerm({ last: '1271', terms: {} }, terms), '1271');
+  assert.equal(Plans.chooseTerm(null, terms), '1271');
+  const all = { last: null, terms: { 1271: 'c=CS136&off=16' } };
+  assert.deepEqual(Plans.toggleCourse(all, '1271', 'MATH138'), ['CS136', 'MATH138']);
+  assert.equal(all.terms['1271'], 'c=CS136,MATH138&off=16', 'preferences kept');
+  assert.equal(all.last, '1271');
+  assert.deepEqual(Plans.toggleCourse(all, '1271', 'CS136'), ['MATH138']);
+  assert.deepEqual(Plans.toggleCourse(all, '1271', 'MATH138'), []);
+  assert.equal(all.terms['1271'], 'off=16');
+  const full = { terms: { 1271: 'c=A1,A2,A3,A4,A5,A6,A7,A8' } };
+  assert.equal(Plans.toggleCourse(full, '1271', 'B1'), null);
+  assert.deepEqual(Plans.codesOf('c=CS136,MATH138&s=600'), ['CS136', 'MATH138']);
+
+  const { planButton } = await import('./lib/render.mjs');
+  assert.equal(planButton('CS135', null), '');
+  assert.equal(planButton('CS135', [{ t: '1269', n: 'Fall 2026', f: '2026-09-08', h: 0 }]), '');
+  const btn = planButton('CS136', [
+    { t: '1269', n: 'Fall 2026', f: '2026-09-08', h: 1 },
+    { t: '1271', n: 'Winter 2027', f: '2027-01-11', h: 1 },
+  ]);
+  assert.match(btn, /<a class="plan-btn" href="\/calendar\/\?t=1271&amp;c=CS136">Plan a Winter 2027 timetable with CS 136<\/a>/);
+  assert.match(btn, /data-plan="\[\{&quot;term&quot;:&quot;1269&quot;,&quot;name&quot;:&quot;Fall 2026&quot;,&quot;from&quot;:&quot;2026-09-08&quot;,&quot;has&quot;:true\}/);
+  const page = plannerPage({ terms: [{ term: '1271', name: 'Winter 2027', asOf: null, from: '2027-01-11', courses: 1 }], builtAt: new Date(), version: 'v1' });
+  assert.match(page, /<a class="nav-plan" href="\/calendar\/" aria-current="page">Timetable<span class="nav-count" aria-hidden="true"><\/span><\/a>/);
+});
