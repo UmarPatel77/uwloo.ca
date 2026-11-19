@@ -20,6 +20,7 @@ Waterloo course pages at short URLs. A GitHub Action pulls the university's own 
 | `uwloo.ca/1920`, any year from `9596` to `1920` | That year's front page where Waterloo's archives page links it: `academic-calendar-archive.uwaterloo.ca` for 2007–08 on (ucalendar's own front pages for those years are gone), `www.ucalendar.uwaterloo.ca/0506/` before that |
 | `uwloo.ca/9495/cs`, any year from `6364` to `9495` | That year's CS courses read from the scanned calendar (`/9495/cs241` jumps to CS 241), each linking to its scanned page. Each course links to its scanned page |
 | `uwloo.ca/6263/…` and earlier | Not online; says the archive starts at 1963–64 |
+| `uwloo.ca/calendar` | The timetable planner: add up to 8 courses for this term or next, and see the timetables that fit, best first (below) |
 | `uwloo.ca/courses.csv` | Every course: title, level, whether it's in the current calendars, the last term it ran (looking back 7 years), and its outline.uwaterloo.ca search link. Opens in Excel |
 | `uwloo.ca/1269/cs135` | Redirects to `acal.fast.uwaterloo.ca/course/1269/CS/135` whenever uwloo has no page for it (undergrad codes, and terms uwloo doesn't have) |
 | `uwloo.ca/1065` and earlier terms | Says the online Graduate Calendars start at Fall 2006 |
@@ -183,6 +184,18 @@ WClasses stopped in early 2026, and Open Data deletes a term's sections about a 
 
 The build lays these terms over WClasses' copy, so Open Data's Spring 2026, with final enrolment, replaces WClasses' early read. Open Data withholds instructors and rooms, so from Fall 2025 on those cells are blank.
 
+## The timetable planner (`/calendar/`)
+
+Add up to 8 courses and uwloo tries every combination of their sections, then shows the timetables that fit, best first. It covers the terms Open Data has sections for (this term, and next term once it's published). It opens on next term, unless this term started under three weeks ago.
+
+- **What counts as a timetable:** one section of each kind a course has (lecture, tutorial, lab, test…). A tutorial or lab goes with the lecture that has the same associated-class number, or with any lecture when its number is 99, the same rule Quest uses. Weekly classes can't overlap; classes in different weeks of the term (a lab in the first half, say) can. A test that overlaps a class or another test is allowed but ranked lower and flagged, since instructors arrange another sitting.
+- **Best first:** fewer early and late classes (or none before/after the times you pick), the days you want off, short gaps, a free 45 minutes for lunch if you ask, fewer days on campus if you ask, and sections with seats left. Full sections are skipped unless a kind has nothing else.
+- **Busy times:** "Block off time", then drag down a day on the timetable, or pick a day and times. No section that meets in a busy time is used.
+- **Swap and lock:** each section in the table has a menu of the others that fit (ones that would clash say what with). "Lock" keeps a section in every timetable.
+- **Out:** "Copy class numbers" for Quest's shopping cart, an `.ics` file for Google, Apple or Outlook calendars (weekly classes repeat over their weeks; it doesn't skip holidays), and a link. Everything you pick is in the address (`/calendar/?t=1271&c=CS136,MATH138&off=16`), so the link opens the same timetables. The browser also remembers your last plan.
+
+The build writes one file per term, `/calendar/{term}.json`, from the same Open Data sections the course pages show, so seats are as of the last build. The search runs in the browser (`site/calendar/solve.js`, in a worker), so nothing about anyone's plan is sent anywhere. Course pages link to the planner from their sections, with the course already added.
+
 ## Courses no longer offered
 
 A course that's in none of the current calendars uwloo has (2024–25 on) still gets a page if Waterloo ever listed it: `uwloo.ca/msci452`. It says when it was in the course catalog or the older Graduate Calendars, the terms it ran, its description and requirements as last listed, which of today's courses still mention it (usually as an antirequisite), its r/uwaterloo discussions, and links to its last calendar entry on ucalendar and to the scanned calendars it's in. Today's pages link to it too, greyed out.
@@ -281,6 +294,8 @@ scripts/find-links.mjs         the weekly link finder (.github/workflows/find-li
 scripts/lib/links.mjs          its rules: course codes in pages and addresses, robots.txt, what's skipped
 tools/links/                   reddit_links.py (r/uwaterloo dump → data/links/seeds/) and how the finder works
 data/links/                    where the finder looks, what it found, and what's been removed
+scripts/lib/planner.mjs        the timetable planner's page and its per-term data files
+site/calendar/                 the planner in the browser: solve.js (the search), planner.js (the page), ics.js
 site/                          CSS, client JS, the URL router used by 404.html
 ```
 

@@ -89,20 +89,37 @@ export function toSection(c) {
   const meets = (c.scheduleData ?? []).map((m) => {
     const start = String(m.scheduleStartDate ?? '').slice(0, 10);
     const end = String(m.scheduleEndDate ?? '').slice(0, 10);
-    return { days: days(m), start: hhmm(m.classMeetingStartTime), end: hhmm(m.classMeetingEndTime), date: start && start === end ? start : null };
+    const room = String(m.locationName ?? '').trim();
+    return {
+      days: days(m),
+      start: hhmm(m.classMeetingStartTime),
+      end: hhmm(m.classMeetingEndTime),
+      date: start && start === end ? start : null,
+      // For the schedule planner (uwloo.ca/calendar): the weeks it meets, and a room when Open Data gives one
+      // (it usually gives only the campus, "UW U").
+      from: start || null,
+      to: end || null,
+      room: /^[A-Z0-9]{1,5}\s+\S*\d/.test(room) ? room : null,
+    };
   });
+  const assoc = Number.parseInt(c.associatedClassCode, 10);
   return {
     cls: c.classNumber ?? null,
     comp: String(c.courseComponent ?? '').trim(),
     sec: String(c.classSection ?? '').padStart(3, '0'),
     cap: Number.isFinite(Number(c.maxEnrollmentCapacity)) ? Number(c.maxEnrollmentCapacity) : null,
     enrl: Number.isFinite(Number(c.enrolledStudents)) ? Number(c.enrolledStudents) : null,
+    // Which lecture a tutorial or lab goes with: the same number, or 99 for any.
+    assoc: Number.isFinite(assoc) ? assoc : null,
     meets: meets.filter((m) => m.start || m.days || m.date),
   };
 }
 
 const COMP_ORDER = ['LEC', 'SEM', 'STU', 'LAB', 'TUT', 'TST', 'PRA', 'CLN', 'RDG', 'ESS', 'PRJ', 'WRK', 'FLD', 'DIS', 'OLN'];
 const compRank = (c) => (COMP_ORDER.indexOf(c) + 1 || 99);
+
+/** When each term's sections were read from Open Data (for "seats as of"). */
+export const sectionsAsOf = {};
 
 /** Sections for every undergrad and grad course that's scheduled in `term` and has a page on the site. Cached ~20 h. */
 export async function loadSections(term, offerings, known) {
@@ -113,10 +130,11 @@ export async function loadSections(term, offerings, known) {
     seen.add(code);
     return true;
   });
-  const path = `${CACHE}/sections-${term}.json`;
+  const path = `${CACHE}/sections2-${term}.json`; // 2: with assoc and meeting dates
   const hit = await readCache(path);
   if (hit && ageDays(hit.fetchedAt) < 0.8) {
     console.log(`Sections ${term}: cached (${Object.keys(hit.data).length} courses)`);
+    sectionsAsOf[term] = hit.fetchedAt;
     return hit.data;
   }
   const data = {};
@@ -141,9 +159,12 @@ export async function loadSections(term, offerings, known) {
   );
   if (failed > rows.length * 0.25 && hit) {
     console.warn(`! sections ${term}: ${failed} failures, keeping previous snapshot`);
+    sectionsAsOf[term] = hit.fetchedAt;
     return hit.data;
   }
-  await writeCache(path, { fetchedAt: new Date().toISOString(), data });
+  const fetchedAt = new Date().toISOString();
+  await writeCache(path, { fetchedAt, data });
+  sectionsAsOf[term] = fetchedAt;
   return data;
 }
 

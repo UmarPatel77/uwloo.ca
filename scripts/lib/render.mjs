@@ -114,6 +114,7 @@ function sectionsHtml(term, list, course) {
     <thead><tr><th scope="col">Section</th><th scope="col">Class</th><th scope="col">Enrolled</th><th scope="col">Meets</th></tr></thead>
     <tbody>${rows}</tbody>
   </table></div>
+  <p class="plan-link"><a href="/calendar/?t=${term}&amp;c=${esc(course.subject)}${esc(course.number)}">Plan a ${esc(termName(term))} timetable with ${esc(course.subject)} ${esc(course.number)}</a></p>
 </section>`;
 }
 
@@ -478,13 +479,14 @@ ${subjectList(`/${cat.term}/`, subjects)}`;
   });
 }
 
-export function homePage({ current, catalogs, gradCatalogs, groups, courseCount, builtAt, version }) {
+export function homePage({ current, catalogs, gradCatalogs, groups, courseCount, builtAt, version, planner = null }) {
   const body = `<form class="go" action="/" role="search">
   <label for="home-q">Type a course code or title</label>
   <div class="url"><span aria-hidden="true">uwloo.ca/</span><input id="home-q" name="q" placeholder="cs135" autocomplete="off" autocapitalize="none" spellcheck="false" role="combobox" aria-controls="results" aria-expanded="true" autofocus></div>
 </form>
 <p class="lede">Prerequisites, what a course leads to, and when it actually runs, for ${courseCount.toLocaleString('en-CA')} Waterloo undergraduate and graduate courses.</p>
 <ol id="results" class="results" role="listbox" aria-label="Matching courses"></ol>
+${planner ? `<p class="plan-link home-plan"><a href="/calendar/">Plan your ${esc(planner)} timetable</a> <span class="t">Add your courses; see every schedule that fits, best first.</span></p>` : ''}
 <div class="home-grid">
 ${groups
   .map(

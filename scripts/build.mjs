@@ -18,6 +18,7 @@ import { gradAppearances, loadGradArchive, oldTermIndexPage, oldTermSubjectPage,
 import { loadUgArchive, ugOldSubjectPage, ugOldYearPage } from './lib/ugarchive.mjs';
 import { groupThreads } from '../site/reddit.js';
 import * as opendata from './lib/opendata.mjs';
+import { plannerData, plannerPage } from './lib/planner.mjs';
 import {
   coursePage,
   homePage,
@@ -70,7 +71,9 @@ async function main() {
   const js = await readFile('site/app.js');
   const rjs = await readFile('site/reddit.js');
   const vjs = await readFile('site/viewer.js');
-  const version = createHash('sha1').update(css).update(js).update(rjs).update(vjs).digest('hex').slice(0, 8);
+  const hash = createHash('sha1').update(css).update(js).update(rjs).update(vjs);
+  for (const f of (await readdir('site/calendar')).sort()) hash.update(await readFile(join('site/calendar', f)));
+  const version = hash.digest('hex').slice(0, 8);
 
   // 1. Calendars (Kuali): undergrad by academic year, grad by term.
   const { ug, grad } = await kuali.loadCatalogList(builtAt);
@@ -530,8 +533,20 @@ async function main() {
         .filter((g) => g.subjects.length)
     : [{ key: 'all', name: 'Subjects', subjects: homeSubjects }];
   const liveCount = new Set([...current.courses.keys(), ...(gradCurrent?.courses.keys() ?? [])]).size;
+
+  // The timetable planner (/calendar/): one file of sections per term that has them.
+  const planTerms = [];
+  for (const term of Object.keys(sections).sort((a, b) => Number(a) - Number(b))) {
+    if (!Object.keys(sections[term]).length) continue;
+    const file = plannerData(term, sections[term], { asOf: opendata.sectionsAsOf[term] ?? null, titleOf: (c) => primary.get(c)?.course.title ?? '' });
+    pages.push([`calendar/${term}.json`, JSON.stringify(file)]);
+    planTerms.push({ term, name: file.name, asOf: file.asOf, from: file.from, courses: Object.keys(file.c).length });
+  }
+  pages.push(['calendar/index.html', plannerPage({ ...ctxBase, terms: planTerms })]);
+  sitemap.push('/calendar/');
+  console.log(`Planner: ${planTerms.map((t) => `${t.name} (${t.courses} courses)`).join(', ') || 'no terms with sections'}`);
   pages.push(['about/links/index.html', linksAboutPage({ ...ctxBase, repo, meta: foundFile && { links: foundFile.links.length, courses: foundFor.size, generated: foundFile.generated } })]);
-  pages.push(['index.html', homePage({ ...ctxBase, current, catalogs: ugNav, gradCatalogs: gradNav, groups, courseCount: liveCount })]);
+  pages.push(['index.html', homePage({ ...ctxBase, current, catalogs: ugNav, gradCatalogs: gradNav, groups, courseCount: liveCount, planner: planTerms.at(-1)?.name ?? null })]);
   sitemap.push('/');
 
   const meta = {

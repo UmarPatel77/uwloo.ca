@@ -189,7 +189,11 @@ test('Open Data class → section', () => {
     ],
   });
   assert.equal(s.sec, '001');
-  assert.deepEqual(s.meets[0], { days: 'MWF', start: '10:30', end: '11:20', date: null });
+  assert.deepEqual(s.meets[0], { days: 'MWF', start: '10:30', end: '11:20', date: null, from: '2026-09-08', to: '2026-12-08', room: null });
+  assert.equal(s.assoc, null);
+  assert.equal(toSection({ associatedClassCode: '99', scheduleData: [{ locationName: 'MC 2065', classMeetingDayPatternCode: 'M', classMeetingStartTime: '10:30', classMeetingEndTime: '11:20' }] }).assoc, 99);
+  assert.equal(toSection({ scheduleData: [{ locationName: 'MC 2065', classMeetingDayPatternCode: 'M', classMeetingStartTime: '10:30', classMeetingEndTime: '11:20' }] }).meets[0].room, 'MC 2065');
+  assert.equal(toSection({ scheduleData: [{ locationName: 'UW U', classMeetingDayPatternCode: 'M', classMeetingStartTime: '10:30', classMeetingEndTime: '11:20' }] }).meets[0].room, null, 'only the campus');
   assert.equal(s.meets[1].date, '2026-10-14');
 });
 
@@ -1570,4 +1574,163 @@ test('term archive: Open Data terms saved like data/schedules, finished terms on
   assert.match(html, /href="#t1261"/);
   const older = offeringsSection('CS135', { ...entry, terms: { ...entry.terms, 1259: [['LEC 001', 100, 98, '', '', '']] } }, { through: '1269', now });
   assert.match(older, /aria-label="Winter 2025: nothing on WClasses"/, 'before the last term read: "nothing", not "no data"');
+});
+
+// ---------------- the timetable planner (uwloo.ca/calendar) ----------------
+
+const P = await import('../site/calendar/solve.js');
+const { run: planRun } = await import('../site/calendar/run.js');
+const { icsFile } = await import('../site/calendar/ics.js');
+const { plannerData, plannerPage } = await import('./lib/planner.mjs');
+const TERM = { from: '2027-01-06', to: '2027-04-06' };
+const MWF = 1 | 4 | 16;
+const TTh = 2 | 8;
+// [comp, sec, assoc, class, cap, enrolled, meets]
+const lec = (sec, assoc, cls, mask, s, e, enrl = 10, cap = 100) => ['LEC', sec, assoc, cls, cap, enrl, [[mask, s, e]]];
+const tut = (sec, assoc, cls, mask, s, e, enrl = 10, cap = 30) => ['TUT', sec, assoc, cls, cap, enrl, [[mask, s, e]]];
+const plan = (entries, prefs = {}) => Object.assign(planRun(P, TERM, entries, { ...P.DEFAULTS, ...prefs }), { prefs: { ...P.DEFAULTS, ...prefs } });
+const picked = (res, entries, i = 0) =>
+  res.schedules[i].picks.map(([ci, comp, oi]) => {
+    const code = Object.keys(entries)[ci];
+    const built = P.buildCourse(code, entries[code], TERM, res.prefs ?? P.DEFAULTS);
+    return `${code} ${comp} ${built.opts[comp][oi].section.sec}`;
+  });
+
+test('planner: a tutorial goes with its own lecture, or any lecture when its number is 99', () => {
+  const entries = {
+    CS136: ['Elementary Algorithm Design', [lec('001', 1, 5001, MWF, 510, 560), lec('002', 2, 5002, MWF, 630, 680), tut('101', 1, 5101, 1, 870, 920), tut('102', 2, 5102, 2, 870, 920)]],
+    MATH138: ['Calculus 2', [lec('001', 1, 6001, MWF, 690, 740), tut('101', 99, 6101, 4, 900, 950)]],
+  };
+  const res = plan(entries);
+  assert.equal(res.schedules.length, 2, 'two CS 136 lectures, each with only its own tutorial');
+  for (let i = 0; i < 2; i++) {
+    const p = picked(res, entries, i);
+    const l = p.find((x) => x.startsWith('CS136 LEC')).slice(-1);
+    assert.ok(p.includes(`CS136 TUT 10${l}`), `LEC 00${l} brings TUT 10${l}`);
+    assert.ok(p.includes('MATH138 TUT 101'), 'the 99 tutorial goes with any lecture');
+  }
+  assert.ok(res.all && res.complete);
+});
+
+test('planner: clashing sections never pair; days off and start times rank the rest', () => {
+  const entries = {
+    A100: ['', [lec('001', 1, 1, MWF, 510, 560), lec('002', 2, 2, TTh, 600, 680)]],
+    B200: ['', [lec('001', 1, 3, MWF, 510, 560), lec('002', 2, 4, MWF, 870, 920)]],
+  };
+  const res = plan(entries);
+  for (const s of res.schedules) {
+    const p = picked({ schedules: [s], prefs: res.prefs }, entries);
+    assert.ok(!(p.includes('A100 LEC 001') && p.includes('B200 LEC 001')), '8:30 MWF twice');
+  }
+  assert.equal(res.schedules.length, 3);
+  assert.deepEqual(picked(plan(entries, { start: 600 }), entries).sort(), ['A100 LEC 002', 'B200 LEC 002'], 'start after 10: nothing at 8:30');
+  const fri = plan(entries, { off: 2 | 8 });
+  assert.ok(picked(fri, entries).includes('A100 LEC 001'), 'Tuesday and Thursday off: A100 moves to MWF');
+});
+
+test('planner: full sections are skipped unless they’re all that’s left; locks and busy times', () => {
+  const entries = { C300: ['', [lec('001', 1, 11, MWF, 510, 560, 100, 100), lec('002', 2, 12, MWF, 600, 650), lec('003', 3, 13, TTh, 600, 680)]] };
+  const all = plan(entries);
+  assert.ok(!all.schedules.some((s) => picked({ schedules: [s], prefs: all.prefs }, entries)[0] === 'C300 LEC 001'), 'the full one is left out');
+  assert.equal(plan(entries, { skipFull: false }).schedules.length, 3);
+  const only = plan({ D400: ['', [lec('001', 1, 21, MWF, 510, 560, 100, 100)]] });
+  assert.equal(only.schedules.length, 1, 'every section full: they’re shown anyway');
+  assert.match(only.notes[0][1], /full/);
+  const locked = plan(entries, { locks: [13] });
+  assert.deepEqual(picked(locked, entries), ['C300 LEC 003']);
+  assert.equal(locked.schedules.length, 1);
+  const busy = plan(entries, { blocks: [{ mask: 4, s: 540, e: 720 }] });
+  assert.deepEqual(picked(busy, entries), ['C300 LEC 003'], 'Wednesday 9–noon busy');
+  const none = plan(entries, { blocks: [{ mask: 31, s: 480, e: 1200 }] });
+  assert.equal(none.schedules.length, 0);
+  assert.deepEqual(none.problems, [['C300', 'blocked:LEC']]);
+});
+
+test('planner: weeks and one-day meetings; why nothing fits; other choices', () => {
+  // Same time, different halves of the term: no clash.
+  const a = P.readSection(['LEC', '001', 1, 1, 50, 0, [[MWF, 600, 650, '2027-01-06', '2027-02-14']]], TERM);
+  const b = P.readSection(['LEC', '001', 1, 2, 50, 0, [[MWF, 600, 650, '2027-02-24', '2027-04-06']]], TERM);
+  const c = P.readSection(['LEC', '001', 1, 3, 50, 0, [[1, 600, 650]]], TERM);
+  assert.equal(P.clash(a.meets[0], b.meets[0]), false);
+  assert.equal(P.clash(a.meets[0], c.meets[0]), true);
+  const t = P.readSection(['TST', '201', 99, 4, 400, 0, [[0, 1140, 1250, '2027-02-25']]], TERM);
+  assert.equal(t.meets[0].mask, 8, 'a test on Thursday Feb 25');
+  assert.ok(t.meets[0].one);
+  // A test overlapping a class costs, but doesn't rule the timetable out.
+  const entries = {
+    E500: ['', [lec('001', 1, 31, TTh, 1140, 1250), lec('002', 2, 32, TTh, 600, 680)]],
+    F600: ['', [lec('001', 1, 41, MWF, 600, 650), ['TST', '201', 99, 42, 400, 0, [[0, 1140, 1250, '2027-02-25']]]]],
+  };
+  const res = plan(entries);
+  assert.equal(res.schedules.length, 2);
+  assert.ok(picked(res, entries).includes('E500 LEC 002'), 'the one without the overlap ranks first');
+  const built = Object.entries(entries).map(([k, v]) => P.buildCourse(k, v, TERM, P.DEFAULTS));
+  const second = res.schedules[1].picks.map(([ci, comp, oi]) => ({ code: built[ci].code, comp, opt: built[ci].opts[comp][oi] }));
+  assert.equal(P.metrics(second).overlaps, 1);
+  // Nothing fits: name the pair.
+  const stuck = plan({ G1: ['', [lec('001', 1, 51, MWF, 510, 560)]], H2: ['', [lec('001', 1, 52, 1, 530, 580)]], I3: ['', [lec('001', 1, 53, TTh, 510, 560)]] });
+  assert.equal(stuck.schedules.length, 0);
+  assert.deepEqual(stuck.why.pairs, [['G1', 'H2']]);
+  // Three that clash only all together: say which one to leave out.
+  const tri = plan({
+    J1: ['', [lec('001', 1, 61, 1, 510, 560), lec('002', 2, 62, 2, 510, 560)]],
+    K2: ['', [lec('001', 1, 63, 1, 510, 560), lec('002', 2, 64, 2, 510, 560)]],
+    L3: ['', [lec('001', 1, 65, 1, 510, 560), lec('002', 2, 66, 2, 510, 560)]],
+  });
+  assert.deepEqual(tri.why, { pairs: [], drop: ['J1', 'K2', 'L3'] });
+  // Same-time sections are one choice; alternatives say what a swap would clash with.
+  const same = P.buildCourse('M1', ['', [lec('001', 1, 71, MWF, 510, 560, 90), lec('002', 1, 72, MWF, 510, 560, 20), lec('003', 3, 73, MWF, 600, 650)]], TERM, P.DEFAULTS);
+  assert.equal(same.opts.LEC.length, 2);
+  assert.equal(same.opts.LEC[0].section.sec, '002', 'the one with more seats left');
+  const other = P.buildCourse('N2', ['', [lec('001', 1, 81, MWF, 600, 650)]], TERM, P.DEFAULTS);
+  const s = P.solve([same, other], P.DEFAULTS).schedules[0];
+  const alts = P.alternatives([same, other], s.picks, 0);
+  assert.equal(alts[0].opt, s.picks[0].opt, 'the current choice first');
+  assert.equal(alts[1].clash.code, 'N2');
+});
+
+test('planner: a search too big to finish says so', () => {
+  const entries = {};
+  for (let k = 0; k < 8; k++) entries[`Z${k}`] = ['', Array.from({ length: 12 }, (_, i) => lec(String(i + 1).padStart(3, '0'), i + 1, k * 100 + i, [1, 2, 4, 8, 16][i % 5], 480 + 60 * (i % 10), 530 + 60 * (i % 10)))];
+  const courses = Object.entries(entries).map(([k, v]) => P.buildCourse(k, v, TERM, P.DEFAULTS));
+  const res = P.solve(courses, P.DEFAULTS, { budget: 2000 });
+  assert.equal(res.complete, false);
+  assert.equal(res.all, false);
+  const full = P.solve(courses, P.DEFAULTS);
+  assert.ok(full.schedules.length > 0 && full.schedules.length <= 60);
+  for (let i = 1; i < full.schedules.length; i++) assert.ok(full.schedules[i].cost >= full.schedules[i - 1].cost, 'best first');
+});
+
+test('planner: term file from Open Data sections; calendar file; page', () => {
+  const sec = (over) => ({ cls: 5001, comp: 'LEC', sec: '001', cap: 100, enrl: 90, assoc: 1, meets: [{ days: 'MWF', start: '08:30', end: '09:20', date: null, from: '2027-01-06', to: '2027-04-06' }], ...over });
+  const data = plannerData(
+    '1271',
+    {
+      CS136: [sec(), sec({ cls: 5101, comp: 'TUT', sec: '101', meets: [{ days: 'Th', start: '14:30', end: '15:20', date: null, from: '2027-01-14', to: '2027-04-01' }] }), sec({ cls: 5201, comp: 'TST', sec: '201', assoc: 99, meets: [{ days: 'Th', start: '19:00', end: '20:50', date: '2027-02-25', from: '2027-02-25', to: '2027-02-25' }] })],
+      MATH138: [sec({ cls: 6001, meets: [{ days: 'TTh', start: '10:00', end: '11:20', date: null, from: '2027-01-06', to: '2027-04-06' }] }), sec({ cls: 6002, sec: '002', meets: [] })],
+    },
+    { asOf: '2026-11-18T10:00:00Z', titleOf: (c) => ({ CS136: 'Elementary Algorithm Design and Data Abstraction' })[c] },
+  );
+  assert.equal(data.name, 'Winter 2027');
+  assert.equal(data.from, '2027-01-06');
+  assert.deepEqual(data.c.CS136[1][0], ['LEC', '001', 1, 5001, 100, 90, [[MWF, 510, 560]]], 'the usual weeks are left out');
+  assert.deepEqual(data.c.CS136[1][1][6], [[8, 870, 920, '2027-01-14', '2027-04-01']], 'other weeks are written out');
+  assert.deepEqual(data.c.CS136[1][2][6], [[8, 1140, 1250, '2027-02-25']]);
+  assert.deepEqual(data.c.MATH138[1][1][6], [], 'online');
+  assert.equal(data.c.MATH138[0], '');
+  const res = planRun(P, { from: data.from, to: data.to }, data.c, P.DEFAULTS);
+  assert.equal(res.schedules.length, 2, 'MATH 138 in person or online');
+  const built = Object.entries(data.c).map(([k, v]) => P.buildCourse(k, v, data, P.DEFAULTS));
+  const picks = res.schedules[0].picks.map(([ci, comp, oi]) => ({ code: built[ci].code, comp, opt: built[ci].opts[comp][oi] }));
+  const { text } = icsFile(picks, 'Winter 2027', { dayBit: P.dayBit });
+  assert.match(text, /^BEGIN:VCALENDAR\r\n/);
+  assert.match(text, /DTSTART;TZID=America\/Toronto:20270106T083000\r\nDTEND;TZID=America\/Toronto:20270106T092000\r\nRRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR;UNTIL=20270407T045959Z/);
+  assert.match(text, /DTSTART;TZID=America\/Toronto:20270114T143000/, 'the first Thursday on or after the tutorials start');
+  assert.match(text, /SUMMARY:CS 136 TST 201\r\nDTSTART;TZID=America\/Toronto:20270225T190000\r\nDTEND;TZID=America\/Toronto:20270225T205000\r\nDESCRIPTION/, 'a test is one event');
+  const html = plannerPage({ terms: [{ term: '1269', name: 'Fall 2026', asOf: null, from: '2026-09-02', courses: 1 }, { term: '1271', name: data.name, asOf: data.asOf, from: data.from, courses: 2 }], builtAt: new Date('2026-11-19T12:00:00Z'), version: 'abc12345' });
+  assert.match(html, /<link rel="canonical" href="https:\/\/uwloo\.ca\/calendar\/">/);
+  assert.match(html, /data-terms="\[\{&quot;term&quot;:&quot;1269&quot;/);
+  assert.match(html, /src="\/calendar\/planner\.js\?v=abc12345"/);
+  assert.match(html, /<button type="button" data-term="1271" aria-pressed="true">Winter 2027<\/button>/);
+  assert.doesNotMatch(plannerPage({ terms: [], builtAt: new Date(), version: 'x' }), /planner\.js/);
 });
