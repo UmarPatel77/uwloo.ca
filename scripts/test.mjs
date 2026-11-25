@@ -1961,6 +1961,8 @@ test('pathways: leads, words and co-op charts become rules the grid can check', 
   assert.deepEqual(PW.kindOf('Not completed nor concurrently enrolled in any of the following:'), ['not']);
   assert.deepEqual(PW.kindOf('Complete no more than 1 from the following:'), ['max', 1]);
   assert.deepEqual(PW.kindOf('Choose any of the following:'), ['any']);
+  assert.deepEqual(PW.kindOf('Must have completed or be concurrently enrolled in the following:'), ['all']);
+  assert.deepEqual(PW.kindOf('Must have completed or be concurrently enrolled in at least 1 of the following:'), ['n', 1]);
   assert.deepEqual(PW.hints('Students must be in level 3A or higher'), { t: 'Students must be in level 3A or higher', lv: '3A' });
   assert.equal(PW.hints('Enrolled in H-Software Engineering').en, 'H-Software Engineering');
   assert.deepEqual(PW.hints('Complete 1.5 additional units of ECON courses at the 300-level or above'), { t: 'Complete 1.5 additional units of ECON courses at the 300-level or above', u: 1.5, subj: ['ECON'], min: 3 });
@@ -1975,6 +1977,8 @@ test('pathways: leads, words and co-op charts become rules the grid can check', 
   assert.deepEqual(PW.totalUnits('<ul><li>Complete a total of 20.0 units:</li></ul>'), { u: 20 });
   assert.deepEqual(PW.totalUnits('<p>Complete a total of 4.0 units of GSJ courses.</p>'), { u: 4, subj: ['GSJ'] });
   assert.deepEqual(PW.totalUnits('<p>Three-year: a total of 15.0 units, with … Honours: a total of 20.0 units.</p>', { all: true }), [15, 20]);
+  assert.deepEqual(PW.totalUnits('<p>General degree: Complete a minimum of 15.0 units</p><p>Honours degree: Complete a minimum of 20.0 units, exceptions noted below. A minimum of 12.5 units must be at the 200-level.</p>', { all: true }), [15, 20]);
+  assert.equal(PW.totalUnits('<p>Complete a minimum of 2.0 units at the 300-level.</p>'), null, 'a program’s own total says "a total of"');
   const seq = PW.sequences('<table><thead><tr><th>Sequence</th><th>F</th><th>W</th><th>S</th><th>F</th></tr></thead><tbody><tr><td>1</td><td>1A</td><td>1B</td><td>WT</td><td>2A</td></tr></tbody></table><table><tr><th>Key</th><th>Description</th></tr></table>');
   assert.deepEqual(seq, [{ label: '1', start: 'F', terms: ['1A', '1B', 'WT', '2A'] }]);
 });
@@ -2048,4 +2052,81 @@ test('pathways: the data file and the page', () => {
   assert.match(page, /<link rel="canonical" href="https:\/\/uwloo\.ca\/pathways\/">/);
   assert.match(page, /src="\/pathways\/app\.js\?v=v9"/);
   assert.match(page, /href="\/pathways\/app\.css\?v=v9"/);
+});
+
+test('pathways: placeholders, and a course counts toward two plans at most', () => {
+  assert.equal(PW.hints('Complete 1 CS course at the 200-, 300-, or 400-level').min, 2);
+  assert.equal(PW.hints('Complete 1 additional CS course at the 100-, 200-, 300-, or 400-level').min, 1);
+  assert.equal(PW.hints('Complete 1.0 unit of courses, in any combination, chosen from the Faculty of Arts, or from the following subject codes: BET, BUS, COMM, STV.').fa, 1);
+  assert.ok(PE.isPlaceholder('PMATH4XX') && PE.isPlaceholder('ECONXXX') && PE.isPlaceholder('ELECTIVE'));
+  assert.ok(!PE.isPlaceholder('ECON101') && !PE.isPlaceholder('CS136L'));
+  const m = new Map();
+  assert.deepEqual([PE.addPlanned(m, 'PMATH4XX'), PE.addPlanned(m, 'PMATH4XX'), PE.addPlanned(m, 'ECON101')], ['PMATH4XX', 'PMATH4XX#2', 'ECON101']);
+  const pm = { s: 'pm', n: 'Pure Mathematics', t: 'Major', req: [{ h: 'Required Courses', r: [{ g: 'all', i: [{ r: 'all', c: ['PMATH347'] }, { t: 'Complete 3 additional PMATH courses at the 400-level', nc: 3, subj: ['PMATH'], min: 4 }, { t: 'Complete 1.0 unit from the Faculty of Arts', u: 1, fa: 1 }, { t: 'Complete 1 additional ECON course', nc: 1, subj: ['ECON'] }] }], l: [] }] };
+  const planned = new Map();
+  for (const c of ['PMATH347', 'PMATH4XX', 'PMATH4XX', 'PMATH3XX', 'ELECTIVE', 'ELECTIVE', 'ECONXXX']) PE.addPlanned(planned, c);
+  const ev = PE.evaluate(pm, planned);
+  assert.deepEqual([ev.need, ev.have], [7, 6], '2 of 3 PMATH 400-level (a 300-level one doesn’t count), 2 electives for the Arts unit, ECONXXX for the ECON course');
+  assert.ok(!ev.used.has('PMATH3XX'));
+  const major = { s: 'mj', n: 'Economics', t: 'Major', req: [{ h: '', r: [{ r: 'all', c: ['ECON101', 'ECON102'] }], l: [] }] };
+  const spec = { s: 'sp', n: 'Public Policy Specialization', t: 'Specialization', req: [{ h: '', r: [{ r: 'all', c: ['ECON101'] }], l: [] }] };
+  const minor = (s) => ({ s, n: `Minor ${s}`, t: 'Minor', req: [{ h: '', r: [{ r: 'all', c: ['ECON101', 'ECON102'] }], l: [] }] });
+  const deg = { s: 'dg', n: 'Degree Requirements', t: 'Degree Requirements', req: [{ h: '', r: [{ r: 'all', c: ['ECON101'] }], l: [] }] };
+  const two = new Map(['ECON101', 'ECON102'].map((c) => [c, { units: 0.5 }]));
+  const r = PE.evaluateAll([minor('a'), major, minor('b'), spec, deg], two);
+  assert.deepEqual(r.evals.map((e) => e.have), [2, 2, 0, 1, 1], 'the major counts first, then the specialization (one use with the major), then the first minor; the second minor gets nothing');
+  assert.deepEqual(r.capped.get('ECON101'), ['Minor b']);
+  assert.ok(!r.avail[2].has('ECON102') && r.avail[0].has('ECON102'));
+});
+
+test('pathways: filling in a plan, and where its courses go', () => {
+  const prog = {
+    s: 'me',
+    n: 'Mechanical',
+    t: 'Major',
+    req: [
+      { h: '1A Term', r: [{ r: 'all', c: ['MATH115', 'ME100'] }], l: [] },
+      { h: '1B Term', r: [{ g: 'all', i: [{ r: 'all', c: ['ME101'] }, { t: 'Complete 1 approved elective', nc: 1, pl: 1 }] }], l: [] },
+      { h: 'Required Courses', r: [{ g: 'all', i: [{ r: 'n', n: 1, c: ['MATH135', 'MATH145'] }, { r: 'n', n: 2, c: ['ME321', 'ME322'] }, { g: 'n', n: 1, i: [{ r: 'n', n: 1, c: ['CS114', 'CS116'] }, { r: 'all', c: ['CS136', 'CS136L'] }] }, { t: 'Complete 2 additional ME courses at the 300-level', nc: 2, subj: ['ME'], min: 3 }] }], l: [] },
+      { h: 'Technical Electives List', r: [{ t: 'Complete a total of 6 Technical Electives.', nc: 6, pl: 1 }], l: [{ h: 'List 1', r: [{ r: 'n', n: 4, c: ['ME423', 'ME435', 'ME436', 'ME452', 'ME456'] }], l: [] }] },
+    ],
+  };
+  const courses = { ME340: ['Heat', 0.5, 0, 0, 0, [1, 1, 0]], ME354: ['Fluids', 0.5, 0, 0, 0, [1, 0, 0]], ME200A: ['Seminar', 0.5, 0, 0, 0, [0, 0, 0]], ME321: ['Gone', 0.5, 0, 0, 0, [1, 1, 1], [], 1] };
+  const f = PE.fillItems(prog, new Map([['MATH145', { units: 0.5 }], ['ME100', { units: 0.5 }]]), { courses });
+  assert.deepEqual(f.must, [{ code: 'MATH115', at: '1A' }, { code: 'ME101', at: '1B' }, { code: 'ME321', at: null }, { code: 'ME322', at: null }], 'planned ones and met choices are left out; 2 of 2 is all');
+  assert.deepEqual(f.picks.map((p) => [p.n, p.options.map((o) => o.codes.join('+'))]), [[1, ['CS114', 'CS116', 'CS136+CS136L']], [4, ['ME423', 'ME435', 'ME436', 'ME452', 'ME456']]]);
+  assert.deepEqual(f.words.map((w) => [w.count, w.ph, w.at]), [[1, 'ELECTIVE', '1B'], [2, 'ME3XX', null], [2, 'ELECTIVE', null]], 'a total of 6 technical electives is 4 from List 1 and 2 more');
+  assert.deepEqual(f.words[1].cands, ['ME340', 'ME354'], 'courses that fit and have run lately, not gone ones');
+
+  // A regular four years from Fall 2026: Fall and Winter study terms, Spring off.
+  const rows = [];
+  let t = '1269';
+  for (let i = 0; i < 12; i++) {
+    rows.push({ kind: PE.seasonOf(t) === 'S' ? 'off' : 'study', season: PE.seasonOf(t), codes: [] });
+    t = PE.nextTerm(t);
+  }
+  rows[0].codes = ['ECON101'];
+  const C = {
+    MATH135: ['Algebra', 0.5, 0, 0, 0, [1, 1, 1]],
+    MATH136: ['Linear Algebra', 0.5, [{ r: 'n', n: 1, c: ['MATH135', 'MATH145'] }], 0, 0, [1, 1, 1]],
+    MATH239: ['Combinatorics', 0.5, [{ g: 'all', i: [{ r: 'all', c: ['MATH136'] }, { t: 'level', lv: '2A' }] }], 0, 0, [1, 1, 1]],
+    CS136: ['Elementary Algorithm Design', 0.5, [{ r: 'n', n: 1, c: ['CS135', 'CS145'] }], 0, 0, [1, 1, 1]],
+    CS136L: ['Tools', 0.25, 0, [{ r: 'all', c: ['CS136'] }], 0, [1, 1, 1]],
+    STAT231: ['Statistics', 0.5, [{ r: 'all', c: ['STAT230'] }], 0, 0, [0, 1, 0]],
+    STAT230: ['Probability', 0.5, 0, 0, 0, [1, 1, 1]],
+  };
+  const want = ['MATH239', 'CS136L', 'MATH136', 'STAT231', 'MATH135', 'CS136', 'PMATH4XX', 'ELECTIVE', 'STAT230'].map((code) => ({ code })).concat([{ code: 'ME100', at: '1B' }]);
+  const res = PE.arrange(rows, want, { courses: C, load: 3 });
+  const where = Object.fromEntries(res.placed.map((p) => [p.code, PE.levels(rows)[p.row]]));
+  assert.deepEqual(where, { ME100: '1B', MATH135: '1A', CS136: '1A', MATH136: '1B', CS136L: '1B', MATH239: '2A', STAT230: '2A', STAT231: '2B', ELECTIVE: '2A', PMATH4XX: '4A' });
+  assert.deepEqual(res.left, []);
+  const afm = { s: 'afm', n: 'AFM', t: 'Major', tu: 3, req: [{ h: '', r: [{ r: 'all', c: ['AFM101', 'AFM102'] }], l: [] }] };
+  const deg = { ...afm, tu: 20 };
+  const some = new Map(['AFM101', 'ECON101', 'ELECTIVE'].map((c) => [c, { units: 0.5 }]));
+  assert.deepEqual([PE.evaluate(afm, some).need, PE.evaluate(afm, some).have], [6, 1], 'a major’s own total (3.0 units) counts only its courses');
+  const whole = PE.evaluate(deg, some);
+  assert.deepEqual([whole.need, whole.have, whole.used.has('ECON101')], [40, 3, false], 'a whole degree’s total (20.0 units) counts every other course, without using it');
+  assert.deepEqual(PE.fillItems(deg, some).words.map((w) => [w.key, w.count, w.ph]), [['total', 36, 'ELECTIVE']], 'AFM102 is named; 36 more make 40');
+  const later = PE.arrange(rows, [{ code: 'MATH135' }, { code: 'ME100', at: '1A' }], { courses: C, from: 3 });
+  assert.deepEqual(later.placed.map((p) => PE.levels(rows)[p.row]), ['2A', '2A'], 'nothing goes before the term it fills from');
 });

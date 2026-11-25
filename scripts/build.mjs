@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { archiveSubjectPage, archiveYearPage, loadArchiveText, textMap } from './lib/archive.mjs';
 import * as kuali from './lib/kuali.mjs';
 import * as programsLib from './lib/programs.mjs';
-import { pathwaysData, pathwaysPage } from './lib/pathways.mjs';
+import { pathwaysData, pathwaysPage, pathwaysPrograms } from './lib/pathways.mjs';
 import { loadReddit, redditSection, SHOWN } from './lib/reddit.mjs';
 import { flowSection, loadFlow } from './lib/uwflow.mjs';
 import { available, entryPages, linksAboutPage, loadResources, publishFiles, resourcePage, resourcesSection, syncFiles } from './lib/resources.mjs';
@@ -328,12 +328,32 @@ async function main() {
     // Pathways (/pathways/): the degree grid, with every program and current course in one file.
     try {
       const published = Object.fromEntries(Object.entries(sections).map(([t, s]) => [t, new Set(Object.keys(s))]));
-      const pw = pathwaysData({ programs, combos: byProgram, catalog: progCat, schedules, published, curTerm, retired });
+      // Each other calendar year's programs too (past ones are cached for good), so a plan follows the
+      // requirements of the year someone started.
+      const years = [];
+      for (const cat of ug) {
+        if (cat === progCat) {
+          years.push({ year: cat.start, label: cat.label, file: null });
+          continue;
+        }
+        try {
+          const progs = await programsLib.loadPrograms(cat);
+          const pol = await programsLib.loadPolicy(cat, programsLib.ICC_PID);
+          const yicc = programsLib.parseCombinations(pol?.body ?? '');
+          const combos = programsLib.combosFor(yicc.rows, progs, yicc.rulesHtml).byProgram;
+          const file = `pathways/programs-${cat.start}.json`;
+          pages.push([file, JSON.stringify({ year: cat.start, label: cat.label, programs: pathwaysPrograms({ programs: progs, combos }) })]);
+          years.push({ year: cat.start, label: cat.label, file: `/${file}` });
+        } catch (err) {
+          console.warn(`! Pathways: ${cat.label} programs skipped (${err.message})`);
+        }
+      }
+      const pw = pathwaysData({ programs, combos: byProgram, catalog: progCat, schedules, published, curTerm, retired, years });
       const json = JSON.stringify(pw);
       pages.push(['pathways/data.json', json]);
       pages.push(['pathways/index.html', pathwaysPage({ ...ctxBase, cat: progCat, curTerm })]);
       sitemap.push('/pathways/');
-      console.log(`Pathways: ${Object.keys(pw.courses).length} courses, ${pw.programs.length} programs, ${(json.length / 1e6).toFixed(1)} MB`);
+      console.log(`Pathways: ${Object.keys(pw.courses).length} courses, ${pw.programs.length} programs, ${(json.length / 1e6).toFixed(1)} MB; calendars ${years.map((y) => y.label).join(', ')}`);
     } catch (err) {
       console.warn(`! Pathways skipped: ${err.message}`);
     }

@@ -4,13 +4,43 @@
 // scripts/lib/pathways.mjs from the calendar's rules:
 //   {g: 'all'|'n', n, i: [nodes]}                       a group ("Complete 1 of the following")
 //   {r: 'all'|'n'|'any'|'max'|'not'|'list', n, c: [codes]} a rule over listed courses
-//   {t: text, lv, en, u, nc, subj, min}                 words: a level ("3A"), a plan to be enrolled in, or units
-//                                                        or courses from the section's lists or from subjects
+//   {t: text, lv, en, u, nc, subj, rg, min, pl, fa}     words: a level ("3A"), a plan to be enrolled in, or units
+//                                                        or courses from the section's lists, subjects or faculties
 // A program's requirements are sections: {h: heading, u: units, r: [nodes], l: [sections]}.
 // A course is [title, units, prereq, coreq, antireq codes, [Fall, Winter, Spring] terms run lately, cross-listed,
 // gone]: gone is 1 when it isn't in the current calendar.
 
 export const UNIT = 0.5; // a usual course, for turning units into a number of courses
+
+// ---------------- placeholders ----------------
+
+// A cell can hold a placeholder for a course not picked yet: "PMATH4XX" is a PMATH course at the 400 level,
+// "ECONXXX" an ECON course at any level, "ELECTIVE" any course. They count toward requirements in words
+// ("3 PMATH courses at the 400-level"; an elective toward ones the grid can't check by subject, like "from the
+// Faculty of Arts"), never toward a course named by its code. In a Map of planned courses the second and
+// later copies of one are keyed "PMATH4XX#2", "PMATH4XX#3"…
+export const isPlaceholder = (code) => /^[A-Z]{2,8}(?:\dXX|XXX)$/.test(code) || code === 'ELECTIVE';
+export const baseCode = (key) => String(key).replace(/#\d+$/, '');
+/** Adds a placeholder (or a course) to a Map of planned courses under a free key. */
+export function addPlanned(map, code, value = { units: UNIT }) {
+  let key = code;
+  for (let n = 2; isPlaceholder(code) && map.has(key); n++) key = `${code}#${n}`;
+  map.set(key, value);
+  return key;
+}
+/** Subject and number: ECON101 → [ECON, 101]; PMATH4XX → [PMATH, 450] (some 400-level course); ECONXXX → [ECON, null]. */
+function numbered(key) {
+  const c = baseCode(key);
+  const m = /^([A-Z]+)(\d)(\d\d|XX)/.exec(c) ?? /^([A-Z]+)(X)(XX)$/.exec(c);
+  if (!m) return null;
+  if (m[2] === 'X') return [m[1], null];
+  return [m[1], m[3] === 'XX' ? Number(m[2]) * 100 + 50 : Number(m[2] + m[3])];
+}
+/** A course's (or placeholder's) year: 1 for 100-level…; electives and any-level placeholders fit any year. */
+export const yearOf = (code) => {
+  const n = numbered(code);
+  return n?.[1] != null ? Math.floor(n[1] / 100) : 1;
+};
 
 // ---------------- terms and levels ----------------
 
@@ -85,7 +115,7 @@ export function enrolled(text, plans) {
 }
 
 /** Courses an antirequisite tree rules out. */
-export const antiCodes = (nodes) => (nodes ?? []).flatMap((n) => (n.g ? antiCodes(n.i) : n.r ? n.c : []));
+export const antiCodes = (nodes) => (Array.isArray(nodes) ? nodes : []).flatMap((n) => (n.g ? antiCodes(n.i) : n.r ? n.c : []));
 
 /** Courses a requisite tree names that aren't done: what to add first. */
 export const missing = (nodes, have, ctx = {}) => why(nodes, have, ctx).codes;
@@ -152,12 +182,13 @@ export function evaluate(program, planned, { ticked = new Set(), courses = {} } 
   };
   const subjectPool = (n) =>
     [...planned.keys()].filter((c) => {
-      const m = /^([A-Z]+)(\d+)/.exec(c);
+      const m = numbered(c);
       if (!m) return false;
-      const num = Number(m[2]);
-      if (n.rg) return n.rg.some(([s, lo, hi]) => s === m[1] && num >= lo && num <= hi);
-      return n.subj.includes(m[1]) && (!n.min || num >= n.min * 100);
+      const [subj, num] = m;
+      if (n.rg) return num != null && n.rg.some(([s, lo, hi]) => s === subj && num >= lo && num <= hi);
+      return n.subj.includes(subj) && (!n.min || (num != null && num >= n.min * 100));
     });
+  const electives = () => [...planned.keys()].filter((c) => baseCode(c) === 'ELECTIVE');
 
   // One requirement node → {need, have, got, unknown}. Groups take their best children.
   const node = (n, key, depth, pool) => {
@@ -229,7 +260,13 @@ export function evaluate(program, planned, { ticked = new Set(), courses = {} } 
       return { need: 0, have: 0, unknown: false };
     }
     if (n.u || n.nc) {
-      const codes = n.subj || n.rg ? subjectPool(n) : n.pl ? pool : null;
+      let codes = n.subj || n.rg ? subjectPool(n) : n.pl ? pool : null;
+      // Elective placeholders stand in for what the grid can't check by subject: "from the Faculty of Arts",
+      // "approved electives", "from List 1". They go last, after real courses.
+      if (n.fa || !(n.subj || n.rg)) {
+        const w = electives();
+        if (w.length) codes = [...(codes ?? []), ...w];
+      }
       if (codes?.length || n.subj || n.rg) {
         if (n.u) {
           const { got, sum } = takeUnits(codes, n.u);
@@ -293,7 +330,7 @@ export function evaluate(program, planned, { ticked = new Set(), courses = {} } 
   // The program's total: "4.0 units of GSJ courses" can be counted; "4.0 units" alone only sets the size.
   if (program.tsub) {
     const subj = program.tsub.subj;
-    const got = [...planned.keys()].filter((c) => subj.includes(/^[A-Z]+/.exec(c)?.[0]));
+    const got = [...planned.keys()].filter((c) => subj.includes(numbered(c)?.[0]));
     const sum = got.reduce((s, c) => s + unitsOf(c), 0);
     emit({ key: 'total', depth: 0, kind: 'units', text: `A total of ${program.tsub.u} units of ${subj.join(', ')} courses`, units: program.tsub.u, sum, got });
     const tn = Math.round(program.tsub.u / UNIT);
@@ -301,10 +338,289 @@ export function evaluate(program, planned, { ticked = new Set(), courses = {} } 
       have = Math.max(have, Math.min(tn, Math.round(sum / UNIT)));
       need = tn;
     }
-  } else if (program.tu && Math.round(program.tu / UNIT) > need) need = Math.round(program.tu / UNIT);
+  } else if (program.tu && Math.round(program.tu / UNIT) > need) {
+    const tn = Math.round(program.tu / UNIT);
+    // A total of 15.0 units or more is the whole degree's ("Complete a total of 20.0 units"): any other planned
+    // course counts toward what the named requirements leave, as an elective. It isn't a use of the course.
+    if (program.tu >= DEGREE_UNITS) {
+      const got = [...planned.keys()].filter((c) => !used.has(c)).slice(0, tn - need);
+      emit({ key: 'total', depth: 0, kind: 'count', text: `Electives and other courses, for ${program.tu.toFixed(1)} units in all`, want: tn - need, got, free: true });
+      have += got.length;
+    }
+    need = tn;
+  }
   return { need, have, rows, used, unknown };
 }
+const DEGREE_UNITS = 15; // a three-year degree; a program total this big is the degree's
 const rank = (n) => (n.r === 'all' ? 0 : n.g ? 1 : n.r === 'n' ? 2 : n.r === 'not' || n.r === 'max' ? 4 : n.t ? 3 : 5);
+
+const PRIORITY = { Major: 0, Specialization: 1, Option: 2, Minor: 3, Diploma: 4, Certificate: 5 };
+
+/**
+ * Every plan's progress under the calendar's Counting of Courses rule: "A course used to meet the requirements
+ * of an academic plan … may be counted toward a maximum of two academic plans", and one required by both a
+ * major and a specialization is a single use. Plans take courses in order: majors, specializations, options,
+ * minors, diplomas, certificates, then the order they were picked. Degree requirements aren't an academic plan,
+ * so they always count. → {evals (in the plans' order), avail: the Map each plan was counted with,
+ * capped: Map course → names of the plans it couldn't count toward}
+ */
+export function evaluateAll(plans, planned, opts = {}) {
+  const evals = new Array(plans.length);
+  const avail = new Array(plans.length);
+  const uses = new Map();
+  const capped = new Map();
+  const order = plans.map((p, k) => ({ p, k })).sort((a, b) => (PRIORITY[a.p.t] ?? 9) - (PRIORITY[b.p.t] ?? 9) || a.k - b.k);
+  for (const { p, k } of order) {
+    const counted = p.t !== 'Degree Requirements';
+    const spec = p.t === 'Specialization';
+    const free = (c) => {
+      const u = uses.get(c);
+      return !u || u.n - (spec && u.major ? 1 : 0) < 2;
+    };
+    const mine = counted ? new Map([...planned].filter(([c]) => free(c))) : planned;
+    const ev = evaluate(p, mine, opts);
+    evals[k] = ev;
+    avail[k] = mine;
+    if (!counted) continue;
+    for (const c of ev.used) {
+      const u = uses.get(c) ?? { n: 0, major: false };
+      if (!(spec && u.major)) u.n++;
+      if (p.t === 'Major') u.major = true;
+      uses.set(c, u);
+    }
+    if (mine.size < planned.size) {
+      for (const c of evaluate(p, planned, opts).used) if (!mine.has(c)) capped.set(c, [...(capped.get(c) ?? []), p.n]);
+    }
+  }
+  return { evals, avail, capped };
+}
+
+// ---------------- filling in a plan ----------------
+
+/**
+ * What filling in a program would add, given what's planned (and avail: the courses that can still count
+ * toward it, from evaluateAll). Requirements already met are left out.
+ * → {must: [{code, at}], picks: [{key, n, options, at}], words: [{key, count, ph, text, at, cands}]}
+ *   must: a course it requires by name; at: '2B' when a term-by-term program gives the term.
+ *   picks: n of the options, each {codes: [...]} (one course, or a few that go together) or {ph, count, text}.
+ *   words: courses described in words, as placeholders (ph) until picked from cands, the courses that fit.
+ */
+export function fillItems(program, planned, { courses = {}, equiv, avail = planned } = {}) {
+  const ev = evaluate(program, avail, { courses });
+  const row = new Map(ev.rows.map((r) => [r.key, r]));
+  const out = { must: [], picks: [], words: [] };
+  const inPlan = (c) => planned.has(c) || (equiv?.get(c) ?? []).some((x) => planned.has(x));
+  const seen = new Set();
+  // The subject a placeholder uses when words allow several: the one the program names most.
+  const named = new Map();
+  const count = (ns) => {
+    for (const n of ns ?? []) {
+      if (n.c) for (const c of n.c) named.set(numbered(c)?.[0], (named.get(numbered(c)?.[0]) ?? 0) + 1);
+      if (n.i) count(n.i);
+    }
+  };
+  const countSec = (s) => {
+    count(s.r);
+    for (const l of s.l ?? []) countSec(l);
+  };
+  for (const s of program.req ?? []) countSec(s);
+  const phFor = (n) => {
+    if (n.fa || !(n.subj || n.rg)) return 'ELECTIVE';
+    if (n.rg) return `${n.rg[0][0]}${Math.floor(Math.min(...n.rg.map((r) => r[1])) / 100)}XX`;
+    const subj = [...n.subj].sort((a, b) => (named.get(b) ?? 0) - (named.get(a) ?? 0) || n.subj.indexOf(a) - n.subj.indexOf(b))[0];
+    return `${subj}${n.min ? `${n.min}XX` : 'XXX'}`;
+  };
+  const cands = (n) => {
+    if (n.fa || !(n.subj || n.rg)) return [];
+    return Object.keys(courses)
+      .filter((c) => {
+        const x = courses[c];
+        if (x[7] || !(x[5]?.[0] + x[5]?.[1] + x[5]?.[2]) || inPlan(c)) return false;
+        const [subj, num] = numbered(c) ?? [];
+        if (n.rg) return n.rg.some(([s, lo, hi]) => s === subj && num >= lo && num <= hi);
+        return n.subj.includes(subj) && (!n.min || num >= n.min * 100);
+      })
+      .sort((a, b) => numbered(a)[1] - numbered(b)[1] || a.localeCompare(b));
+  };
+  const left = (r, n) => {
+    if (!r) return n.nc ?? Math.round((n.u ?? 0) / UNIT);
+    if (r.kind === 'count') return r.want - r.got.length;
+    if (r.kind === 'units') return Math.ceil((r.units - r.sum) / UNIT - 1e-9);
+    return r.done ? 0 : n.nc ?? Math.round((n.u ?? 0) / UNIT);
+  };
+  // One choice's options.
+  const optionsOf = (n) => {
+    if (n.r === 'all') return [{ codes: n.c }];
+    if (n.r === 'n' && (n.n ?? 1) === 1) return n.c.map((c) => ({ codes: [c] }));
+    if (n.r === 'list' || n.r === 'any') return n.c.map((c) => ({ codes: [c] }));
+    if (n.g === 'n' && (n.n ?? 1) === 1) return n.i.flatMap(optionsOf);
+    if (n.g === 'all' && n.i.every((x) => x.r === 'all')) return [{ codes: n.i.flatMap((x) => x.c) }];
+    if (!n.r && !n.g && (n.u || n.nc) && !n.info) return [{ ph: phFor(n), count: n.nc ?? Math.round(n.u / UNIT), text: n.t }];
+    return [];
+  };
+  const must = (c, at) => {
+    if (inPlan(c) || seen.has(c)) return;
+    seen.add(c);
+    out.must.push({ code: c, at });
+  };
+  // A section's words like "Complete a total of 6 Technical Electives" sum up its lists; only what the lists
+  // don't already ask for is extra.
+  const listed = (s) => (s.l ?? []).reduce((sum, l) => sum + (l.r ?? []).reduce((t, n) => t + (n.r === 'n' ? n.n ?? 1 : n.r === 'all' ? n.c.length : 0), 0) + listed(l), 0);
+  const node = (n, key, at, sec) => {
+    if (n.g === 'all') return n.i.forEach((c, j) => node(c, `${key}.${j}`, at, sec));
+    if (n.g === 'n') {
+      const r = row.get(key);
+      if (r && r.need && r.have >= r.need) return;
+      const options = optionsOf({ ...n, n: 1 });
+      if (!options.length) return;
+      const done = options.filter((o) => o.codes?.every(inPlan)).length;
+      if (done >= (n.n ?? 1)) return;
+      out.picks.push({ key, n: (n.n ?? 1) - done, options: options.filter((o) => !o.codes?.every(inPlan)), at });
+      return;
+    }
+    if (n.r === 'all') return n.c.forEach((c) => must(c, at));
+    if (n.r === 'n') {
+      const want = Math.max(1, Math.round(n.n ?? 1));
+      // Counted from what can still count toward this program (a course already counted toward two other
+      // plans doesn't), so another course from the list can take its place.
+      const r = row.get(key);
+      const got = r ? r.got.length : n.c.filter(inPlan).length;
+      if (got >= want) return;
+      if (want >= n.c.length) return n.c.forEach((c) => must(c, at));
+      out.picks.push({ key, n: want - got, options: n.c.filter((c) => !inPlan(c)).map((c) => ({ codes: [c] })), at });
+      return;
+    }
+    if (n.r || n.info || !(n.u || n.nc)) return;
+    let k = left(row.get(key), n);
+    if (n.pl && !(n.subj || n.rg) && !at) k -= listed(sec);
+    if (k > 0) out.words.push({ key, count: k, ph: phFor(n), text: n.t, at, cands: cands(n) });
+  };
+  const section = (s, key, at) => {
+    const here = /^(\d[AB])\s+Term\b/i.exec(s.h ?? '')?.[1]?.toUpperCase() ?? at;
+    (s.r ?? []).forEach((n, j) => node(n, `${key}.${j}`, here, s));
+    (s.l ?? []).forEach((l, j) => section(l, `${key}.l${j}`, here));
+  };
+  (program.req ?? []).forEach((s, j) => section(s, `s${j}`, null));
+  const total = row.get('total');
+  if (total?.free && total.want > total.got.length) out.words.push({ key: 'total', count: total.want - total.got.length, ph: 'ELECTIVE', text: total.text, at: null, cands: [] });
+  return out;
+}
+
+/**
+ * Puts courses in a grid. Each goes in the earliest study term in its year or later (a 300-level course in
+ * third year) that comes after its prerequisites, is in a season it has run in lately, and has fewer than
+ * `load` courses; or in the term a term-by-term program names (up to `max`). Courses whose prerequisites
+ * nothing planned can meet still go in their year, for the grid to flag.
+ * rows: [{kind: 'study'|'coop'|'off', season: 'F'|'W'|'S', codes: [...]}]; want: [{code, at}]; from: the first
+ * row to put courses in (earlier ones are done). → {placed: [{code, row}], left: [codes with no room]}
+ */
+export function arrange(rows, want, { courses = {}, load = 5, max = 7, from = 0, equiv, plans = [] } = {}) {
+  const lv = levels(rows);
+  const study = rows.map((r, i) => (r.kind === 'study' && i >= from ? i : -1)).filter((i) => i >= 0);
+  const cells = rows.map((r) => (r.kind === 'study' ? (r.codes ?? []).filter(Boolean).map(baseCode) : []));
+  const year = (i) => Number(lv[i]?.slice(0, -1));
+  const last = Math.max(0, ...study.map(year));
+  const target = (w) => {
+    if (w.at) {
+      const i = study.find((x) => lv[x] === w.at);
+      if (i != null) return { i, exact: true };
+    }
+    const y = Math.min(Math.max(yearOf(w.code), 1), last);
+    return { i: study.find((x) => year(x) >= y) ?? study.at(-1), exact: false };
+  };
+  const runs = (code, i) => {
+    const s = courses[code]?.[5];
+    if (!s || !(s[0] + s[1] + s[2])) return true;
+    return s['FWS'.indexOf(rows[i].season)] > 0;
+  };
+  const before = (i) => new Set(cells.slice(0, i).flat());
+  // Requisites nothing in the plan can meet (a prerequisite not picked yet) don't hold a course back: it
+  // goes in its year, at the level its requisites name, and the grid flags it.
+  const wanted = new Set(want.map((w) => w.code));
+  const everything = new Set([...cells.flat(), ...wanted]);
+  const meetable = (tree) => !tree?.length || holds(tree, everything, { plans, equiv }) !== false;
+  const levelNeeded = (tree) => {
+    let best = null;
+    const walk = (ns) => {
+      for (const n of Array.isArray(ns) ? ns : []) {
+        if (n.g) walk(n.i);
+        if (n.lv && levelRank(n.lv) > levelRank(best)) best = n.lv;
+      }
+    };
+    walk(tree);
+    return best;
+  };
+  const ok = (code, i) => {
+    const c = courses[code];
+    if (!runs(code, i)) return false;
+    const ctx = { level: lv[i], plans, equiv };
+    for (const [tree, have] of [
+      [c?.[2], () => before(i)],
+      [c?.[3], () => new Set([...before(i), ...cells[i]])],
+    ]) {
+      if (!tree?.length) continue;
+      if (meetable(tree)) {
+        if (holds(tree, have(), ctx) === false) return false;
+      } else {
+        const need = levelNeeded(tree);
+        if (need && levelRank(lv[i]) < levelRank(need)) return false;
+      }
+    }
+    return true;
+  };
+  // Prerequisites first (depth: how many of the wanted courses lead up to a course; a corequisite can be in
+  // the same term), and among equals the ones more courses build on (height), so a long chain starts early.
+  const pre = (code) => antiCodes(courses[code]?.[2]).filter((c) => wanted.has(c) && c !== code);
+  const co = (code) => antiCodes(courses[code]?.[3]).filter((c) => wanted.has(c) && c !== code);
+  const memo = (fn) => {
+    const m = new Map();
+    const go = (code, seen = new Set()) => {
+      if (m.has(code)) return m.get(code);
+      if (seen.has(code)) return 0;
+      seen.add(code);
+      const v = fn(code, (c) => go(c, seen));
+      m.set(code, v);
+      return v;
+    };
+    return go;
+  };
+  const depth = memo((code, d) => Math.max(0, ...pre(code).map((c) => 1 + d(c)), ...co(code).map(d)));
+  const after = new Map();
+  for (const c of wanted) for (const x of pre(c)) after.set(x, [...(after.get(x) ?? []), c]);
+  const height = memo((code, h) => Math.max(0, ...(after.get(code) ?? []).map((c) => 1 + h(c))));
+  const all = want.map((w, j) => ({ ...w, j, t: target(w) }));
+  const sorted = all.filter((w) => w.t.i != null).sort((a, b) => a.t.i - b.t.i || depth(a.code) - depth(b.code) || height(b.code) - height(a.code) || a.j - b.j);
+  const placed = [];
+  const left = all.filter((w) => w.t.i == null).map((w) => w.code);
+  const put = (w, i) => {
+    cells[i].push(w.code);
+    placed.push({ code: w.code, row: i });
+  };
+  // Terms a program names first, then real courses by year and prerequisites, then placeholders for a level
+  // ("PMATH 4XX"), then electives in the room that's left. Each gets two strict passes (requisites, seasons,
+  // load), then one that only keeps to the load.
+  const generic = (c) => c === 'ELECTIVE' || /XXX$/.test(c);
+  const loose = sorted.filter((w) => !w.t.exact);
+  const phases = [sorted.filter((w) => w.t.exact), loose.filter((w) => !isPlaceholder(w.code)), loose.filter((w) => isPlaceholder(w.code) && !generic(w.code)), loose.filter((w) => generic(w.code))];
+  for (let queue of phases) {
+    for (const strict of [true, true, false]) {
+      const next = [];
+      for (const w of queue) {
+        if (w.t.exact) {
+          if (cells[w.t.i].length < max) put(w, w.t.i);
+          else next.push({ ...w, t: { i: w.t.i, exact: false } });
+          continue;
+        }
+        const i = study.find((x) => x >= w.t.i && cells[x].length < load && (!strict || ok(w.code, x)));
+        if (i != null) put(w, i);
+        else next.push(w);
+      }
+      queue = next;
+    }
+    left.push(...queue.map((w) => w.code));
+  }
+  return { placed, left };
+}
 
 /**
  * Programs still within reach: each one's courses still needed, given what's planned. programs: the data

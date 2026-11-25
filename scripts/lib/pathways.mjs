@@ -1,8 +1,10 @@
 // uwloo.ca/pathways: map out a whole degree, term by term. This writes its data file and its page; the app
 // itself is site/pathways/ (engine.js for the rules, app.js for the grid).
 //
-// /pathways/data.json: {cat, term, courses: {CODE: [title, units, prereq, coreq, antireq, seasons, equiv]},
-//                       programs: [{s, n, t, f, fi, c, req, open, tu, seq, cant}]}
+// /pathways/data.json: {cat, term, year, years, courses: {CODE: [title, units, prereq, coreq, antireq, seasons, equiv]},
+//                       programs: [{s, n, t, f, fi, c, req, open, tu, tsub, tt, seq, cant}]}  (the current calendar's)
+// /pathways/programs-{year}.json: {year, label, programs} for each other calendar year (2024–25 on): someone
+//                       follows the requirements of the year they started.
 //   prereq, coreq: compact requisite trees (engine.js describes the shape); antireq: the codes it rules out
 //   seasons: [Fall, Winter, Spring] terms with sections in the last 4 academic years, plus any published term
 import { shell } from './render.mjs';
@@ -19,7 +21,8 @@ export function kindOf(lead) {
   if ((m = /no more than (\d+(?:\.\d+)?)/.exec(l))) return ['max', Number(m[1])];
   if ((m = /(?:at least|complete) (\d+(?:\.\d+)?) of the following/.exec(l))) return ['n', Number(m[1])];
   if (/choose any of the following/.test(l)) return ['any'];
-  if (/\b(all|each) (of )?the following|completed the following|complete the following/.test(l)) return ['all'];
+  // "Must have completed or be concurrently enrolled in the following:" (a corequisite) is all of them too.
+  if (/\b(all|each) (of )?the following|completed the following|complete the following|enrolled in the following/.test(l)) return ['all'];
   return ['list'];
 }
 
@@ -65,9 +68,10 @@ export function hints(text) {
     const ranges = [...t.matchAll(new RegExp(`(${SUBJ}) ?(\\d{3})\\s*[-–]\\s*(?:${SUBJ} ?)?(\\d{3})`, 'g'))].map((x) => [x[1], Number(x[2]), Number(x[3])]);
     if (ranges.length) h.rg = ranges;
     else if (subj.size) h.subj = [...subj];
-    // "at the 300- or 400-level", "at the 200-level or above"
-    if ((m = /\b(\d)00-? or (\d)00[- ]level\b/i.exec(t))) h.min = Math.min(Number(m[1]), Number(m[2]));
-    else if ((m = /\b(\d)00[- ]level\b/i.exec(t))) h.min = Number(m[1]);
+    // "at the 300- or 400-level", "at the 200-, 300-, or 400-level", "at the 200-level or above"
+    if ((m = /\b((?:\d00-?,?\s*(?:or\s+|and\s+)?)*\d00)[- ]level\b/i.exec(t))) h.min = Math.min(...[...m[1].matchAll(/(\d)00/g)].map((x) => Number(x[1])));
+    // "from the Faculty of Arts", "offered by the Faculties of…": the grid can't check a faculty.
+    if (/\bFacult(?:y|ies)\b/.test(t)) h.fa = 1;
     if (!h.subj && !h.rg && /\b(list|lists|following|below|approved|technical electives?)\b/i.test(t)) h.pl = 1;
   } else if (!h.lv && !h.en && !/\b(complete|earn|take|must|required?)\b/i.test(t)) h.info = 1;
   return h;
@@ -102,7 +106,10 @@ export const compactSections = (sections) => (sections ?? []).map((s) => ({ h: s
  */
 export function totalUnits(html, { all = false } = {}) {
   const text = norm(String(html ?? '').replace(/<[^>]*>/g, ' '));
-  const found = [...text.matchAll(/total of\s*(\d+(?:\.\d+)?)\s*units(?: of ((?:[A-Z]{2,8})(?:\s*(?:,|or|and)\s*[A-Z]{2,8})*) courses)?/g)].map((m) => ({ u: Number(m[1]), ...(m[2] ? { subj: m[2].split(/[^A-Z]+/).filter(Boolean) } : {}) }));
+  // A degree's total can also be "Complete a minimum of 20.0 units" (BMath, BCS).
+  const lead = all ? /(?:total of|[Cc]omplete a minimum of)/ : /total of/;
+  const re = new RegExp(`${lead.source}\\s*(\\d+(?:\\.\\d+)?)\\s*units(?: of ((?:[A-Z]{2,8})(?:\\s*(?:,|or|and)\\s*[A-Z]{2,8})*) courses)?`, 'g');
+  const found = [...text.matchAll(re)].map((m) => ({ u: Number(m[1]), ...(m[2] ? { subj: m[2].split(/[^A-Z]+/).filter(Boolean) } : {}) }));
   if (all) return [...new Set(found.filter((x) => !x.subj).map((x) => x.u))].sort((a, b) => a - b);
   return found[0] ?? null;
 }
@@ -132,9 +139,9 @@ const oldTitle = (r) => r?.od?.title ?? r?.arch?.title ?? r?.ga?.title ?? '';
 /**
  * Everything the app needs. programs: programs.mjs's {list, byId}; combos: its byProgram; catalog: the current
  * undergraduate catalog (its courses); schedules: code → {terms}; published: {term: Set of codes} (this term
- * and next, from Open Data); curTerm: e.g. '1269'.
+ * and next, from Open Data); curTerm: e.g. '1269'; years: [{year, label, file}] for every calendar with programs.
  */
-export function pathwaysData({ programs, combos, catalog, schedules, published = {}, curTerm, retired = new Map() }) {
+export function pathwaysData({ programs, combos, catalog, schedules, published = {}, curTerm, retired = new Map(), years = [] }) {
   const from = String(Number(curTerm) - 40); // four academic years back
   const courses = {};
   for (const [code, c] of catalog.courses) {
@@ -164,7 +171,13 @@ export function pathwaysData({ programs, combos, catalog, schedules, published =
     for (const l of s.lists ?? []) walkSection(l);
   };
   for (const p of programs.list) for (const s of p.sections) walkSection(s);
-  const list = programs.list.map((p) => {
+  const list = pathwaysPrograms({ programs, combos });
+  return { cat: catalog.label, term: curTerm, year: catalog.start ?? null, years, courses, programs: list };
+}
+
+/** One calendar's programs, in the shape the app reads. */
+export function pathwaysPrograms({ programs, combos }) {
+  return programs.list.map((p) => {
     const out = {
       s: p.slug,
       n: p.name,
@@ -189,7 +202,6 @@ export function pathwaysData({ programs, combos, catalog, schedules, published =
     if (cant.length) out.cant = [...new Set(cant)];
     return out;
   });
-  return { cat: catalog.label, term: curTerm, courses, programs: list };
 }
 
 // ---------------- the page ----------------
@@ -198,7 +210,7 @@ export function pathwaysPage({ cat, builtAt, version, curTerm }) {
   const body = `<div class="pw" id="pathways" data-v="${esc(version)}" data-term="${esc(curTerm)}">
 <header class="pw-head">
   <h1>Pathways</h1>
-  <p class="lede">Map out your whole degree, term by term: your plans, every course, what each one counts toward, and what you’d still need for anything else.</p>
+  <p class="lede">Map out your whole degree, term by term: pick your plans and fill in their courses, then make it yours. See what each course counts toward, and what you’d still need for anything else.</p>
 </header>
 <noscript><p class="pl-msg">Pathways needs JavaScript. Every program’s requirements are on its page under <a href="/programs/">Programs</a>.</p></noscript>
 <div class="pw-app" id="pw-app"><p class="pl-msg">Loading the ${esc(cat.label)} calendar…</p></div>
@@ -206,7 +218,7 @@ export function pathwaysPage({ cat, builtAt, version, curTerm }) {
 <script type="module" src="/pathways/app.js?v=${esc(version)}"></script>`;
   return shell({
     title: 'Pathways: plan your degree | uwloo',
-    description: `Plan a University of Waterloo degree term by term with the ${cat.label} Undergraduate Calendar: majors, minors, options and specializations, prerequisites, course loads, and what each course counts toward.`,
+    description: `Plan a University of Waterloo degree term by term with the Undergraduate Calendar of the year you started (${cat.label} and earlier): majors, minors, options and specializations, prerequisites, course loads, and what each course counts toward.`,
     path: '/pathways/',
     body,
     builtAt,
