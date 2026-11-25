@@ -1,0 +1,38 @@
+{
+  "at": "2026-11-25T20:17:35.538Z",
+  "archive": {
+    "robots": {
+      "status": 404,
+      "groups": 0
+    },
+    "2021-2022": {
+      "pages": 799,
+      "samples": 90,
+      "failed": 1,
+      "left": 0
+    },
+    "2022-2023": {
+      "pages": 746,
+      "samples": 90,
+      "failed": 1,
+      "left": 0
+    },
+    "2023-2024": {
+      "pages": 743,
+      "samples": 90,
+      "failed": 1,
+      "left": 0
+    }
+  },
+  "opendata": {
+    "ImportantDates": "array of 552",
+    "ImportantDates/2026": "array of 119",
+    "ImportantDates/2025": "array of 129",
+    "ImportantDates/2026-2027": "no data",
+    "ExamSchedules": "error 500",
+    "ExamSchedules/1269": "error 500",
+    "ExamSchedules/1271": "error 500",
+    "ExamSchedules/1259": "error 500",
+    "ExamSchedules/1261": "error 500"
+  }
+}

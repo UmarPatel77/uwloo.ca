@@ -1,0 +1,2508 @@
+{
+  "count": 119,
+  "keys": [
+    "id",
+    "name",
+    "description",
+    "importantDateType",
+    "associatedAcademicYear",
+    "details",
+    "keywords",
+    "audiences",
+    "audienceString",
+    "keywordString"
+  ],
+  "first": [
+    {
+      "id": 464,
+      "name": "University holiday closure",
+      "description": "<p>No classes and offices closed.</p>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 464,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-12-24T00:00:00",
+          "endDate": "2025-12-31T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 464,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-01-01T00:00:00",
+          "endDate": "2026-01-02T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off",
+        "No classes",
+        "Christmas break"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off;No classes;Christmas break"
+    },
+    {
+      "id": 466,
+      "name": "Canada Day",
+      "description": "<p>All classes cancelled and offices closed.</p>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 466,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-07-01T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off",
+        "No classes"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off;No classes"
+    },
+    {
+      "id": 468,
+      "name": "Civic Day",
+      "description": "<div class=\"important-dates__description\">\n\t<p>All classes cancelled and offices closed.</p>\n</div>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 468,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-03T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off",
+        "No classes"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off;No classes"
+    },
+    {
+      "id": 470,
+      "name": "Thanksgiving Day",
+      "description": "<p>All classes cancelled and offices closed.</p>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 470,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-10-13T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off",
+        "No classes",
+        "Reading week"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off;No classes;Reading week"
+    },
+    {
+      "id": 472,
+      "name": "Victoria Day",
+      "description": "<p>All classes cancelled and offices closed.</p>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 472,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-05-18T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off",
+        "No classes"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off;No classes"
+    },
+    {
+      "id": 474,
+      "name": "Good Friday",
+      "description": "<div class=\"important-dates__description\">\n\t<p>All classes cancelled and offices closed.</p>\n</div>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 474,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-04-03T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off",
+        "No classes"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off;No classes"
+    },
+    {
+      "id": 476,
+      "name": "Family Day",
+      "description": "<p>All classes cancelled and offices closed.</p>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 476,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-02-16T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off",
+        "No classes",
+        "Reading week"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off;No classes;Reading week"
+    },
+    {
+      "id": 478,
+      "name": "Labour Day",
+      "description": "<p>No classes and offices closed.</p>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 478,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-09-01T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off",
+        "No classes",
+        "No courses"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off;No classes;No courses"
+    },
+    {
+      "id": 480,
+      "name": "Convocation - fall 2025",
+      "description": "<div class=\"important-dates__description\">\n\t<p>Visit the <a href=\"https://uwaterloo.ca/convocation/ceremonies/ceremony-dates-and-times\">Convocation website</a> for details.</p>\n</div>\n",
+      "importantDateType": "Event",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 480,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-10-24T00:00:00",
+          "endDate": "2025-10-25T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Graduation",
+        "Grad",
+        "Graduation ceremony",
+        "Convocation ceremony",
+        "Ceremony"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Graduation;Grad;Graduation ceremony;Convocation ceremony;Ceremony"
+    },
+    {
+      "id": 482,
+      "name": "Convocation - spring 2026",
+      "description": "<p>Visit <a href=\"https://uwaterloo.ca/convocation/ceremonies/ceremony-dates-and-times\">Convocation website</a> for ceremony details.</p>\n",
+      "importantDateType": "Event",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 482,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-06-16T00:00:00",
+          "endDate": "2026-06-20T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Graduation",
+        "Grad",
+        "Graduation ceremony",
+        "Convocation ceremony",
+        "Ceremony"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Graduation;Grad;Graduation ceremony;Convocation ceremony;Ceremony"
+    },
+    {
+      "id": 484,
+      "name": "Co-operative work term ends",
+      "description": "<p>Actual dates may vary depending on employer or student requirements.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 484,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-12-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 484,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-04-24T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 484,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-21T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "coop",
+        "co-op",
+        "work placement",
+        "Last day"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "coop;co-op;work placement;Last day"
+    },
+    {
+      "id": 486,
+      "name": "Co-operative work term begins",
+      "description": "<p>Actual dates may vary depending on employer or student requirements.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 486,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-09-02T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 486,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-01-05T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 486,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-05-11T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "coop",
+        "co-op",
+        "work placement"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "coop;co-op;work placement"
+    },
+    {
+      "id": 488,
+      "name": "Examinations on Sunday",
+      "description": "<p>Final examinations can be held on this day for the fall 2025 term.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 488,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-12-07T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Final exams",
+        "final examinations",
+        "exam period"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Final exams;final examinations;exam period"
+    },
+    {
+      "id": 490,
+      "name": "Pre-examination study days",
+      "description": "<p>There are one or two study days each term, between the end of the Formal Lecture Period and the beginning of the Final Examination Period. No classes are to be held during study days, except where classes are rescheduled as the result of a campus-wide emergency closure.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 490,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-12-03T00:00:00",
+          "endDate": "2025-12-04T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 490,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-04-07T00:00:00",
+          "endDate": "2026-04-08T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 490,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-06T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Study days",
+        "Study break",
+        "Exam break",
+        "No classes",
+        "No courses",
+        "No lectures",
+        "scheduled pause"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Study days;Study break;Exam break;No classes;No courses;No lectures;scheduled pause"
+    },
+    {
+      "id": 492,
+      "name": "Final examinations begin",
+      "description": "<p>First day of the Final Examination Period.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 492,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-12-05T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 492,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-04-09T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 492,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-07T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Exams",
+        "Examination",
+        "Exam schedule",
+        "Final exams",
+        "exam period"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Exams;Examination;Exam schedule;Final exams;exam period"
+    },
+    {
+      "id": 494,
+      "name": "Final examination emergency days",
+      "description": "<p>Dates reserved to hold final examinations in the event the University is closed during the winter 2026 Final Examination Period: Examinations will be rescheduled on the next available day, including Sunday, on which examinations have not been scheduled.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 494,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-04-12T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 494,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-04-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 494,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-04-24T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Exams",
+        "Examination",
+        "Exam schedule",
+        "Final exams",
+        "emergency day",
+        "Closure",
+        "sunday",
+        "Closed",
+        "rescheduled"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Exams;Examination;Exam schedule;Final exams;emergency day;Closure;sunday;Closed;rescheduled"
+    },
+    {
+      "id": 496,
+      "name": "In-person exam days for online courses",
+      "description": "<p>Spring 2026 term dates; not all dates may be used.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 496,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-07T00:00:00",
+          "endDate": "2026-08-08T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 496,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-12T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 496,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-15T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Exams",
+        "Examination",
+        "Exam schedule",
+        "Final exams"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Exams;Examination;Exam schedule;Final exams"
+    },
+    {
+      "id": 498,
+      "name": "In-person exam days for online courses",
+      "description": "<p>Winter 2026 term dates; not all dates may be used.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 498,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-04-10T00:00:00",
+          "endDate": "2026-04-11T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 498,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-04-15T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 498,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-04-18T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Exams",
+        "Examination",
+        "Exam schedule",
+        "Final exams"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Exams;Examination;Exam schedule;Final exams"
+    },
+    {
+      "id": 500,
+      "name": "In-person exam days for online courses",
+      "description": "<p>Fall 2025 term dates; not all dates may be used.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 500,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-12-05T00:00:00",
+          "endDate": "2025-12-06T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 500,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-12-10T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 500,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-12-13T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Exams",
+        "Examination",
+        "Exam schedule",
+        "Final exams"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Exams;Examination;Exam schedule;Final exams"
+    },
+    {
+      "id": 502,
+      "name": "Final examinations end",
+      "description": "<p>Last day examinations are scheduled during the Final Examination Period; additional emergency days may exist in the schedule.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 502,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-12-18T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 502,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-04-23T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 502,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Exams",
+        "Examination",
+        "Exam schedule",
+        "Final exams",
+        "exam period"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Exams;Examination;Exam schedule;Final exams;exam period"
+    },
+    {
+      "id": 504,
+      "name": "Final examination emergency days",
+      "description": "<p>Dates reserved to hold final examinations in the event the University is closed during the fall 2025 Final Examination Period: Examinations will be rescheduled on the next available day, including Sunday, on which examinations have not been scheduled.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 504,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-12-14T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 504,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-12-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Exams",
+        "Examination",
+        "Exam schedule",
+        "Final exams",
+        "emergency day",
+        "Closure",
+        "sunday",
+        "Closed",
+        "rescheduled"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Exams;Examination;Exam schedule;Final exams;emergency day;Closure;sunday;Closed;rescheduled"
+    },
+    {
+      "id": 508,
+      "name": "Final examination emergency days",
+      "description": "<p>Dates reserved to hold final examinations in the event the University is closed during the spring 2026 Final Examination Period: Examinations will be rescheduled on the next available day, including Sunday, on which examinations have not been scheduled.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 508,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-09T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 508,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-16T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 508,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-20T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Exams",
+        "Examination",
+        "Exam schedule",
+        "Final exams",
+        "emergency day",
+        "Closure",
+        "sunday",
+        "Closed",
+        "rescheduled"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Exams;Examination;Exam schedule;Final exams;emergency day;Closure;sunday;Closed;rescheduled"
+    },
+    {
+      "id": 510,
+      "name": "Classes begin",
+      "description": "<p><a href=\"https://www.wlu.ca/\">Laurier</a> may have a different schedule - visit their website for applicable start dates.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 510,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-09-03T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 510,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-01-05T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 510,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-05-11T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Lectures start",
+        "Courses start",
+        "Term start",
+        "First day",
+        "first day of class"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Lectures start;Courses start;Term start;First day;first day of class"
+    },
+    {
+      "id": 512,
+      "name": "Classes end",
+      "description": "<p><a href=\"https://www.wlu.ca/\">Laurier</a> may have a different schedule - visit their website for applicable end dates.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 512,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-12-02T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 512,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-04-06T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 512,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-05T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Lectures end",
+        "Courses end",
+        "term ends",
+        "Last day"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Lectures end;Courses end;term ends;Last day"
+    },
+    {
+      "id": 514,
+      "name": "Reading Week",
+      "description": "<p>All classes cancelled; offices closed on the weekends and the holiday Monday.</p>\n\n<p>Undergraduate students: view the <a href=\"https://uwaterloo.ca/academic-calendar/undergraduate-studies/catalog#/policy/ryDn2YFVT\">Undergraduate Studies Academic Calendar</a> for more details.<br />\n\tGraduate students: view the <a href=\"https://uwaterloo.ca/academic-calendar/graduate-studies/catalog#/policy/Hk8nuXvRT\">Graduate Studies Academic Calendar</a> for more details.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 514,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-10-11T00:00:00",
+          "endDate": "2025-10-19T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 514,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-02-14T00:00:00",
+          "endDate": "2026-02-22T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Study break",
+        "No classes",
+        "Reading week",
+        "Fall break",
+        "Winter break"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Study break;No classes;Reading week;Fall break;Winter break"
+    },
+    {
+      "id": 516,
+      "name": "Make-up day for Victoria Day",
+      "description": "<p>The loss of a Monday class on May 18 will be made up by following a <em><strong>Monday schedule</strong></em> on Tuesday, August 4.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 516,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-04T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Make-up day",
+        "Schedule",
+        "Holiday"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Make-up day;Schedule;Holiday"
+    },
+    {
+      "id": 518,
+      "name": "Make-up day for Canada Day",
+      "description": "<p>The loss of a Wednesday class on July 1 will be made up on Wednesday, August 5 (no change in schedule).</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 518,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-05T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Make-up day",
+        "Schedule",
+        "Holiday"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Make-up day;Schedule;Holiday"
+    },
+    {
+      "id": 520,
+      "name": "Make-up day for Good Friday",
+      "description": "<p>The loss of a Friday class on April 3 will be made up by following a <em><strong>Friday schedule</strong></em> on Monday, April 6.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 520,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-04-06T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Make-up day",
+        "Schedule",
+        "Holiday"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Make-up day;Schedule;Holiday"
+    },
+    {
+      "id": 522,
+      "name": "Last day to arrange tuition and fees ",
+      "description": "<p>Refer to <a href=\"https://uwaterloo.ca/finance/student-financial-services/due-dates\">tuition and fees deadlines</a>. Late fees apply, see <a href=\"https://uwaterloo.ca/finance/student-financial-services\">Student Financial Services</a> for details.</p>\n\n<p>Visit the Finance website for instructions on submitting a <a href=\"https://uwaterloo.ca/finance/student-financial-services/promissory-note\">Promissory Note</a>.</p>\n",
+      "importantDateType": "Financial",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 522,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-10-31T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 522,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-01-31T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 522,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-06-30T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "fees arrangement",
+        "Fees",
+        "Tuition",
+        "promissory note",
+        "register late"
+      ],
+      "audiences": [
+        "Graduate students"
+      ],
+      "audienceString": "Graduate students",
+      "keywordString": "fees arrangement;Fees;Tuition;promissory note;register late"
+    },
+    {
+      "id": 524,
+      "name": "Apply for Graduation ",
+      "description": "<p><span>Deadline for graduate students to <a href=\"https://uwaterloo.ca/quest/graduate-students#graduation\">apply for graduation in Quest</a> for </span>spring ceremony (degree completion in fall term)<span>.</span></p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 524,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-12-31T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Convocation",
+        "graduate"
+      ],
+      "audiences": [
+        "Graduate students"
+      ],
+      "audienceString": "Graduate students",
+      "keywordString": "Convocation;graduate"
+    },
+    {
+      "id": 526,
+      "name": "Apply for Graduation ",
+      "description": "<p><span>Deadline for graduate students to <a href=\"https://uwaterloo.ca/quest/graduate-students#graduation\">apply for graduation in Quest</a> for </span>spring ceremony (degree completion in winter term)<span>.</span></p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 526,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-04-30T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Convocation",
+        "graduate"
+      ],
+      "audiences": [
+        "Graduate students"
+      ],
+      "audienceString": "Graduate students",
+      "keywordString": "Convocation;graduate"
+    },
+    {
+      "id": 528,
+      "name": "Apply for Graduation ",
+      "description": "<p><span>Deadline for graduate students to <a href=\"https://uwaterloo.ca/quest/graduate-students#graduation\">apply for graduation in Quest</a> for </span>fall ceremony (degree completion in spring term)<span>.</span></p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 528,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-31T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Convocation",
+        "graduate"
+      ],
+      "audiences": [
+        "Graduate students"
+      ],
+      "audienceString": "Graduate students",
+      "keywordString": "Convocation;graduate"
+    },
+    {
+      "id": 530,
+      "name": "Class enrolment period",
+      "description": "<p>During this period, graduate students can enrol themselves in classes using <a href=\"https://uwaterloo.ca/quest/graduate-students\">Quest</a>, and can also drop classes in Quest.</p>\n\n<p>Graduate students who are not fee arranged and have enrolled in classes will have their classes dropped at the end of the third week of classes (end of class enrolment period).</p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 530,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-07-30T00:00:00",
+          "endDate": "2025-09-23T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 530,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2025-12-01T00:00:00",
+          "endDate": "2026-01-25T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 530,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-04-06T00:00:00",
+          "endDate": "2026-05-31T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Add courses",
+        "Course enrol",
+        "choose courses",
+        "Class enrolment",
+        "Class registration",
+        "Class selection",
+        "Drop/Add period",
+        "Drop",
+        "drop class",
+        "drop course",
+        "Add classes"
+      ],
+      "audiences": [
+        "Graduate students"
+      ],
+      "audienceString": "Graduate students",
+      "keywordString": "Add courses;Course enrol;choose courses;Class enrolment;Class registration;Class selection;Drop/Add period;Drop;drop class;drop course;Add classes"
+    },
+    {
+      "id": 532,
+      "name": "Class drop with grade of Withdrawn, no credit granted (WD)",
+      "description": "<p>During this period, graduate students can continue to drop classes in Quest but a grade of Withdrawn, no credit granted (WD) will be applied and the class will remain on the transcript.  Note that WD is not an academic penalty.</p>\n\n<p>Outside of this period, students with special circumstances can petition to drop or add a class using a <a href=\"https://uwaterloo.ca/forms/graduate-studies/graduate-studies-course-dropadd\">course drop add form</a> (Graduate Studies forms website).</p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 532,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-09-24T00:00:00",
+          "endDate": "2025-11-18T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 532,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-01-26T00:00:00",
+          "endDate": "2026-03-22T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 532,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-06-01T00:00:00",
+          "endDate": "2026-07-19T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Add courses",
+        "drop class",
+        "Drop/Add period",
+        "drop course",
+        "Course withdrawal"
+      ],
+      "audiences": [
+        "Graduate students"
+      ],
+      "audienceString": "Graduate students",
+      "keywordString": "Add courses;drop class;Drop/Add period;drop course;Course withdrawal"
+    },
+    {
+      "id": 534,
+      "name": "Opt out of optional/voluntary fees deadline",
+      "description": "<p>See how to <a href=\"https://uwaterloo.ca/quest/help/students/how-do-i/opt-out-optional-or-voluntary-fees\">opt out of optional or voluntary fees</a> in Quest.</p>\n",
+      "importantDateType": "Financial",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 534,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-08-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 534,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2025-12-10T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 534,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-04-23T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Fees",
+        "Fees deadline",
+        "Fees due",
+        "optional fees",
+        "voluntary fees"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Fees;Fees deadline;Fees due;optional fees;voluntary fees"
+    },
+    {
+      "id": 538,
+      "name": "Not Fees Arranged (NFA) holds applied",
+      "description": "<p>Not Fees Arranged (NFA) holds applied to students who are not yet Fees Arranged for the term.</p>\n\n<p>Undergraduate students: Find out more about how this <a href=\"https://uwaterloo.ca/the-centre/academics/academics-undergraduate-students/registering-courses/dropadd-period#hold\">hold will impact your course registration process</a> for future terms.</p>\n",
+      "importantDateType": "Financial",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 538,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-09-17T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 538,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-01-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 538,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-05-26T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Not fees arranged",
+        "extension",
+        "late fee",
+        "hold",
+        "Tuition",
+        "NFA"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Not fees arranged;extension;late fee;hold;Tuition;NFA"
+    },
+    {
+      "id": 540,
+      "name": "Tuition and fee refund deadline - 50%",
+      "description": "<p>Deadline to receive 50% of charges for tuition, co-op fee and student services fees removed for withdrawing from the term, completing degree requirements, or for dropping a course. All other charges remain on student accounts. See <a href=\"https://uwaterloo.ca/finance/student-financial-services/due-dates-and-late-fees\">Student Financial Services website</a>.</p>\n",
+      "importantDateType": "Financial",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 540,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-10-17T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 540,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-02-20T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 540,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-06-26T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Refund deadline",
+        "Withdraw deadline",
+        "Fee refund",
+        "50 percent",
+        "Half refund",
+        "Drop",
+        "drop course",
+        "drop class"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Refund deadline;Withdraw deadline;Fee refund;50 percent;Half refund;Drop;drop course;drop class"
+    },
+    {
+      "id": 542,
+      "name": "Tuition and fee refund deadline - 100%",
+      "description": "<p>Deadline to receive 100% of charges removed for withdrawing from the term, completing degree requirements or for dropping a course. See <a href=\"https://uwaterloo.ca/finance/student-financial-services/due-dates-and-late-fees\">Student Financial Services website</a>.</p>\n",
+      "importantDateType": "Financial",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 542,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-09-23T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 542,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-01-23T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 542,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-06-01T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Refund deadline",
+        "Withdraw deadline",
+        "100 percent",
+        "Full refund",
+        "Tuition refund",
+        "Fee refund",
+        "Drop",
+        "drop class",
+        "drop course"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Refund deadline;Withdraw deadline;100 percent;Full refund;Tuition refund;Fee refund;Drop;drop class;drop course"
+    },
+    {
+      "id": 544,
+      "name": "Tuition and fees due",
+      "description": "<div class=\"important-dates__description\">\n\t<p>Pay in full or become <a href=\"https://uwaterloo.ca/finance/student-financial-services/how-become-fees-arranged\">\"Fees Arranged\"</a>; a Fees Arranged Extension fee applies after this date.</p>\n</div>\n",
+      "importantDateType": "Financial",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 544,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-08-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 544,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2025-12-10T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 544,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-04-23T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Fees deadline",
+        "Fees due",
+        "Tuition due",
+        "Tuition deadline",
+        "Payment due",
+        "Payment deadline",
+        "Due date",
+        "owe money"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Fees deadline;Fees due;Tuition due;Tuition deadline;Payment due;Payment deadline;Due date;owe money"
+    },
+    {
+      "id": 548,
+      "name": "Fees Arranged Extension fees begin",
+      "description": "<div class=\"important-dates__description\">\n\t<p>See <a href=\"https://uwaterloo.ca/finance/student-financial-services/due-dates\">Student Financial Services</a> website for Fees Arranged Extension fee amounts by date.</p>\n</div>\n",
+      "importantDateType": "Financial",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 548,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-08-20T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 548,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2025-12-11T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 548,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-04-24T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Late payment",
+        "Late penalty",
+        "Late tuition",
+        "Fees",
+        "Late",
+        "late fee amount",
+        "owe money",
+        "interest",
+        "Fees Arranged Extension",
+        "Fees extension",
+        "extension",
+        "passed due"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Late payment;Late penalty;Late tuition;Fees;Late;late fee amount;owe money;interest;Fees Arranged Extension;Fees extension;extension;passed due"
+    },
+    {
+      "id": 558,
+      "name": "Reserves removed",
+      "description": "<p>Reserves on most classes will be removed on this date, opening remaining spaces to all students. See the <a href=\"https://classes.uwaterloo.ca/under.html\">Schedule of Classes</a> for remaining spaces.</p>\n\n<p>Any <a href=\"https://uwaterloo.ca/the-centre/academics/academics-undergraduate-students/registering-courses/undergraduate-courses-active-reserves\">reserves not removed from undergraduate courses</a> will be listed on The Centre website after this date.</p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 558,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-09-10T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 558,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-01-12T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 558,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-05-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "reserves",
+        "Add classes",
+        "Add courses"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "reserves;Add classes;Add courses"
+    },
+    {
+      "id": 560,
+      "name": "View next term's schedule and appointments",
+      "description": "<p>Registered students can begin to view, in Quest, their next term's class schedule and appointment time. See <a href=\"https://uwaterloo.ca/the-centre/quest/quest-undergraduate-students/how-do-i-view-my-appointment-time-beginning-dropadd-period\">How to view appointment time for the beginning of drop/add?</a></p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 560,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-07-23T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 560,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2025-11-12T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 560,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-03-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Class schedule",
+        "schedule of",
+        "Timetable",
+        "view appointment",
+        "appointment",
+        "course schedule",
+        "drop/add appointment"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Class schedule;schedule of;Timetable;view appointment;appointment;course schedule;drop/add appointment"
+    },
+    {
+      "id": 562,
+      "name": "Course Selection Period - new students",
+      "description": "<p>To determine if you need to create your course wish list during the Course Selection Period, see the <a href=\"https://uwaterloo.ca/the-centre/academics/academics-undergraduate-students/registering-courses/course-registration-information-new-undergraduate-students\">course registration information for new students page</a>.</p>\n\n<p>If you do, also see <a href=\"https://uwaterloo.ca/the-centre/quest/quest-undergraduate-students/how-do-i-select-courses-future-term\">How do I select courses for a future term?</a></p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 562,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-07-02T00:00:00",
+          "endDate": "2025-07-09T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Class selection",
+        "Selection",
+        "Select courses",
+        "Select classes",
+        "Pick classes",
+        "Pick courses",
+        "Registration",
+        "Register",
+        "Class registration",
+        "Course registration",
+        "Class enrolment",
+        "Course enrolment",
+        "Add courses",
+        "Add classes",
+        "Choose classes",
+        "choose courses"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Class selection;Selection;Select courses;Select classes;Pick classes;Pick courses;Registration;Register;Class registration;Course registration;Class enrolment;Course enrolment;Add courses;Add classes;Choose classes;choose courses"
+    },
+    {
+      "id": 564,
+      "name": "Course Selection Period - returning students",
+      "description": "<p>See <a href=\"https://uwaterloo.ca/the-centre/quest/quest-undergraduate-students/how-do-i-select-courses-future-term\">How do I select courses for a future term?</a></p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 564,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-05-22T00:00:00",
+          "endDate": "2025-06-02T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Class selection",
+        "Selection",
+        "Select courses",
+        "Select classes",
+        "Pick classes",
+        "Pick courses",
+        "Registration",
+        "Register",
+        "Class registration",
+        "Course registration",
+        "Class enrolment",
+        "Course enrolment",
+        "Add courses",
+        "Add classes",
+        "Choose classes",
+        "choose courses"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Class selection;Selection;Select courses;Select classes;Pick classes;Pick courses;Registration;Register;Class registration;Course registration;Class enrolment;Course enrolment;Add courses;Add classes;Choose classes;choose courses"
+    },
+    {
+      "id": 566,
+      "name": "Drop/Add Period Appointments - new students",
+      "description": "<div class=\"important-dates__description\">\n\t<p>The Drop/Add Period begins with individualized Quest appointment times; the dates listed indicate the Quest appointment period. See <a href=\"https://uwaterloo.ca/the-centre/quest/quest-undergraduate-students/how-do-i-view-my-appointment-time-beginning-dropadd-period\">How to view appointment time for the beginning of drop/add</a>.</p>\n</div>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 566,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-07-24T00:00:00",
+          "endDate": "2025-07-29T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Add courses",
+        "Add classes",
+        "drop class",
+        "drop course",
+        "Change schedule",
+        "Course withdrawal",
+        "Class withdrawal",
+        "Withdraw",
+        "Withdrawal",
+        "Class enrol",
+        "Course enrol",
+        "appointment",
+        "add period"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Add courses;Add classes;drop class;drop course;Change schedule;Course withdrawal;Class withdrawal;Withdraw;Withdrawal;Class enrol;Course enrol;appointment;add period"
+    },
+    {
+      "id": 568,
+      "name": "Drop/Add Period Appointments - returning students",
+      "description": "<p>The Drop/Add Period begins with individualized Quest appointment times; the dates listed indicate the Quest appointment period. See <a href=\"https://uwaterloo.ca/the-centre/quest/quest-undergraduate-students/how-do-i-view-my-appointment-time-beginning-dropadd-period\">How to view appointment time for the beginning of drop/add</a>.</p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 568,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-07-28T00:00:00",
+          "endDate": "2025-07-29T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Add classes",
+        "Add courses",
+        "drop course",
+        "drop class",
+        "Change schedule",
+        "Course withdrawal",
+        "Class withdrawal",
+        "Withdraw",
+        "Withdrawal",
+        "Open enrolment",
+        "Enrol",
+        "Class enrol",
+        "Course enrol",
+        "appointment",
+        "add period"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Add classes;Add courses;drop course;drop class;Change schedule;Course withdrawal;Class withdrawal;Withdraw;Withdrawal;Open enrolment;Enrol;Class enrol;Course enrol;appointment;add period"
+    },
+    {
+      "id": 570,
+      "name": "Add Period begins (open enrolment)",
+      "description": "<p>The first day of the Drop/Add Period where all undergraduate students have equal access <a href=\"https://uwaterloo.ca/the-centre/quest/quest-undergraduate-students#class-and-exams\">to make changes to their term class schedule</a> (add, drop, swap) in Quest. The Add Period continues for all students until the last day to add a class.</p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 570,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-07-30T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 570,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2025-11-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 570,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-03-25T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Drop/Add period",
+        "add period",
+        "Open enrolment",
+        "add class",
+        "Add courses",
+        "Add classes",
+        "drop class",
+        "drop course",
+        "Change schedule",
+        "Course withdrawal",
+        "Class withdrawal",
+        "Withdraw",
+        "Withdrawal",
+        "Class enrol",
+        "Course enrolment"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Drop/Add period;add period;Open enrolment;add class;Add courses;Add classes;drop class;drop course;Change schedule;Course withdrawal;Class withdrawal;Withdraw;Withdrawal;Class enrol;Course enrolment"
+    },
+    {
+      "id": 576,
+      "name": "Add Period ends",
+      "description": "<p>Last day to add a class. See <a href=\"https://uwaterloo.ca/the-centre/quest/quest-undergraduate-students\">how to add or swap classes</a> in Quest.</p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 576,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-09-16T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 576,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-01-16T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 576,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-05-25T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Add courses",
+        "Add classes",
+        "Change schedule",
+        "Open enrolment",
+        "Enrol",
+        "Class enrol",
+        "Course enrol",
+        "appointment"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Add courses;Add classes;Change schedule;Open enrolment;Enrol;Class enrol;Course enrol;appointment"
+    },
+    {
+      "id": 578,
+      "name": "Drop with WD begins",
+      "description": "<p>WD (Withdrew, no credit granted) grade assigned for class(es) <a href=\"https://uwaterloo.ca/the-centre/quest/quest-help/how-do-i-drop-classes\">dropped</a> during this period.</p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 578,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-09-24T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 578,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-01-24T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 578,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-06-02T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Drop",
+        "drop course",
+        "drop class",
+        "Change schedule",
+        "Course withdrawal",
+        "Class withdrawal",
+        "Withdraw",
+        "Withdrawal",
+        "penalty"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Drop;drop course;drop class;Change schedule;Course withdrawal;Class withdrawal;Withdraw;Withdrawal;penalty"
+    },
+    {
+      "id": 580,
+      "name": "Drop with WD ends",
+      "description": "<div class=\"important-dates__description\">\n\t<p>Last day to <a href=\"https://uwaterloo.ca/the-centre/quest/quest-help/how-do-i-drop-classes\">drop</a> a class and receive a WD (Withdrew, no credit granted) grade.</p>\n</div>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 580,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-11-18T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 580,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-03-20T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 580,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-07-21T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "drop class",
+        "drop course",
+        "Change schedule",
+        "Course withdrawal",
+        "Class withdrawal",
+        "Withdraw",
+        "Withdrawal",
+        "penalty"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "drop class;drop course;Change schedule;Course withdrawal;Class withdrawal;Withdraw;Withdrawal;penalty"
+    },
+    {
+      "id": 582,
+      "name": "Drop with WF begins",
+      "description": "<div class=\"important-dates__description\">\n\t<p>WF (Withdrew/Failure, no credit granted, value 32) grade assigned for class(es) dropped during this period.</p>\n\n\t<p><strong>Engineering students</strong>: Visit <a href=\"https://uwaterloo.ca/academic-calendar/undergraduate-studies/catalog#/policy/HyLCpCs4a\">course load</a> and <a href=\"https://uwaterloo.ca/academic-calendar/undergraduate-studies/catalog#/policy/ryuzk13VT\">withdrawal</a> in the Undergraduate Calendar for specific regulations.</p>\n</div>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 582,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-11-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 582,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-03-21T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 582,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-07-22T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "drop course",
+        "drop class",
+        "Change schedule",
+        "Course withdrawal",
+        "Class withdrawal",
+        "Withdraw",
+        "penalty"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "drop course;drop class;Change schedule;Course withdrawal;Class withdrawal;Withdraw;penalty"
+    },
+    {
+      "id": 584,
+      "name": "Drop with WF ends",
+      "description": "<p>Last day to <a href=\"https://uwaterloo.ca/the-centre/quest/quest-help/how-do-i-drop-classes\">drop</a> a class without a petition and receive a WF (Withdrew/Failure, no credit granted, value 32) grade.</p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 584,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-12-04T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 584,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-04-08T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 584,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-06T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "drop course",
+        "drop class",
+        "Change schedule",
+        "Course withdrawal",
+        "Class withdrawal",
+        "Withdraw",
+        "Withdrawal",
+        "penalty"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "drop course;drop class;Change schedule;Course withdrawal;Class withdrawal;Withdraw;Withdrawal;penalty"
+    },
+    {
+      "id": 586,
+      "name": "Last day to drop a class from the academic record",
+      "description": "<p>The Drop Period ends. Classes dropped prior to or on this day will be removed from the academic record. See how to <a href=\"https://uwaterloo.ca/the-centre/quest/quest-help/how-do-i-drop-classes\">drop a class</a> in Quest.</p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 586,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-09-23T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 586,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-01-23T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 586,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-06-01T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Refund deadline",
+        "Withdraw deadline",
+        "100 percent",
+        "Full refund",
+        "Tuition refund",
+        "Fee refund",
+        "Drop",
+        "drop class",
+        "drop course"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Refund deadline;Withdraw deadline;100 percent;Full refund;Tuition refund;Fee refund;Drop;drop class;drop course"
+    },
+    {
+      "id": 590,
+      "name": "Standing decisions and official grades are available in Quest",
+      "description": "<p>Registered students can view their official and complete term grades, along with <a href=\"https://uwaterloo.ca/the-centre/academics/academics-undergraduate-students/academic-standing\">academic standing</a>, in Quest.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 590,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2026-01-22T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 590,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-05-20T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 590,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-09-11T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Marks",
+        "Grades",
+        "Final grades",
+        "Final marks",
+        "Official grades",
+        "Official marks",
+        "academic standing"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Marks;Grades;Final grades;Final marks;Official grades;Official marks;academic standing"
+    },
+    {
+      "id": 592,
+      "name": "Drop/Add Period begins",
+      "description": "<p>The Drop/Add Period begins with individualized Quest appointment times. See <a href=\"https://uwaterloo.ca/the-centre/quest/quest-undergraduate-students/how-do-i-view-my-appointment-time-beginning-dropadd-period\">How to view appointment time for the beginning of drop/add</a>.</p>\n\n<p>Dates listed indicate Quest appointment period. The Add Period continues for all students until the last day to add a class.</p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 592,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2025-11-17T00:00:00",
+          "endDate": "2025-11-18T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 592,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-03-23T00:00:00",
+          "endDate": "2026-03-24T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Add classes",
+        "Add courses",
+        "drop course",
+        "drop class",
+        "Change schedule",
+        "Course withdrawal",
+        "Class withdrawal",
+        "Withdraw",
+        "Withdrawal",
+        "Open enrolment",
+        "Enrol",
+        "Class enrol",
+        "Course enrol",
+        "appointment"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Add classes;Add courses;drop course;drop class;Change schedule;Course withdrawal;Class withdrawal;Withdraw;Withdrawal;Open enrolment;Enrol;Class enrol;Course enrol;appointment"
+    },
+    {
+      "id": 594,
+      "name": "Course Selection Period",
+      "description": "<p>See <a href=\"https://uwaterloo.ca/the-centre/quest/quest-undergraduate-students/how-do-i-select-courses-future-term\">How do I select courses for a future term?</a></p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 594,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2025-09-19T00:00:00",
+          "endDate": "2025-09-29T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 594,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-01-26T00:00:00",
+          "endDate": "2026-02-03T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Class selection",
+        "Selection",
+        "Select courses",
+        "Select classes",
+        "Pick classes",
+        "Pick courses",
+        "Registration",
+        "Register",
+        "Class registration",
+        "Course registration",
+        "Class enrolment",
+        "Course enrolment",
+        "Add courses",
+        "Add classes",
+        "Choose classes",
+        "choose courses"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Class selection;Selection;Select courses;Select classes;Pick classes;Pick courses;Registration;Register;Class registration;Course registration;Class enrolment;Course enrolment;Add courses;Add classes;Choose classes;choose courses"
+    },
+    {
+      "id": 596,
+      "name": "Grades begin to appear in Quest",
+      "description": "<p>Registered students can <a href=\"https://uwaterloo.ca/the-centre/quest/quest-help/how-do-i-view-my-term-grades\">view their unofficial term grades</a> in Quest.</p>\n\n<p>Note: Not all grades will be available on this date.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 596,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-12-20T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 596,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-04-25T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 596,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-08-21T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Marks",
+        "Grades",
+        "Final grades",
+        "Final marks",
+        "Unofficial grades",
+        "Unofficial marks",
+        "grades posted",
+        "marks posted"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Marks;Grades;Final grades;Final marks;Unofficial grades;Unofficial marks;grades posted;marks posted"
+    },
+    {
+      "id": 598,
+      "name": "Last day to select an examination centre or submit a proctor for online course final examinations",
+      "description": "<p>View details about <a href=\"https://uwaterloo.ca/the-centre/academics/final-examinations/final-examination-arrangements-online-courses\">final examination arrangements for online courses</a> on The Centre website. Deadline is 3 p.m. ET on date listed.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 598,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-10-17T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 598,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-02-20T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 598,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-06-29T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Online exam",
+        "Online final",
+        "Location centre",
+        "Exam centre",
+        "Select exam",
+        "Choose exam",
+        "Change exam",
+        "online course",
+        "proctor"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Online exam;Online final;Location centre;Exam centre;Select exam;Choose exam;Change exam;online course;proctor"
+    },
+    {
+      "id": 600,
+      "name": "Final examination relief requests due",
+      "description": "<p><a href=\"https://uwaterloo.ca/the-centre/forms-and-official-documents/forms-undergraduate-students/request-relief-consecutive-final-exams\">Requests for relief for consecutive final exams</a> are generally due two weeks after the final examination schedule is published.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 600,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-10-10T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 600,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-02-13T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 600,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-06-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "relief",
+        "Deadline",
+        "exam",
+        "request",
+        "back-to-back"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "relief;Deadline;exam;request;back-to-back"
+    },
+    {
+      "id": 602,
+      "name": "Final examination schedules released",
+      "description": "<p>Visit the <a href=\"https://uwaterloo.ca/final-examination-schedule\">Final Examination Schedule</a> website (authentication required).</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2025 - 2026",
+      "details": [
+        {
+          "importantDateId": 602,
+          "termId": 0,
+          "termName": "Fall 2025",
+          "startDate": "2025-09-26T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 602,
+          "termId": 0,
+          "termName": "Winter 2026",
+          "startDate": "2026-01-30T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 602,
+          "termId": 0,
+          "termName": "Spring 2026",
+          "startDate": "2026-06-05T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Exams",
+        "Final exams",
+        "Exam schedule"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Exams;Final exams;Exam schedule"
+    }
+  ]
+}

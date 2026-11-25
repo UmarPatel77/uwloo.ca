@@ -1,0 +1,2358 @@
+{
+  "count": 552,
+  "keys": [
+    "id",
+    "name",
+    "description",
+    "importantDateType",
+    "associatedAcademicYear",
+    "details",
+    "keywords",
+    "audiences",
+    "audienceString",
+    "keywordString"
+  ],
+  "first": [
+    {
+      "id": 3,
+      "name": "Co-operative work term begins",
+      "description": "<p>Actual dates may vary depending on employer or student requirements.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 3,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-09-04T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 3,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-01-07T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 3,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-05-06T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "coop",
+        "co-op",
+        "work placement"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "coop;co-op;work placement"
+    },
+    {
+      "id": 4,
+      "name": "Classes begin",
+      "description": "<p><a href=\"https://www.wlu.ca/\">Laurier</a> may have a different schedule - visit their website for applicable start dates.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 4,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-09-06T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 4,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-01-07T00:00:00",
+          "endDate": null,
+          "notes": "Undergraduate students: Classes for 4A Pharmacy begin January 2."
+        },
+        {
+          "importantDateId": 4,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-05-06T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Lectures start",
+        "Courses start",
+        "Term start",
+        "First day"
+      ],
+      "audiences": [
+        "Undergraduate students",
+        "Graduate students"
+      ],
+      "audienceString": "Undergraduate students;Graduate students",
+      "keywordString": "Lectures start;Courses start;Term start;First day"
+    },
+    {
+      "id": 5,
+      "name": "English Language Proficiency Exam (ELPE)",
+      "description": "<p>English Language Proficiency Exam (ELPE) dates for new students (in some faculties). View details on the <a href=\"https://uwaterloo.ca/communication-requirement/writing-english-language-proficiency-exam/elpe-dates\">Communication Requirement website</a>.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 5,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-09-22T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 5,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2018-12-05T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 5,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-04-09T00:00:00",
+          "endDate": null,
+          "notes": "April 9, 2019 will be the last time the ELPE is offered."
+        }
+      ],
+      "keywords": [
+        "ELPE"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "ELPE"
+    },
+    {
+      "id": 6,
+      "name": "Mid-Term Study Break",
+      "description": null,
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 6,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-10-09T00:00:00",
+          "endDate": "2018-10-10T00:00:00",
+          "notes": "Fall mid-term study break also known as “Fall Break”."
+        },
+        {
+          "importantDateId": 6,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-02-19T00:00:00",
+          "endDate": "2019-02-22T00:00:00",
+          "notes": "Winter mid-term study break also known as \"Reading Week\"."
+        }
+      ],
+      "keywords": [
+        "Study break",
+        "No classes",
+        "Reading week",
+        "Fall break",
+        "Winter break"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Study break;No classes;Reading week;Fall break;Winter break"
+    },
+    {
+      "id": 7,
+      "name": "Make-up day for October 10",
+      "description": "<p>The loss of a Wednesday class on October 10 (Fall Break study day) will be made up by following a Wednesday schedule on October 12.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 7,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-10-12T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Make-up day",
+        "Change schedule"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Make-up day;Change schedule"
+    },
+    {
+      "id": 8,
+      "name": "View next term's schedule and appointments",
+      "description": "<p>Registered students can begin to view next term's class schedule and appointment time in Quest. See <a href=\"https://uwaterloo.ca/quest/help/students/how-do-i/view-my-appointment-time-beginning-drop-add\">How to view appointment time for the beginning of drop/add?</a></p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 8,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-07-18T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 8,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2018-11-15T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 8,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-03-21T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Class schedule",
+        "schedule of",
+        "Timetable",
+        "view appointment",
+        "appointment"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Class schedule;schedule of;Timetable;view appointment;appointment"
+    },
+    {
+      "id": 9,
+      "name": "Tuition and fee refund deadline - 100%",
+      "description": "<p>See <a href=\"https://uwaterloo.ca/finance/student-financial-services\">Student Financial Services website</a>.</p>\n\n<p>*Graduate students: complete your program or withdraw by this date to receive a refund.</p>\n",
+      "importantDateType": "Financial",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 9,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-09-26T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 9,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-01-25T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 9,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-05-24T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Refund deadline",
+        "Withdraw deadline",
+        "100 percent",
+        "Full refund",
+        "Tuition refund",
+        "Fee refund",
+        "Drop",
+        "drop class",
+        "drop course"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Refund deadline;Withdraw deadline;100 percent;Full refund;Tuition refund;Fee refund;Drop;drop class;drop course"
+    },
+    {
+      "id": 10,
+      "name": "Make-up day for October 9",
+      "description": "<p>The loss of a Tuesday class on October 9 (Fall Break study day) will be made up by following a Tuesday schedule on October 11.</p>\n",
+      "importantDateType": null,
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 10,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-10-11T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Make-up day",
+        "Schedule"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Make-up day;Schedule"
+    },
+    {
+      "id": 11,
+      "name": "Standing decisions and official grades are available in Quest",
+      "description": "<p>Registered students can view their official and complete term grades, along with academic standing, in Quest.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 11,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2019-01-18T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 11,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-05-22T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 11,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-09-18T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Marks",
+        "Grades",
+        "Final grades",
+        "Final marks",
+        "Official grades",
+        "Official marks",
+        "academic standing"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Marks;Grades;Final grades;Final marks;Official grades;Official marks;academic standing"
+    },
+    {
+      "id": 12,
+      "name": "Tuition and fees due",
+      "description": "<div class=\"body\">\n\t<p>Become <a href=\"https://uwaterloo.ca/finance/student-financial-services/how-become-fees-arranged\">\"Fees Arranged\"</a> or access to LEARN may be affected.</p>\n</div>\n",
+      "importantDateType": "Financial",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 12,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-08-22T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 12,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2018-12-13T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 12,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-04-24T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Fees deadline",
+        "Fees due",
+        "Tuition due",
+        "Tuition deadline",
+        "Payment due",
+        "Payment deadline",
+        "Due date"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Fees deadline;Fees due;Tuition due;Tuition deadline;Payment due;Payment deadline;Due date"
+    },
+    {
+      "id": 13,
+      "name": "Late fees begin",
+      "description": "<div class=\"body\">\n\t<p>See <a href=\"https://uwaterloo.ca/finance/student-financial-services\">Student Financial Services</a> website.</p>\n</div>\n",
+      "importantDateType": "Financial",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 13,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-08-23T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 13,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2018-12-14T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 13,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-04-25T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Late payment",
+        "Late penalty",
+        "Late tuition",
+        "Fees",
+        "Late"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Late payment;Late penalty;Late tuition;Fees;Late"
+    },
+    {
+      "id": 14,
+      "name": "Undergraduate student orientation",
+      "description": "<p>For students enrolling for the first time at Waterloo; see <a href=\"https://uwaterloo.ca/orientation/\">Orientation website</a>.</p>\n",
+      "importantDateType": "Event",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 14,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-09-02T00:00:00",
+          "endDate": "2018-09-08T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 14,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-01-05T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 14,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-05-05T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Frosh week",
+        "O week",
+        "Welcome week",
+        "orientation week"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Frosh week;O week;Welcome week;orientation week"
+    },
+    {
+      "id": 15,
+      "name": "Last day to select examination centres",
+      "description": "<p>For online courses; login to <a href=\"https://uwaterloo.ca/quest/home\">Quest</a>.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 15,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-09-16T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 15,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-01-13T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 15,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-05-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Online exam",
+        "Online final",
+        "Location centre",
+        "Exam centre",
+        "Select exam",
+        "Choose exam",
+        "Change exam"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Online exam;Online final;Location centre;Exam centre;Select exam;Choose exam;Change exam"
+    },
+    {
+      "id": 16,
+      "name": "Last day to add a class",
+      "description": "<p>See <a href=\"https://uwaterloo.ca/quest/undergraduate-students#class-and-exams\">How to create your class schedule</a>.</p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 16,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-09-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 16,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-01-20T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 16,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-05-17T00:00:00",
+          "endDate": null,
+          "notes": "Changed on January 15/19 (was May 19, 2019)."
+        }
+      ],
+      "keywords": [
+        "Add courses",
+        "Add classes",
+        "Change schedule",
+        "Open enrolment",
+        "Enrol",
+        "Class enrol",
+        "Course enrol",
+        "appointment"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Add courses;Add classes;Change schedule;Open enrolment;Enrol;Class enrol;Course enrol;appointment"
+    },
+    {
+      "id": 17,
+      "name": "Drop with WD begins",
+      "description": "<p>WD (Withdrew, no credit granted) grade assigned for class(es) <a href=\"https://uwaterloo.ca/quest/help/students/how-do-i/drop-classes\">dropped</a> during this period.</p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 17,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-09-27T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 17,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-01-26T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 17,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-05-25T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Drop",
+        "drop course",
+        "drop class",
+        "Change schedule",
+        "Course withdrawal",
+        "Class withdrawal",
+        "Withdraw",
+        "Withdrawal",
+        "penalty"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Drop;drop course;drop class;Change schedule;Course withdrawal;Class withdrawal;Withdraw;Withdrawal;penalty"
+    },
+    {
+      "id": 18,
+      "name": "Drop with WD ends",
+      "description": "<div class=\"important-dates__description\">\n\t<p>Last day to <a href=\"https://uwaterloo.ca/quest/help/students/how-do-i/drop-classes\">drop</a> a class and receive a WD (Withdrew, no credit granted) grade.</p>\n</div>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 18,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-11-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 18,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-03-22T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 18,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-07-16T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "drop class",
+        "drop course",
+        "Change schedule",
+        "Course withdrawal",
+        "Class withdrawal",
+        "Withdraw",
+        "Withdrawal",
+        "penalty"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "drop class;drop course;Change schedule;Course withdrawal;Class withdrawal;Withdraw;Withdrawal;penalty"
+    },
+    {
+      "id": 19,
+      "name": "Final examination schedules released",
+      "description": "<p>Go to <a href=\"https://uwaterloo.ca/registrar/final-examinations/exam-schedule\">on-campus</a> and <a href=\"https://uwaterloo.ca/quest/help/students/how-do-i/online-exam-schedule\">online</a> schedules.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 19,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-09-28T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 19,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-01-31T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 19,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-05-29T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Exams",
+        "Final exams",
+        "Exam schedule"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Exams;Final exams;Exam schedule"
+    },
+    {
+      "id": 20,
+      "name": "Adjust online course examination location",
+      "description": "<p>See <a href=\"https://uwaterloo.ca/quest/help/students/how-do-i/online-exam-schedule\">How do I view my online course exam schedule?</a></p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 20,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-09-28T00:00:00",
+          "endDate": "2018-10-19T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 20,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-01-31T00:00:00",
+          "endDate": "2019-02-19T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 20,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-05-24T00:00:00",
+          "endDate": "2019-06-14T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Online exam",
+        "Online final",
+        "Location centre",
+        "Exam centre",
+        "Select exam",
+        "Choose exam",
+        "Change exam"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Online exam;Online final;Location centre;Exam centre;Select exam;Choose exam;Change exam"
+    },
+    {
+      "id": 21,
+      "name": "Convocation - spring 2019",
+      "description": "<p>Visit <a href=\"https://uwaterloo.ca/convocation/ceremonies/ceremony-dates-and-times\">Convocation website</a> for ceremony details.</p>\n",
+      "importantDateType": "Event",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 21,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-06-11T00:00:00",
+          "endDate": "2019-06-15T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Graduation",
+        "Grad",
+        "Graduation ceremony",
+        "Convocation ceremony",
+        "Ceremony"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Graduation;Grad;Graduation ceremony;Convocation ceremony;Ceremony"
+    },
+    {
+      "id": 22,
+      "name": "Tuition and fee refund deadline - 50%",
+      "description": "<p>See <a href=\"https://uwaterloo.ca/finance/student-financial-services\">Student Financial Services website</a>.</p>\n\n<p>*Graduate students: complete your program or withdraw by this date to receive a refund.</p>\n",
+      "importantDateType": "Financial",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 22,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-10-24T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 22,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-02-15T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 22,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-06-21T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Refund deadline",
+        "Withdraw deadline",
+        "Fee refund",
+        "50 percent",
+        "Half refund",
+        "Drop",
+        "drop course",
+        "drop class"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Refund deadline;Withdraw deadline;Fee refund;50 percent;Half refund;Drop;drop course;drop class"
+    },
+    {
+      "id": 23,
+      "name": "University holiday closure",
+      "description": "<p>No classes and offices closed</p>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 23,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-12-24T00:00:00",
+          "endDate": "2018-12-31T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off",
+        "No classes",
+        "Christmas break"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off;No classes;Christmas break"
+    },
+    {
+      "id": 24,
+      "name": "Convocation - fall 2018",
+      "description": "<p>Visit <a href=\"https://uwaterloo.ca/convocation/ceremonies/ceremony-dates-and-times\">Convocation website</a> for ceremony details.</p>\n",
+      "importantDateType": "Event",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 24,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-10-26T00:00:00",
+          "endDate": "2018-10-27T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Graduation",
+        "Grad",
+        "Graduation ceremony",
+        "Convocation ceremony",
+        "Ceremony"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Graduation;Grad;Graduation ceremony;Convocation ceremony;Ceremony"
+    },
+    {
+      "id": 25,
+      "name": "Tuition and fee arrangement deadline",
+      "description": "<p>Undergraduate students: After this date, a <a href=\"https://uwaterloo.ca/forms/undergraduate-studies/late-fees-arrangement\">Late Fees Arrangement form</a> is required to become <a href=\"https://uwaterloo.ca/finance/student-financial-services\">\"Fees Arranged\"</a>.</p>\n",
+      "importantDateType": "Financial",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 25,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-10-31T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 25,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-01-31T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 25,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-06-30T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "fees arrangement",
+        "Fees",
+        "Tuition"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "fees arrangement;Fees;Tuition"
+    },
+    {
+      "id": 26,
+      "name": "New Year's Day",
+      "description": "<p>No classes and offices closed</p>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 26,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-01-01T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off"
+    },
+    {
+      "id": 27,
+      "name": "Drop with WF begins",
+      "description": "<div class=\"body\">\n\t<p>WF (Withdrew/Failure, no credit granted, value 32) grade assigned for class(es) dropped during this period.</p>\n\n\t<p><strong>Engineering students</strong>: Visit <a href=\"http://ugradcalendar.uwaterloo.ca/page/ENG-Examinations-and-Promotions-Rules\">course load</a> and <a href=\"http://ugradcalendar.uwaterloo.ca/page/ENG-Voluntary-Withdrawals-1\">withdrawal</a> in the Undergraduate Calendar for specific regulations.</p>\n</div>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 27,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-11-20T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 27,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-03-23T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 27,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-07-17T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "drop course",
+        "drop class",
+        "Change schedule",
+        "Course withdrawal",
+        "Class withdrawal",
+        "Withdraw",
+        "penalty"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "drop course;drop class;Change schedule;Course withdrawal;Class withdrawal;Withdraw;penalty"
+    },
+    {
+      "id": 28,
+      "name": "Make-up day for Canada Day",
+      "description": "<p>The loss of a Monday class on July 1 will be made up by following a Monday schedule on July 2.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 28,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-07-02T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Make-up day",
+        "Schedule"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Make-up day;Schedule"
+    },
+    {
+      "id": 29,
+      "name": "Make-up day for Victoria Day",
+      "description": "<p>The loss of a Monday class on May 20 will be made up by following a Monday schedule on July 29.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 29,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-07-29T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Make-up day",
+        "Schedule"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Make-up day;Schedule"
+    },
+    {
+      "id": 30,
+      "name": "Classes end",
+      "description": "<p><a href=\"https://www.wlu.ca/\">Laurier</a> may have a different schedule - visit their website for applicable end dates.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 30,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-12-03T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 30,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-04-05T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 30,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-07-30T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Lectures end",
+        "Courses end",
+        "term ends",
+        "Last day"
+      ],
+      "audiences": [
+        "Undergraduate students",
+        "Graduate students"
+      ],
+      "audienceString": "Undergraduate students;Graduate students",
+      "keywordString": "Lectures end;Courses end;term ends;Last day"
+    },
+    {
+      "id": 31,
+      "name": "Labour Day",
+      "description": "<p>No classes and offices closed</p>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 31,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-09-03T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off"
+    },
+    {
+      "id": 32,
+      "name": "Victoria Day",
+      "description": "<p>All classes cancelled and offices closed</p>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 32,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-05-20T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off",
+        "No classes"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off;No classes"
+    },
+    {
+      "id": 33,
+      "name": "Thanksgiving Day",
+      "description": "<p>All classes cancelled and offices closed</p>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 33,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-10-08T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off",
+        "No classes"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off;No classes"
+    },
+    {
+      "id": 34,
+      "name": "Family Day",
+      "description": "<p>All classes cancelled and offices closed</p>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 34,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-02-18T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off",
+        "No classes"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off;No classes"
+    },
+    {
+      "id": 35,
+      "name": "Canada Day",
+      "description": "<p>All classes cancelled and offices closed</p>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 35,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-07-01T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off",
+        "No classes"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off;No classes"
+    },
+    {
+      "id": 36,
+      "name": "Good Friday",
+      "description": "<p>All classes cancelled and offices closed</p>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 36,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-04-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off",
+        "No classes"
+      ],
+      "audiences": [
+        "Undergraduate students",
+        "Graduate students"
+      ],
+      "audienceString": "Undergraduate students;Graduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off;No classes"
+    },
+    {
+      "id": 37,
+      "name": "Make-up day for Thanksgiving Day",
+      "description": "<p>The loss of a Monday class on October 8 will be made up by following a Monday schedule on December 3.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 37,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-12-03T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Make-up day",
+        "Schedule"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Make-up day;Schedule"
+    },
+    {
+      "id": 38,
+      "name": "Make-up day for July 2",
+      "description": "<p>The loss of a Tuesday class on July 2 will be made up by following a Tuesday schedule on July 30.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 38,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-07-30T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Make-up day",
+        "Schedule"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Make-up day;Schedule"
+    },
+    {
+      "id": 39,
+      "name": "Pre-examination study days",
+      "description": null,
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 39,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-12-04T00:00:00",
+          "endDate": "2018-12-05T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 39,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-04-08T00:00:00",
+          "endDate": "2019-04-09T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 39,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-07-31T00:00:00",
+          "endDate": "2019-08-01T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Study days",
+        "Study break",
+        "Exam break",
+        "No classes",
+        "No courses",
+        "No lectures"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Study days;Study break;Exam break;No classes;No courses;No lectures"
+    },
+    {
+      "id": 40,
+      "name": "Drop with WF ends",
+      "description": "<p>Last day to <a href=\"https://uwaterloo.ca/quest/help/students/how-do-i/drop-classes\">drop</a> a class without a petition and receive a WF (Withdrew/Failure, no credit granted, value 32) grade.</p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 40,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-12-05T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 40,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-04-09T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 40,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-08-01T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "drop course",
+        "drop class",
+        "Change schedule",
+        "Course withdrawal",
+        "Class withdrawal",
+        "Withdraw",
+        "Withdrawal",
+        "penalty"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "drop course;drop class;Change schedule;Course withdrawal;Class withdrawal;Withdraw;Withdrawal;penalty"
+    },
+    {
+      "id": 41,
+      "name": "On-campus examinations begin",
+      "description": null,
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 41,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-12-06T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 41,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-04-10T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 41,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-08-02T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Exams",
+        "Examination",
+        "Exam schedule",
+        "Final exams"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Exams;Examination;Exam schedule;Final exams"
+    },
+    {
+      "id": 42,
+      "name": "On-campus examinations end",
+      "description": null,
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 42,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-12-21T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 42,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-04-27T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 42,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-08-16T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Exams",
+        "Examination",
+        "Exam schedule",
+        "Final exams"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Exams;Examination;Exam schedule;Final exams"
+    },
+    {
+      "id": 43,
+      "name": "Online class examination - day 1",
+      "description": null,
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 43,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-12-07T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 43,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-04-12T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 43,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-08-02T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Exams",
+        "Examination",
+        "Exam schedule",
+        "Final exams"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Exams;Examination;Exam schedule;Final exams"
+    },
+    {
+      "id": 44,
+      "name": "Online class examination - day 2",
+      "description": null,
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 44,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-12-08T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 44,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-04-13T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 44,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-08-10T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Exams",
+        "Examination",
+        "Exam schedule",
+        "Final exams"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Exams;Examination;Exam schedule;Final exams"
+    },
+    {
+      "id": 45,
+      "name": "Co-operative work term ends",
+      "description": "<p>Actual dates may vary depending on employer or student requirements.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 45,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-12-21T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 45,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-04-26T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 45,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-08-23T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "coop",
+        "co-op",
+        "work placement"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "coop;co-op;work placement"
+    },
+    {
+      "id": 46,
+      "name": "Grades begin to appear in Quest",
+      "description": "<p>Registered students can <a href=\"https://uwaterloo.ca/quest/help/students/how-do-i/term-grades\">view their unofficial term grades</a> in Quest.</p>\n\n<p>Note: Not all grades will be available on this date.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 46,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-12-22T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 46,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-04-28T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 46,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-08-17T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Marks",
+        "Grades",
+        "Final grades",
+        "Final marks",
+        "Unofficial grades",
+        "Unofficial marks",
+        "grades posted",
+        "marks posted"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Marks;Grades;Final grades;Final marks;Unofficial grades;Unofficial marks;grades posted;marks posted"
+    },
+    {
+      "id": 47,
+      "name": "Drop/Add period begins",
+      "description": "<p>The Drop/Add period begins with individualized Quest appointment times. See <a href=\"https://uwaterloo.ca/quest/help/students/how-do-i/view-my-appointment-time-beginning-drop-add\">How to view appointment time for the beginning of drop/add</a>.</p>\n\n<p>Dates listed indicate Quest appointment period. The Add period continues for all students until the <a href=\"/important-dates/2018-2019/last-day-add-class\">last day to add a class</a>.</p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 47,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2018-11-19T00:00:00",
+          "endDate": "2018-11-20T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 47,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-03-25T00:00:00",
+          "endDate": "2019-03-26T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Add classes",
+        "Add courses",
+        "drop course",
+        "drop class",
+        "Change schedule",
+        "Course withdrawal",
+        "Class withdrawal",
+        "Withdraw",
+        "Withdrawal",
+        "Open enrolment",
+        "Enrol",
+        "Class enrol",
+        "Course enrol",
+        "appointment"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Add classes;Add courses;drop course;drop class;Change schedule;Course withdrawal;Class withdrawal;Withdraw;Withdrawal;Open enrolment;Enrol;Class enrol;Course enrol;appointment"
+    },
+    {
+      "id": 48,
+      "name": "Drop/Add period begins - new students",
+      "description": "<div class=\"important-dates__description\">\n\t<p>The Drop/Add period begins with individualized Quest appointment times. See <a href=\"https://uwaterloo.ca/quest/help/students/how-do-i/view-my-appointment-time-beginning-drop-add\">How to view appointment time for the beginning of drop/add</a>.</p>\n\n\t<p>Date listed indicates Quest appointment period. The Add period continues for all students until the <a href=\"https://pilots.uwaterloo.ca/important-dates/2018-2019/last-day-add-class\">last day to add a class</a>.</p>\n</div>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 48,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-07-19T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Add courses",
+        "Add classes",
+        "drop class",
+        "drop course",
+        "Change schedule",
+        "Course withdrawal",
+        "Class withdrawal",
+        "Withdraw",
+        "Withdrawal",
+        "Open enrolment",
+        "Class enrol",
+        "Course enrol",
+        "appointment"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Add courses;Add classes;drop class;drop course;Change schedule;Course withdrawal;Class withdrawal;Withdraw;Withdrawal;Open enrolment;Class enrol;Course enrol;appointment"
+    },
+    {
+      "id": 49,
+      "name": "Course selection",
+      "description": "<p>See <a href=\"https://uwaterloo.ca/quest/help/students/how-do-i/select-courses-future-term\">How do I select courses for a future term?</a></p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 49,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2018-09-27T00:00:00",
+          "endDate": "2018-10-04T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 49,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-01-28T00:00:00",
+          "endDate": "2019-02-07T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Class selection",
+        "Selection",
+        "Select courses",
+        "Select classes",
+        "Pick classes",
+        "Pick courses",
+        "Registration",
+        "Register",
+        "Class registration",
+        "Course registration",
+        "Class enrolment",
+        "Course enrolment",
+        "Add courses",
+        "Add classes",
+        "Choose classes",
+        "choose courses"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Class selection;Selection;Select courses;Select classes;Pick classes;Pick courses;Registration;Register;Class registration;Course registration;Class enrolment;Course enrolment;Add courses;Add classes;Choose classes;choose courses"
+    },
+    {
+      "id": 50,
+      "name": "Course selection - new students",
+      "description": "<p>To determine if you need to participate in the course selection period, see the <a href=\"https://uwaterloo.ca/new-student-course-selection/\">New Student Course Selection website</a>.</p>\n\n<p>See <a href=\"https://uwaterloo.ca/quest/help/students/how-do-i/select-courses-future-term\">How do I select courses for a future term?</a></p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 50,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-07-03T00:00:00",
+          "endDate": "2018-07-09T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Class selection",
+        "Selection",
+        "Select courses",
+        "Select classes",
+        "Pick classes",
+        "Pick courses",
+        "Registration",
+        "Register",
+        "Class registration",
+        "Course registration",
+        "Class enrolment",
+        "Course enrolment",
+        "Add courses",
+        "Add classes",
+        "Choose classes",
+        "choose courses"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Class selection;Selection;Select courses;Select classes;Pick classes;Pick courses;Registration;Register;Class registration;Course registration;Class enrolment;Course enrolment;Add courses;Add classes;Choose classes;choose courses"
+    },
+    {
+      "id": 51,
+      "name": "Civic Day",
+      "description": "<p>All classes cancelled and offices closed</p>\n",
+      "importantDateType": "University closure",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 51,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-08-05T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Holiday",
+        "University closed",
+        "Closure",
+        "Day off",
+        "No classes"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Holiday;University closed;Closure;Day off;No classes"
+    },
+    {
+      "id": 52,
+      "name": "Course selection - returning students",
+      "description": "<p>See <a href=\"https://uwaterloo.ca/quest/help/students/how-do-i/select-courses-future-term\">How do I select courses for a future term?</a></p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 52,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-05-23T00:00:00",
+          "endDate": "2018-05-28T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Class selection",
+        "Selection",
+        "Select courses",
+        "Select classes",
+        "Pick classes",
+        "Pick courses",
+        "Registration",
+        "Register",
+        "Class registration",
+        "Course registration",
+        "Class enrolment",
+        "Course enrolment",
+        "Add courses",
+        "Add classes",
+        "Choose classes",
+        "choose courses"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Class selection;Selection;Select courses;Select classes;Pick classes;Pick courses;Registration;Register;Class registration;Course registration;Class enrolment;Course enrolment;Add courses;Add classes;Choose classes;choose courses"
+    },
+    {
+      "id": 53,
+      "name": "Drop/Add period begins - returning students",
+      "description": "<p>The Drop/Add period begins with individualized Quest appointment times. See <a href=\"https://uwaterloo.ca/quest/help/students/how-do-i/view-my-appointment-time-beginning-drop-add\">How to view appointment time for the beginning of drop/add</a>.</p>\n\n<p>Dates listed indicate Quest appointment period. The Add period continues for all students until the <a href=\"/important-dates/2018-2019/last-day-add-class\">last day to add a class</a>.</p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 53,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-07-23T00:00:00",
+          "endDate": "2018-07-24T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Add classes",
+        "Add courses",
+        "drop course",
+        "drop class",
+        "Change schedule",
+        "Course withdrawal",
+        "Class withdrawal",
+        "Withdraw",
+        "Withdrawal",
+        "Open enrolment",
+        "Enrol",
+        "Class enrol",
+        "Course enrol",
+        "appointment"
+      ],
+      "audiences": [
+        "Undergraduate students"
+      ],
+      "audienceString": "Undergraduate students",
+      "keywordString": "Add classes;Add courses;drop course;drop class;Change schedule;Course withdrawal;Class withdrawal;Withdraw;Withdrawal;Open enrolment;Enrol;Class enrol;Course enrol;appointment"
+    },
+    {
+      "id": 54,
+      "name": "Class enrolment period",
+      "description": "<p>Graduate students who are not fee arranged and have enrolled in classes will have their classes dropped at the end of the third week of classes (end of class enrolment period).</p>\n",
+      "importantDateType": "Class registration",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 54,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2018-12-03T00:00:00",
+          "endDate": "2019-01-27T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 54,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-04-01T00:00:00",
+          "endDate": "2019-05-26T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Course selection",
+        "Class selection",
+        "Class registration",
+        "Course registration",
+        "Class enrolment",
+        "Course enrolment",
+        "Add courses",
+        "Add classes",
+        "Open enrolment",
+        "Enrol",
+        "drop course",
+        "Drop/Add period",
+        "Drop/Add"
+      ],
+      "audiences": [
+        "Graduate students"
+      ],
+      "audienceString": "Graduate students",
+      "keywordString": "Course selection;Class selection;Class registration;Course registration;Class enrolment;Course enrolment;Add courses;Add classes;Open enrolment;Enrol;drop course;Drop/Add period;Drop/Add"
+    },
+    {
+      "id": 55,
+      "name": "Program completion deadline for Convocation - spring 2019",
+      "description": null,
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 55,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-04-30T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Program completion",
+        "Completion deadline",
+        "Complete"
+      ],
+      "audiences": [
+        "Graduate students"
+      ],
+      "audienceString": "Graduate students",
+      "keywordString": "Program completion;Completion deadline;Complete"
+    },
+    {
+      "id": 56,
+      "name": "Graduate student orientation",
+      "description": "<p>Visit the <a href=\"https://uwaterloo.ca/orientation/graduate-students\">Student Success Office website</a> for information about graduate student orientation.</p>\n",
+      "importantDateType": "Event",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 56,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-05-05T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 56,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-05-10T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Welcome week",
+        "orientation week"
+      ],
+      "audiences": [
+        "Graduate students"
+      ],
+      "audienceString": "Graduate students",
+      "keywordString": "Welcome week;orientation week"
+    },
+    {
+      "id": 57,
+      "name": "Term begins",
+      "description": null,
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 57,
+          "termId": 0,
+          "termName": "Fall 2018",
+          "startDate": "2018-09-01T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 57,
+          "termId": 0,
+          "termName": "Winter 2019",
+          "startDate": "2019-01-01T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 57,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-05-01T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": null,
+      "audiences": [
+        "Graduate students"
+      ],
+      "audienceString": "Graduate students",
+      "keywordString": null
+    },
+    {
+      "id": 58,
+      "name": "Program completion deadline for Convocation - fall 2019",
+      "description": null,
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2018 - 2019",
+      "details": [
+        {
+          "importantDateId": 58,
+          "termId": 0,
+          "termName": "Spring 2019",
+          "startDate": "2019-08-31T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Program completion",
+        "Completion deadline",
+        "Complete"
+      ],
+      "audiences": [
+        "Graduate students"
+      ],
+      "audienceString": "Graduate students",
+      "keywordString": "Program completion;Completion deadline;Complete"
+    },
+    {
+      "id": 59,
+      "name": "Pre-examination study days",
+      "description": null,
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2019 - 2020",
+      "details": [
+        {
+          "importantDateId": 59,
+          "termId": 0,
+          "termName": "Fall 2019",
+          "startDate": "2019-12-04T00:00:00",
+          "endDate": "2019-12-05T00:00:00",
+          "notes": null
+        },
+        {
+          "importantDateId": 59,
+          "termId": 0,
+          "termName": "Winter 2020",
+          "startDate": "2020-04-06T00:00:00",
+          "endDate": "2020-04-07T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Study days",
+        "Study break",
+        "Exam break",
+        "No classes",
+        "No courses",
+        "No lectures"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Study days;Study break;Exam break;No classes;No courses;No lectures"
+    },
+    {
+      "id": 61,
+      "name": "Convocation - fall 2019",
+      "description": "<p>Visit <a href=\"https://uwaterloo.ca/convocation/ceremonies/ceremony-dates-and-times\">Convocation website</a> for ceremony details.</p>\n",
+      "importantDateType": "Event",
+      "associatedAcademicYear": "2019 - 2020",
+      "details": [
+        {
+          "importantDateId": 61,
+          "termId": 0,
+          "termName": "Fall 2019",
+          "startDate": "2019-10-25T00:00:00",
+          "endDate": "2019-10-26T00:00:00",
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Graduation",
+        "Grad",
+        "Graduation ceremony",
+        "Convocation ceremony",
+        "Ceremony"
+      ],
+      "audiences": [
+        "Undergraduate students",
+        "Graduate students"
+      ],
+      "audienceString": "Undergraduate students;Graduate students",
+      "keywordString": "Graduation;Grad;Graduation ceremony;Convocation ceremony;Ceremony"
+    },
+    {
+      "id": 62,
+      "name": "Classes end",
+      "description": "<p><a href=\"https://www.wlu.ca/\">Laurier</a> may have a different schedule - visit their website for applicable end dates.</p>\n",
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2019 - 2020",
+      "details": [
+        {
+          "importantDateId": 62,
+          "termId": 0,
+          "termName": "Fall 2019",
+          "startDate": "2019-12-03T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 62,
+          "termId": 0,
+          "termName": "Winter 2020",
+          "startDate": "2020-04-03T00:00:00",
+          "endDate": null,
+          "notes": null
+        },
+        {
+          "importantDateId": 62,
+          "termId": 0,
+          "termName": "Spring 2020",
+          "startDate": "2020-08-05T00:00:00",
+          "endDate": null,
+          "notes": "Revised from July 28 due to COVID-19."
+        }
+      ],
+      "keywords": [
+        "Lectures end",
+        "Courses end",
+        "term ends",
+        "Last day"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Lectures end;Courses end;term ends;Last day"
+    },
+    {
+      "id": 63,
+      "name": "On-campus examinations begin",
+      "description": null,
+      "importantDateType": "Academic",
+      "associatedAcademicYear": "2019 - 2020",
+      "details": [
+        {
+          "importantDateId": 63,
+          "termId": 0,
+          "termName": "Fall 2019",
+          "startDate": "2019-12-06T00:00:00",
+          "endDate": null,
+          "notes": null
+        }
+      ],
+      "keywords": [
+        "Exams",
+        "Examination",
+        "Exam schedule",
+        "Final exams"
+      ],
+      "audiences": [
+        "Graduate students",
+        "Undergraduate students"
+      ],
+      "audienceString": "Graduate students;Undergraduate students",
+      "keywordString": "Exams;Examination;Exam schedule;Final exams"
+    }
+  ]
+}
