@@ -2079,6 +2079,64 @@ test('pathways: placeholders, and a course counts toward two plans at most', () 
   assert.ok(!r.avail[2].has('ECON102') && r.avail[0].has('ECON102'));
 });
 
+test('pathways: co-op study/work sequences, from each chart to each major', () => {
+  const head = (n) => `<tr><th>Plan</th><th>S/S</th>${'<th>F</th><th>W</th><th>S</th>'.repeat(n)}</tr>`;
+  const bmath = `<table>${head(2)}<tr><td rowspan="2">*Computer Science; Data Science</td><td>1</td><td>1A</td><td>1B</td><td>WT</td><td>2A</td><td>WT</td><td>2B</td></tr><tr><td>2</td><td>1A</td><td>1B</td><td>WT</td><td>2A</td><td>2B</td><td>WT</td></tr><tr><td rowspan="2">Business Administration and Computer Science double degree</td><td></td><td>1A</td><td>1B</td><td>WT</td><td>2A</td><td>WT</td><td>2B</td></tr><tr><td></td><td>1A</td><td>1B</td><td>WT</td><td>2A</td><td>2B</td><td>WT</td></tr><tr><td>Mathematics/Teaching</td><td>1</td><td>1A</td><td>1B</td><td>WT</td><td>2A</td><td>†</td><td>†</td></tr><tr><td>*All other majors for the Bachelor of Mathematics</td><td>1</td><td>1A</td><td>1B</td><td>off</td><td>2A</td><td>WT</td><td>2B</td></tr></table>`;
+  const rows = PW.sequences(bmath);
+  assert.deepEqual(rows.map((r) => [r.plans, r.label, r.terms.length, r.cut ?? 0]), [
+    ['Computer Science; Data Science', '1', 6, 0],
+    ['Computer Science; Data Science', '2', 6, 0],
+    ['Business Administration and Computer Science double degree', '', 6, 0],
+    ['Business Administration and Computer Science double degree', '', 6, 0],
+    ['Mathematics/Teaching', '1', 4, 1],
+    ['All other majors for the Bachelor of Mathematics', '1', 6, 0],
+  ], 'a Plan cell spanning rows names each of them; a chart that turns to † stops there');
+  const basc = PW.sequences(`<table>${head(2)}<tr><td>Management, Mechanical, Mechatronics</td><td>8X</td><td>1A</td><td>1B</td><td>WT</td><td>2A</td><td>WT</td><td>2B</td></tr><tr><td>Environmental, Mechanical</td><td>4</td><td>1A</td><td>WT</td><td>1B</td><td>WT</td><td>2A</td><td>2B</td></tr></table>`);
+  const arts = PW.sequences(`<table><tr><th>Plan</th>${'<th>F</th><th>W</th><th>S</th>'.repeat(2)}</tr><tr><td>Arts and Business; Honours Arts co-op majors of Economics, English</td><td>1A</td><td>1B</td><td>off</td><td>2A</td><td>WT</td><td>2B</td></tr><tr><td>Honours Arts co-op plans (excluding majors in Economics, English)</td><td>1A</td><td>1B</td><td>off</td><td>2A</td><td>2B</td><td>WT</td></tr></table>`);
+  const list = [
+    { s: 'bcs', n: 'Bachelor of Computer Science Degree Requirements', t: 'Degree Requirements', f: 'Faculty of Mathematics', seq: rows },
+    { s: 'basc', n: 'Bachelor of Applied Science Degree Requirements', t: 'Degree Requirements', f: 'Faculty of Engineering', seq: basc },
+    { s: 'ba', n: 'Bachelor of Arts Degree Requirements (Arts)', t: 'Degree Requirements', f: 'Faculty of Arts', seq: arts },
+    { s: 'cs', n: 'Computer Science (Bachelor of Computer Science - Honours)', t: 'Major', f: 'Faculty of Mathematics', fi: 'Computer Science', co: 1, re: 1 },
+    { s: 'bbacs', n: 'Business Administration and Computer Science Double Degree (Bachelor of Business Administration and Bachelor of Computer Science - Honours)', t: 'Major', f: 'Faculty of Mathematics', fi: 'Computer Science', co: 1 },
+    { s: 'pm', n: 'Pure Mathematics (Joint Honours)', t: 'Major', f: 'Faculty of Mathematics', fi: 'Pure Mathematics', co: 1 },
+    { s: 'me', n: 'Mechanical Engineering (Bachelor of Applied Science - Honours)', t: 'Major', f: 'Faculty of Engineering', fi: 'Mechanical Engineering', co: 1 },
+    { s: 'econ', n: 'Economics (Bachelor of Arts - Honours)', t: 'Major', f: 'Faculty of Arts', fi: 'Economics', co: 1, re: 1 },
+    { s: 'hist', n: 'History (Bachelor of Arts - Honours)', t: 'Major', f: 'Faculty of Arts', fi: 'History', co: 1, re: 1 },
+    { s: 'anth', n: 'Anthropology (Bachelor of Arts - Four-Year General)', t: 'Major', f: 'Faculty of Arts', fi: 'Anthropology', re: 1 },
+    { s: 'afm', n: 'Accounting and Financial Management (Bachelor of Accounting and Financial Management - Honours)', t: 'Major', f: 'Faculty of Arts', co: 1, seq: [{ label: '1', start: 'F', terms: ['1A', '1B', 'off', '2A'] }, { label: '2', start: 'F', terms: ['1A', '1B', 'WT', '2A'] }] },
+  ];
+  const got = PW.coopSequences(list);
+  const show = (s) => got.get(s)?.map((q) => `${q.label}:${q.terms.join(',')}`);
+  assert.deepEqual(show('cs'), ['Sequence 1:1A,1B,WT,2A,WT,2B', 'Sequence 2:1A,1B,WT,2A,2B,WT']);
+  assert.deepEqual(show('bbacs'), ['Sequence 1:1A,1B,WT,2A,WT,2B', 'Sequence 2:1A,1B,WT,2A,2B,WT'], 'its own rows, not Computer Science’s');
+  assert.deepEqual(show('pm'), ['Sequence 1:1A,1B,off,2A,WT,2B'], 'joint honours: the faculty’s “all other majors”');
+  assert.deepEqual(show('me'), ['Stream 8X:1A,1B,WT,2A,WT,2B', 'Stream 4:1A,WT,1B,WT,2A,2B'], 'engineering charts list streams; “Mechanical” is Mechanical Engineering');
+  assert.deepEqual(show('econ'), ['Co-op:1A,1B,off,2A,WT,2B']);
+  assert.deepEqual(show('hist'), ['Co-op:1A,1B,off,2A,2B,WT'], 'the row for majors the other row leaves out');
+  assert.equal(got.get('anth'), undefined, 'no co-op, no sequence');
+  assert.deepEqual(show('afm'), ['Sequence 1:1A,1B,off,2A', 'Sequence 2:1A,1B,WT,2A'], 'its own chart');
+});
+
+test('pathways: a section with named exceptions', () => {
+  const secs = PW.compactSections([
+    { heading: 'Additional Requirements', tree: [{ type: 'text', text: 'All Bachelor of Mathematics students, with the exceptions of Mathematical Studies and Mathematics/Chartered Professional Accountancy, must complete the following List A courses.' }], lists: [{ heading: 'List A', tree: [{ type: 'rule', lead: 'Complete 1 of the following:', courses: [{ code: 'MATH235' }, { code: 'MATH245' }] }], lists: [] }] },
+    { heading: 'Communication', tree: [{ type: 'rule', lead: 'Complete 1 of the following:', courses: [{ code: 'ENGL109' }, { code: 'COMMST100' }] }], lists: [] },
+  ]);
+  assert.equal(secs[0].ex, 'Mathematical Studies and Mathematics/Chartered Professional Accountancy');
+  assert.equal(secs[0].r[0].info, 1, 'the sentence is a note, not a box to tick');
+  const deg = { s: 'bmath', n: 'Bachelor of Mathematics Degree Requirements', t: 'Degree Requirements', req: secs };
+  const cpa = { s: 'cpa', n: 'Mathematics/Chartered Professional Accountancy (Bachelor of Mathematics - Honours)', t: 'Major', fi: 'Mathematics/Chartered Professional Accountancy' };
+  const pm = { s: 'pm', n: 'Pure Mathematics (Bachelor of Mathematics - Honours)', t: 'Major', fi: 'Pure Mathematics' };
+  const mathJ = { s: 'mj', n: 'Mathematics (Joint Honours)', t: 'Major', fi: 'Mathematics' };
+  const asCpa = PE.forPlans(deg, [cpa, deg]);
+  assert.equal(asCpa.req.length, 2, 'sections keep their places');
+  assert.deepEqual(asCpa.req[0].r, [{ t: 'Not required for Mathematics/Chartered Professional Accountancy students.', info: 1 }]);
+  assert.deepEqual([PE.evaluate(asCpa, new Map()).need, PE.fillItems(asCpa, new Map()).picks.length], [1, 1], 'only the communication course is left');
+  assert.equal(PE.forPlans(deg, [pm, deg]), deg);
+  assert.equal(PE.forPlans(deg, [mathJ, deg]), deg, '“Mathematics” alone isn’t Mathematics/Chartered Professional Accountancy');
+});
+
 test('pathways: filling in a plan, and where its courses go', () => {
   const prog = {
     s: 'me',

@@ -45,7 +45,7 @@ async function loadYear() {
 const labelOf = (y) => yearList.find((x) => x.year === y)?.label ?? data.cat;
 const equiv = new Map(Object.entries(C).filter(([, c]) => c[6]?.length).map(([k, c]) => [k, c[6]]));
 const SLOTS = 7; // columns: 5 is a usual load, 6 an overload, 7 heavy
-const NORMAL = 5;
+let NORMAL = 5; // a usual load; a term-by-term major (engineering) can set more, from its calendar terms
 const KEY = 'uwloo.pathways';
 const TYPE_ORDER = ['Major', 'Minor', 'Specialization', 'Option', 'Diploma', 'Certificate', 'Degree Requirements'];
 
@@ -107,6 +107,7 @@ else {
 }
 for (const r of state.rows) r.c = (r.c ?? []).slice(0, SLOTS);
 let offer = null; // a plan just added: offer to fill in its courses
+let pendingAdopt = null; // a plan from the link (#add=…), adopted once everything's ready
 let undo = null; // {rows, n, names}: the grid before the last fill-in
 // The calendar year (May to April) a start term falls in: Winter 2027 is in 2026–27.
 const startYear = () => 1900 + Number(String(state.start).slice(0, 3)) - (String(state.start).endsWith('1') ? 1 : 0);
@@ -115,7 +116,7 @@ if (hash.startsWith('add=')) {
   const s = decodeURIComponent(hash.slice(4));
   if (bySlug.has(s) && !state.plans.includes(s)) {
     state.plans.push(s);
-    offer = s;
+    pendingAdopt = s;
   }
 }
 if (hash) history.replaceState(null, '', location.pathname);
@@ -155,10 +156,13 @@ function analyze() {
   });
   const plans = state.plans.map((s) => bySlug.get(s)).filter(Boolean);
   const absent = state.plans.filter((s) => !bySlug.has(s));
+  NORMAL = Math.min(SLOTS, Math.max(5, ...plans.filter((p) => p.t === 'Major').map((p) => p.ld ?? 5)));
   const planCtx = plans.map((p) => ({ code: p.c, faculty: p.f, name: p.n }));
   const ticked = new Set(state.ticked);
-  // A course counts toward two academic plans at most (Counting of Courses): engine.js's evaluateAll.
-  const { evals, capped } = E.evaluateAll(plans, planned, { ticked, courses: C });
+  // A course counts toward two academic plans at most (Counting of Courses): engine.js's evaluateAll. Each plan
+  // is read as it applies next to the others (BMath's List A isn't for Math/CPA).
+  const asPicked = plans.map((p) => E.forPlans(p, plans));
+  const { evals, capped } = E.evaluateAll(asPicked, planned, { ticked, courses: C });
   const before = new Set();
   const flags = state.rows.map(() => []);
   state.rows.forEach((r, i) => {
@@ -201,7 +205,7 @@ function analyze() {
     });
     for (const code of same) before.add(code);
   });
-  A = { lv, planned, plans, evals, flags, capped, absent, keys };
+  A = { lv, planned, plans, asPicked, evals, flags, capped, absent, keys };
   return A;
 }
 
@@ -239,13 +243,17 @@ function render() {
 function barHtml() {
   const starts = [];
   for (let y = Number(data.term.slice(0, 3)) - 6; y <= Number(data.term.slice(0, 3)) + 1; y++) starts.push(`${y}9`);
-  const seqs = [];
-  const deg = degreeFor(A.plans);
-  for (const p of [...A.plans, ...(deg ? [deg] : [])]) for (const [k, sq] of (p.seq ?? []).entries()) seqs.push({ id: `${p.s}:${k}`, label: `${/^\d+$/.test(sq.label) ? `Sequence ${sq.label}` : sq.label} (${p.n.replace(/ Degree Requirements.*/, '')})` });
+  // Each major's co-op sequences, from the calendar's study/work charts.
+  const groups = A.plans.filter((p) => p.t === 'Major' && p.seq?.length).map((p) => ({ p, opts: p.seq.map((_, k) => ({ id: `${p.s}:${k}`, label: seqLabel(p.s, k) })) }));
+  const values = ['regular', 'all', ...groups.flatMap((g) => g.opts.map((o) => o.id))];
+  const cur = currentPattern(values);
+  const reg = patternFor('regular');
+  const regLen = lengthOf(reg.start, reg.kinds);
+  const short = (n) => n.replace(/\s*\(.*$/, '');
   return `<div class="pw-bar">
   <label>Starts <select id="pw-start">${starts.map((t) => `<option value="${t}"${t === state.start ? ' selected' : ''}>${esc(E.termName(t))}</option>`).join('')}</select></label>
   <span class="pw-cal t" title="Requirements follow the calendar of the year you started">${esc(labelOf(calYear))} rules${calYear > startYear() ? ' (the earliest here)' : calYear < startYear() ? ' (the newest here)' : ''}</span>
-  <label>Terms <select id="pw-seq"><option value="">Keep my rows</option><option value="regular">Regular: Fall and Winter, Spring off</option><option value="all">Every term</option>${seqs.map((s) => `<option value="${esc(s.id)}">Co-op ${esc(s.label)}</option>`).join('')}</select></label>
+  <label>Terms <select id="pw-seq">${cur ? '' : '<option value="" selected>Your own terms</option>'}<option value="regular"${cur === 'regular' ? ' selected' : ''}>Regular: Fall and Winter, Spring off · ${esc(yearsText(regLen.terms))}</option><option value="all"${cur === 'all' ? ' selected' : ''}>Every term, no breaks</option>${groups.map((g) => `<optgroup label="Co-op: ${esc(short(g.p.n))}">${g.opts.map((o) => `<option value="${esc(o.id)}"${cur === o.id ? ' selected' : ''}>${esc(o.label)}</option>`).join('')}</optgroup>`).join('')}</select></label>
   <span class="pw-tools"><button type="button" data-act="tsv">Copy as a table</button><button type="button" data-act="link">Copy link</button><button type="button" data-act="reset">Start over</button><span class="t" id="pw-done" role="status"></span></span>
 </div>`;
 }
@@ -276,10 +284,23 @@ function plansHtml() {
   }
   const deg = degreeFor(A.plans);
   const offered = offer && A.plans.find((p) => p.s === offer);
+  // Co-op: the sequence it took (co-op-only majors), or its sequences to pick from.
+  let coop = '';
+  if (offered?.t === 'Major' && offered.seq?.length) {
+    const named = (k) => (offered.seq[k].label === 'Co-op' ? 'co-op sequence' : `co-op ${offered.seq[k].label}`);
+    if (coopNote?.slug === offered.s) coop = ` <span>Your terms follow its ${esc(named(coopNote.k))} (${esc(seqLabel(offered.s, coopNote.k).split(' · ')[1] ?? '')})${offered.seq.length > 1 ? '; the others are under <b>Terms</b>' : ''}.</span>`;
+    else {
+      const opts = offered.seq.slice(0, 4).map((sq, k) => {
+        const p = patternFor(`${offered.s}:${k}`);
+        return `<button type="button" class="pw-linkbtn" data-seq="${esc(offered.s)}:${k}">${esc(sq.label === 'Co-op' ? 'Use its co-op sequence' : sq.label)}</button> (${esc(yearsText(lengthOf(p.start, p.kinds).terms))})`;
+      });
+      coop = ` <span>Co-op? ${opts.join(', ')}${offered.seq.length > 4 ? ', more under <b>Terms</b>' : ''}</span>`;
+    }
+  }
   return `<div class="pw-plans"><ul>${chips}</ul>
 <form class="pw-addplan" id="pw-addplan" autocomplete="off"><label class="vh" for="pw-pq">Add a plan</label><input id="pw-pq" placeholder="${A.plans.length ? 'Add a minor, option, specialization…' : 'Add your major, minors, options…'}" role="combobox" aria-expanded="false" aria-controls="pw-psugg" spellcheck="false"><ul id="pw-psugg" class="pw-sugg" role="listbox" hidden></ul></form>
 ${A.plans.length ? '<button type="button" class="pw-fillbtn" data-act="fill">Fill in courses…</button>' : ''}
-${undo ? `<p class="pw-offer" role="status"><span>Added ${plural(undo.n, 'course')} from ${undo.names.length > 2 ? `${undo.names.length} plans` : esc(undo.names.join(' and '))}.</span> <button type="button" class="pw-linkbtn" data-act="undo">Undo</button></p>` : offered ? `<p class="pw-offer" role="status"><span>Added <b>${esc(offered.n)}</b>.</span> <button type="button" class="pw-fillbtn" data-act="fill" data-only="${esc(offered.s)}">Fill in its courses</button> <button type="button" class="pw-linkbtn" data-act="nooffer">Not now</button></p>` : ''}
+${undo ? `<p class="pw-offer" role="status"><span>Added ${plural(undo.n, 'course')} from ${undo.names.length > 2 ? `${undo.names.length} plans` : esc(undo.names.join(' and '))}.</span> <button type="button" class="pw-linkbtn" data-act="undo">Undo</button></p>` : offered ? `<p class="pw-offer" role="status"><span>Added <b>${esc(offered.n)}</b>.</span>${coop} <button type="button" class="pw-fillbtn" data-act="fill" data-only="${esc(offered.s)}">Fill in its courses</button> <button type="button" class="pw-linkbtn" data-act="nooffer">Not now</button></p>` : ''}
 ${deg ? `<p class="pw-hint">Add the <button type="button" class="pw-linkbtn" data-plan="${esc(deg.s)}">${esc(deg.n)}</button> too, for the degree’s own rules.</p>` : ''}
 ${notes.map((w) => `<p class="pw-hint">${w}</p>`).join('')}
 ${warns.map((w) => `<p class="pw-warn">${w}</p>`).join('')}</div>`;
@@ -368,11 +389,13 @@ function sideHtml() {
     else if (toPlan <= free) fit = `<p>About <b>${plural(toPlan, 'more course')}</b> to place. They fit in your ${plural(study.length, 'study term')} at ${NORMAL} a term (${plural(free, 'open slot')}).</p>`;
     else {
       const extra = toPlan - free;
-      fit = `<p>About <b>${plural(toPlan, 'more course')}</b> to place, <b>${extra} more</b> than fit at ${NORMAL} a term. That’s ${plural(Math.ceil(extra / NORMAL), 'extra term')}, or a 6th course in ${plural(extra, 'term')}${extra > study.length ? ' (more overloads than you have terms)' : ''}.</p>`;
+      fit = `<p>About <b>${plural(toPlan, 'more course')}</b> to place, <b>${extra} more</b> than fit at ${NORMAL} a term. That’s ${plural(Math.ceil(extra / NORMAL), 'extra term')}${NORMAL < SLOTS ? `, or ${NORMAL + 1} courses in ${plural(extra, 'term')}${extra > study.length ? ' (more overloads than you have terms)' : ''}` : ''}.</p>`;
     }
   }
   const unitLine = degreeUnits ? `<p>${units(plannedU)} of ${units(degreeUnits)} units planned.</p>` : `<p>${plural(plannedN, 'course')} planned, ${units(plannedU)} units.</p>`;
-  const summary = `<section class="pw-box"><h2>Your degree</h2>${unitLine}<p>${plural(study.length, 'study term')}${over ? `, ${plural(over, 'with an overload', 'with overloads')}` : ''}.</p>${fit}${gaps ? `<p class="t">Counted from requirements that name courses; ones in words that the grid can’t check are ticked by hand below.</p>` : ''}</section>`;
+  const len = lengthOf(state.start, state.rows.map((r) => r.k));
+  const span = len.terms ? ` ${esc(E.termName(state.start))} to ${esc(E.termName(len.end))}: <b>${esc(yearsText(len.terms))}</b>.` : '';
+  const summary = `<section class="pw-box"><h2>Your degree</h2>${unitLine}<p>${plural(study.length, 'study term')}${len.work ? ` and ${plural(len.work, 'work term')}` : ''}${over ? `, ${plural(over, 'with an overload', 'with overloads')}` : ''}.${span}</p>${fit}${gaps ? `<p class="t">Counted from requirements that name courses; ones in words that the grid can’t check are ticked by hand below.</p>` : ''}</section>`;
   const checklists = A.plans.map((p, k) => checklistHtml(p, A.evals[k], k)).join('');
   return `${summary}${checklists}${directionsShell()}`;
 }
@@ -706,10 +729,19 @@ app.addEventListener('click', async (e) => {
   if (pl) {
     if (!state.plans.includes(pl.dataset.plan)) {
       state.plans.push(pl.dataset.plan);
-      offer = pl.dataset.plan;
+      analyze();
+      adopt(pl.dataset.plan);
     }
     const pq = document.getElementById('pw-pq');
     if (pq) pq.value = '';
+    render();
+    return;
+  }
+  const seqBtn = t.closest('[data-seq]');
+  if (seqBtn) {
+    const [slug, k] = seqBtn.dataset.seq.split(':');
+    resequence(seqBtn.dataset.seq);
+    coopNote = { slug, k: Number(k) };
     render();
     return;
   }
@@ -801,32 +833,111 @@ app.addEventListener('change', async (e) => {
   }
 });
 
-/** A new pattern of terms; each study term keeps its courses in order. */
-function resequence(value) {
-  const studies = state.rows.filter((r) => r.k === 's').map((r) => r.c);
-  let kinds;
-  if (value === 'regular' || value === 'all') {
-    kinds = [];
-    let t = state.start;
-    let n = 0;
-    while (n < Math.max(8, studies.length)) {
-      const k = value === 'all' || E.seasonOf(t) !== 'S' ? 's' : 'o';
+// ---------------- terms: regular, every term, or a co-op sequence ----------------
+
+const THIRD = ['', '⅓', '⅔'];
+/** 13 terms → "4⅓ years". */
+const yearsText = (n) => `${Math.floor(n / 3) || ''}${THIRD[n % 3]} ${n === 3 ? 'year' : 'years'}`.trim();
+/** How long a pattern of terms runs: through its last study or work term, plus the summer after a Winter end. */
+function lengthOf(start, kinds) {
+  let last = -1;
+  kinds.forEach((k, i) => {
+    if (k !== 'o') last = i;
+  });
+  if (last < 0) return { terms: 0, end: start, study: 0, work: 0 };
+  let end = start;
+  for (let i = 0; i < last; i++) end = E.nextTerm(end);
+  return { terms: last + 1 + (E.seasonOf(end) === 'W' ? 1 : 0), end, study: kinds.filter((k) => k === 's').length, work: kinds.filter((k) => k === 'c').length };
+}
+/** Study terms a regular degree takes: six for a three-year general major, else eight. */
+const regularStudy = () => (A?.plans.some((p) => p.t === 'Major' && /Three-Year General/.test(p.n)) ? 6 : 8);
+/** Study terms in use: through the last one with courses. */
+function usedStudy() {
+  let n = 0;
+  let used = 0;
+  for (const r of state.rows) {
+    if (r.k !== 's') continue;
+    n++;
+    if (r.c.some(Boolean)) used = n;
+  }
+  return used;
+}
+/** What a Terms choice makes: {start, kinds}. "regular", "all", or "slug:k" for a co-op sequence. */
+function patternFor(value) {
+  const want = Math.max(usedStudy(), value === 'all' ? 8 : regularStudy());
+  const extend = (from, kinds, every) => {
+    let t = from;
+    for (const k of kinds) t = E.nextTerm(t);
+    let n = kinds.filter((k) => k === 's').length;
+    while (n < want) {
+      const k = every || E.seasonOf(t) !== 'S' ? 's' : 'o';
       kinds.push(k);
       if (k === 's') n++;
       t = E.nextTerm(t);
     }
-  } else {
-    const [slug, k] = value.split(':');
-    const sq = bySlug.get(slug)?.seq?.[Number(k)];
-    if (!sq) return;
-    kinds = sq.terms.map((x) => (/^\d[AB]$/.test(x) ? 's' : x === 'WT' ? 'c' : 'o'));
-    const lead = { F: '9', W: '1', S: '5' }[sq.start] ?? '9';
-    if (!state.start.endsWith(lead)) state.start = `${state.start.slice(0, 3)}${lead}`;
-    let extra = studies.length - kinds.filter((x) => x === 's').length;
-    while (extra-- > 0) kinds.push('s');
-  }
+    return kinds;
+  };
+  if (value === 'regular' || value === 'all') return { start: state.start, kinds: extend(state.start, [], value === 'all') };
+  const [slug, k] = String(value).split(':');
+  const sq = bySlug.get(slug)?.seq?.[Number(k)];
+  if (!sq) return null;
+  // A sequence that starts in Winter (Pharmacy) starts the first Winter from your start on.
+  let start = state.start;
+  for (let i = 0; i < 2 && E.seasonOf(start) !== (sq.start || 'F'); i++) start = E.nextTerm(start);
+  const kinds = sq.terms.map((x) => (/^\d[AB]$/.test(x) ? 's' : x === 'WT' ? 'c' : 'o'));
+  // A chart that stops early (Math/Teaching after 2A) carries on as a regular degree; study terms with courses
+  // past the end of a sequence are kept at the end.
+  return { start, kinds: sq.cut ? extend(start, kinds, false) : [...kinds, ...extraStudy(kinds)] };
+}
+/** Study terms to add after a sequence so no planned courses are lost. */
+function extraStudy(kinds) {
+  const have = kinds.filter((k) => k === 's').length;
+  return Array.from({ length: Math.max(0, usedStudy() - have) }, () => 's');
+}
+const trimOff = (kinds) => {
+  const out = [...kinds];
+  while (out.length && out.at(-1) === 'o') out.pop();
+  return out.join('');
+};
+/** The Terms choice the grid matches now, or ''. */
+function currentPattern(values) {
+  const now = trimOff(state.rows.map((r) => r.k));
+  return values.find((v) => {
+    const p = patternFor(v);
+    return p && p.start === state.start && trimOff(p.kinds) === now;
+  }) ?? '';
+}
+/** A new pattern of terms; each study term keeps its courses in order (1A's stay in 1A). */
+function resequence(value) {
+  const p = patternFor(value);
+  if (!p) return;
+  const studies = state.rows.filter((r) => r.k === 's').map((r) => r.c);
+  state.start = p.start;
   let s = 0;
-  state.rows = kinds.map((k) => ({ k, c: k === 's' ? studies[s++] ?? [] : [] }));
+  state.rows = p.kinds.map((k) => ({ k, c: k === 's' ? studies[s++] ?? [] : [] }));
+  undo = null;
+}
+/** A co-op sequence in a few words: "Sequence 1 · 4⅓ years, 5 work terms". */
+function seqLabel(slug, k) {
+  const sq = bySlug.get(slug)?.seq?.[k];
+  const p = patternFor(`${slug}:${k}`);
+  if (!sq || !p) return '';
+  const len = lengthOf(p.start, p.kinds);
+  return `${sq.label} · ${sq.cut ? 'charted to 2A, then regular' : `${yearsText(len.terms)}, ${plural(len.work, 'work term')}`}${sq.start !== 'F' ? `, starts in ${{ W: 'Winter', S: 'Spring' }[sq.start]}` : ''}`;
+}
+/** A major just picked: co-op only (engineering, AFM) takes its first sequence when the grid is still empty
+ *  and regular; otherwise the banner offers its sequences. */
+let coopNote = null;
+function adopt(slug) {
+  offer = slug;
+  coopNote = null;
+  const p = bySlug.get(slug);
+  if (p?.t !== 'Major' || !p.seq?.length) return;
+  const empty = !state.rows.some((r) => r.c.some(Boolean));
+  if (p.co && !p.re && empty && currentPattern(['regular']) === 'regular') {
+    resequence(`${slug}:0`);
+    coopNote = { slug, k: 0 };
+  }
 }
 
 // ---------------- filling in plans ----------------
@@ -874,9 +985,12 @@ function fillPlan() {
     E.addPlanned(have, code, { units: C[code]?.[1] ?? 0.5 });
     want.push({ code, at });
   };
-  for (const p of plans) {
-    const k = A.plans.indexOf(p);
-    const { avail } = E.evaluateAll(A.plans, have, { courses: C });
+  const everyPlan = [...A.plans, ...(extra ? [extra] : [])];
+  const asPicked = A.plans.map((x) => E.forPlans(x, everyPlan));
+  for (const plan of plans) {
+    const k = A.plans.indexOf(plan);
+    const p = E.forPlans(plan, everyPlan);
+    const { avail } = E.evaluateAll(asPicked, have, { courses: C });
     const it = E.fillItems(p, have, { courses: C, equiv, avail: avail[k] });
     for (const m of it.must) {
       if (must.has(m.code)) continue;
@@ -1005,7 +1119,9 @@ function renderFill(focus = null) {
     : fill.more
       ? `<p class="t">${plural(fill.more, 'term')} added at the end. <button type="button" class="pw-linkbtn" data-fill="less">Remove ${fill.more === 1 ? 'it' : 'one'}</button></p>`
       : '';
-  const coop = F.plans.some((p) => p.seq?.length) && !state.rows.some((r) => r.k === 'c') ? `<p class="pw-hint">Doing co-op? Pick its sequence under <b>Terms</b> first, so courses land in study terms.</p>` : '';
+  // Co-op terms first, so courses land in study terms.
+  const coopMajor = F.plans.find((p) => p.t === 'Major' && p.seq?.length);
+  const coop = coopMajor && !state.rows.some((r) => r.k === 'c') ? `<p class="pw-hint">Doing co-op? <button type="button" class="pw-linkbtn" data-fseq="${esc(coopMajor.s)}:0">Use ${esc(seqLabel(coopMajor.s, 0))}</button>${coopMajor.seq.length > 1 ? ', or pick another under <b>Terms</b>,' : ''} so courses land in study terms.</p>` : '';
   // Starting before this term: what's typed in earlier terms counts as taken.
   const first = study[0];
   const past = fill.from > first && !study.some((i) => i < fill.from && state.rows[i].c.some(Boolean)) ? `<p class="pw-hint">Terms before ${esc(A.lv[fill.from])} are empty. Type in what you’ve taken so it counts, or <button type="button" class="pw-linkbtn" data-fill="from0">fill from ${esc(A.lv[first])}</button>.</p>` : '';
@@ -1090,6 +1206,14 @@ dlg.addEventListener('click', (e) => {
     fill.choice.delete(un.dataset.unpick);
     return renderFill();
   }
+  const fseq = t.closest('[data-fseq]');
+  if (fseq) {
+    resequence(fseq.dataset.fseq);
+    render();
+    const study = studyRows();
+    fill.from = study.find((i) => Number(termOf(i)) >= Number(data.term)) ?? study[0] ?? 0;
+    return renderFill('[data-fill="add"]');
+  }
   const sk = t.closest('[data-skip]');
   if (sk) {
     const k = sk.dataset.skip;
@@ -1136,7 +1260,9 @@ function planSuggest(input) {
   // Names that start with what's typed first: "economics minor" is Economics Minor before Business Economics Minor.
   const q = words.join(' ');
   const rank = (p) => (p.n.toLowerCase().startsWith(q) ? 0 : p.n.toLowerCase().startsWith(words[0]) ? 1 : 2);
-  const hits = words.length ? P.filter((p) => !state.plans.includes(p.s) && words.every((w) => `${p.n} ${p.t} ${p.fi}`.toLowerCase().includes(w))).sort((a, b) => rank(a) - rank(b) || TYPE_ORDER.indexOf(a.t) - TYPE_ORDER.indexOf(b.t) || a.n.localeCompare(b.n)).slice(0, 10) : [];
+  // Then specializations and options open to your majors ("Finance Specialization" for Math/CPA).
+  const other = (p) => (p.open?.length && !p.open.some((s) => state.plans.includes(s)) ? 1 : 0);
+  const hits = words.length ? P.filter((p) => !state.plans.includes(p.s) && words.every((w) => `${p.n} ${p.t} ${p.fi}`.toLowerCase().includes(w))).sort((a, b) => rank(a) - rank(b) || other(a) - other(b) || TYPE_ORDER.indexOf(a.t) - TYPE_ORDER.indexOf(b.t) || a.n.localeCompare(b.n)).slice(0, 10) : [];
   list.innerHTML = hits.map((p, i) => `<li role="option" data-plan="${esc(p.s)}" aria-selected="${i === 0}"><b>${esc(p.n)}</b> <span>${esc(p.t)}</span></li>`).join('');
   list.hidden = !hits.length;
   input.setAttribute('aria-expanded', String(!!hits.length));
@@ -1147,7 +1273,8 @@ app.addEventListener('submit', (e) => {
   const first = document.querySelector('#pw-psugg li[data-plan]');
   if (first) {
     state.plans.push(first.dataset.plan);
-    offer = first.dataset.plan;
+    analyze();
+    adopt(first.dataset.plan);
     document.getElementById('pw-pq').value = '';
     render();
     document.getElementById('pw-pq')?.focus();
@@ -1168,4 +1295,6 @@ async function copy(text) {
   }
 }
 
+analyze();
+if (pendingAdopt) adopt(pendingAdopt);
 render();

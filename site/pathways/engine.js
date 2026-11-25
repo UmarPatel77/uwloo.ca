@@ -351,6 +351,28 @@ export function evaluate(program, planned, { ticked = new Set(), courses = {} } 
   }
   return { need, have, rows, used, unknown };
 }
+/**
+ * A program as it applies next to the plans someone picked: a section that names exceptions ("with the
+ * exceptions of Mathematical Studies and Mathematics/Chartered Professional Accountancy") becomes a note for
+ * students in one of those majors. Sections keep their places, so ticked keys stay put.
+ */
+export function forPlans(program, plans) {
+  const has = (secs) => (secs ?? []).some((s) => s.ex || has(s.l));
+  if (!has(program.req)) return program;
+  const names = plans.filter((p) => p.t === 'Major').flatMap((p) => [p.fi, p.n.replace(/\s*\(.*$/, '')]).filter(Boolean);
+  const esc = (x) => x.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+  const exempt = (ex) => names.find((nm) => new RegExp(`(?:^|,\\s*|\\s+and\\s+|\\s+or\\s+)${esc(nm)}(?=$|,|\\s+and\\s+|\\s+or\\s+)`, 'i').test(ex));
+  let changed = false;
+  const keep = (secs) =>
+    (secs ?? []).map((s) => {
+      const who = s.ex && exempt(s.ex);
+      if (who) changed = true;
+      return who ? { h: s.h, r: [{ t: `Not required for ${who} students.`, info: 1 }], l: [] } : { ...s, l: keep(s.l) };
+    });
+  const req = keep(program.req);
+  return changed ? { ...program, req } : program;
+}
+
 const DEGREE_UNITS = 15; // a three-year degree; a program total this big is the degree's
 const rank = (n) => (n.r === 'all' ? 0 : n.g ? 1 : n.r === 'n' ? 2 : n.r === 'not' || n.r === 'max' ? 4 : n.t ? 3 : 5);
 

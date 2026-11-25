@@ -2,7 +2,9 @@
 // itself is site/pathways/ (engine.js for the rules, app.js for the grid).
 //
 // /pathways/data.json: {cat, term, year, years, courses: {CODE: [title, units, prereq, coreq, antireq, seasons, equiv]},
-//                       programs: [{s, n, t, f, fi, c, req, open, tu, tsub, tt, seq, cant}]}  (the current calendar's)
+//                       programs: [{s, n, t, f, fi, c, req, open, tu, tsub, tt, seq, co, re, cant}]}  (the current
+//                       calendar's; seq: a co-op major's study/work sequences; co/re: co-op, regular offered;
+//                       ld: the usual courses a term, when a term-by-term program lists more than 5)
 // /pathways/programs-{year}.json: {year, label, programs} for each other calendar year (2024–25 on): someone
 //                       follows the requirements of the year they started.
 //   prereq, coreq: compact requisite trees (engine.js describes the shape); antireq: the codes it rules out
@@ -98,7 +100,25 @@ export function compact(nodes) {
 }
 
 /** A program's sections (programs.mjs) → compact sections. */
-export const compactSections = (sections) => (sections ?? []).map((s) => ({ h: s.heading, ...(s.units != null ? { u: s.units } : {}), r: compact(s.tree), l: compactSections(s.lists) })).filter((s) => s.r.length || s.l.length);
+// "All Bachelor of Mathematics students, with the exceptions of Mathematical Studies and Mathematics/Chartered
+// Professional Accountancy, must complete the following List A courses.": the section and its lists don't apply
+// to those majors. ex keeps the names as written; the app checks them against the majors someone picked.
+const EXCEPT = /\bwith the exceptions? of (.+?),\s*(?:must|are|is|will|who)\b/i;
+export const compactSections = (sections) =>
+  (sections ?? [])
+    .map((s) => {
+      const r = compact(s.tree);
+      let ex = null;
+      for (const n of r) {
+        const m = n.t && EXCEPT.exec(n.t);
+        if (m) {
+          ex = m[1];
+          n.info = 1;
+        }
+      }
+      return { h: s.heading, ...(s.units != null ? { u: s.units } : {}), ...(ex ? { ex } : {}), r, l: compactSections(s.lists) };
+    })
+    .filter((s) => s.r.length || s.l.length);
 
 /**
  * "Complete a total of 4.0 units." → {u: 4}; "…a total of 8.0 units of ECON courses." → {u: 8, subj: ['ECON']};
@@ -115,18 +135,126 @@ export function totalUnits(html, { all = false } = {}) {
 }
 
 /** Study/work sequence charts in a program's co-op section → [{label, start: 'F', terms: ['1A', '1B', 'off', 'WT', …]}]. */
+/**
+ * A co-op chart's study/work sequences: [{label, plans, start, terms}]. Charts are tables of terms under F/W/S
+ * headers ("1A", "WT", "off"), sometimes after a Plan column (names, spanning several rows) and a Sequence or
+ * S/S column ("1", "8X"). A chart that stops being specific ("†") ends there, marked cut.
+ */
 export function sequences(html) {
   if (!html || !/<table/i.test(html)) return [];
   const out = [];
   for (const table of findAll(parseHtml(html), (n) => n.tag === 'table')) {
-    const head = findAll(table, (n) => n.tag === 'th').map((n) => norm(textOf(n)));
-    if (head.length < 4 || !/^(sequence|plan|stream)/i.test(head[0]) || !head.slice(1).every((h) => /^[FWS]$/.test(h))) continue;
+    // The table as a grid, with cells that span rows repeated down.
+    const grid = [];
+    const spans = [];
     for (const tr of findAll(table, (n) => n.tag === 'tr')) {
-      const cells = tr.children.filter((c) => c.tag === 'td').map((c) => norm(textOf(c)));
-      if (cells.length < 3) continue;
-      const terms = cells.slice(1).map((c) => (/^\d[AB]$/i.test(c) ? c.toUpperCase() : /^wt/i.test(c) ? 'WT' : 'off'));
-      if (terms.some((t) => /^\d[AB]$/.test(t))) out.push({ label: cells[0], start: head[1], terms });
+      const row = [];
+      let col = 0;
+      const carry = () => {
+        while (spans[col]?.left > 0) {
+          row[col] = spans[col].text;
+          spans[col].left--;
+          col++;
+        }
+      };
+      for (const c of tr.children.filter((x) => x.tag === 'td' || x.tag === 'th')) {
+        carry();
+        const text = norm(textOf(c));
+        const rows = Number(c.attrs.rowspan) || 1;
+        for (let k = 0; k < (Number(c.attrs.colspan) || 1); k++) {
+          row[col] = text;
+          if (rows > 1) spans[col] = { text, left: rows - 1 };
+          col++;
+        }
+      }
+      carry();
+      grid.push(row);
     }
+    const head = grid[0] ?? [];
+    const first = head.findIndex((h) => /^[FWS]$/.test(h));
+    if (first < 0 || head.length - first < 4 || !head.slice(first).every((h) => /^[FWS]$/.test(h))) continue;
+    const before = head.slice(0, first);
+    const planCol = before.findIndex((h) => /^plan/i.test(h));
+    const labelCol = before.findIndex((h) => /^(s\/s|sequence|stream)/i.test(h));
+    for (const row of grid.slice(1)) {
+      const cells = row.slice(first).map((c) => (c ?? '').trim());
+      const terms = [];
+      for (const c of cells) {
+        if (/^\d[AB]$/i.test(c)) terms.push(c.toUpperCase());
+        else if (/^wt/i.test(c)) terms.push('WT');
+        else if (/^off$/i.test(c)) terms.push('off');
+        else break;
+      }
+      if (!terms.some((t) => /^\d[AB]$/.test(t))) continue;
+      const plans = planCol >= 0 ? (row[planCol] ?? '').replace(/^[*#†\s]+|[*#†\s]+$/g, '') : null;
+      out.push({ label: labelCol >= 0 ? row[labelCol] ?? '' : '', ...(plans ? { plans } : {}), start: head[first], terms, ...(cells[terms.length] === '†' ? { cut: 1 } : {}) });
+    }
+  }
+  return out;
+}
+
+/** How many courses a term's rules list: all of a list, n of a choice, the number in words. */
+const termLoad = (nodes) => (nodes ?? []).reduce((t, n) => t + (n.g === 'all' ? termLoad(n.i) : n.g === 'n' ? n.n ?? 1 : n.r === 'all' ? n.c.length : n.r === 'n' ? n.n ?? 1 : n.nc ?? (n.u ? Math.round(n.u / 0.5) : 0)), 0);
+
+const nameKey = (s) => String(s).toLowerCase().replace(/[^a-z0-9/&]+/g, ' ').trim();
+/** The names a chart's Plan cell lists: "Management, Mechanical, Mechatronics", "Computer Science; Data Science",
+ *  "Honours Arts co-op majors of Economics, English, Fine Arts". */
+const chartNames = (cell) =>
+  (cell.includes(';') ? cell.split(';') : cell.split(','))
+    .flatMap((x) => {
+      const m = /\bmajors? (?:of|in) (.+)$/i.exec(x);
+      return m ? m[1].split(/,\s*(?:and\s+)?|\s+and\s+/) : [x];
+    })
+    .map(nameKey)
+    .filter(Boolean);
+/** The names a major goes by in a chart, most specific first: its name, then "Mechanical" for Mechanical
+ *  Engineering, then its field ("Computer Science" for the BBA and BCS double degree). */
+function majorNames(p) {
+  const base = p.n.replace(/\s*\(.*$/, '');
+  const tiers = [[base], [base.replace(/ Engineering$/, '')], [p.fi, String(p.fi ?? '').replace(/ Engineering$/, '')]];
+  return tiers.map((t) => [...new Set(t.filter(Boolean).map(nameKey))]);
+}
+// Engineering's charts list streams ("4", "8X"); the others number sequences.
+const yearsLabel = (label, eng) => (eng && /^\d[A-Z]?$/.test(label) ? `Stream ${label}` : /^\d+$/.test(label) ? `Sequence ${label}` : label);
+
+/**
+ * Each co-op major's study/work sequences: its own chart, else the rows of its degree's chart that name it
+ * (or that are for "all other majors"), else a row of another degree's chart that names it (double degrees).
+ * → Map slug → [{label, start, terms, cut}]
+ */
+export function coopSequences(list) {
+  const degrees = list.filter((p) => p.t === 'Degree Requirements' && p.seq?.length);
+  const out = new Map();
+  for (const p of list) {
+    if (p.t !== 'Major') continue;
+    if (p.seq?.length) {
+      out.set(p.s, p.seq.map((q, i, all) => ({ label: q.label ? yearsLabel(q.label, /Engineering/.test(p.f)) : all.length > 1 ? `Sequence ${i + 1}` : 'Co-op', start: q.start, terms: q.terms, ...(q.cut ? { cut: 1 } : {}) })));
+      continue;
+    }
+    if (p.co !== 1) continue;
+    const deg = /\((Bachelor of [A-Za-z ]+?)\s*[-,)]/.exec(p.n)?.[1];
+    const own = degrees.filter((d) => deg && d.n.startsWith(deg));
+    const fac = String(p.f).replace(/^Facult(?:y|ies) of /, '').split(/ and | with /)[0];
+    const isDefault = (q) => q.plans && /^all other|excluding/i.test(q.plans);
+    const ownDeg = own.find((d) => d.n.includes(`(${fac})`)) ?? own[0];
+    const named = (d) => {
+      for (const names of majorNames(p)) {
+        const hit = d.seq.filter((q) => q.plans && !isDefault(q) && chartNames(q.plans).some((x) => names.includes(x)));
+        if (hit.length) return hit;
+      }
+      return [];
+    };
+    const sameFaculty = degrees.filter((d) => d.f === p.f && d !== ownDeg);
+    // Its own degree's rows that name it; then its faculty's other charts (a double degree's row is in the BCS
+    // or BMath chart); then "all other majors" (joint honours name no degree); then any chart that names it.
+    let rows = ownDeg ? named(ownDeg) : [];
+    for (const d of sameFaculty) if (!rows.length) rows = named(d);
+    const fallback = ownDeg ?? sameFaculty.find((d) => d.seq.some(isDefault));
+    if (!rows.length && fallback) rows = fallback.seq.filter(isDefault);
+    for (const d of degrees) if (!rows.length) rows = named(d);
+    if (!rows.length) continue;
+    const eng = /Engineering/.test(p.f);
+    out.set(p.s, rows.map((q, i) => ({ label: q.label ? yearsLabel(q.label, eng) : rows.length > 1 ? `Sequence ${i + 1}` : 'Co-op', start: q.start, terms: q.terms, ...(q.cut ? { cut: 1 } : {}) })));
   }
   return out;
 }
@@ -177,7 +305,7 @@ export function pathwaysData({ programs, combos, catalog, schedules, published =
 
 /** One calendar's programs, in the shape the app reads. */
 export function pathwaysPrograms({ programs, combos }) {
-  return programs.list.map((p) => {
+  const list = programs.list.map((p) => {
     const out = {
       s: p.slug,
       n: p.name,
@@ -198,10 +326,25 @@ export function pathwaysPrograms({ programs, combos }) {
     }
     const seq = sequences(p.text.coOperativeRequirementsUndergraduate);
     if (seq.length) out.seq = seq;
+    // Systems of study: co: 1 when there's co-op, re: 1 when there's a regular (no co-op) way through.
+    if (p.coop) out.co = 1;
+    if (p.regular) out.re = 1;
+    // A term-by-term program's usual load (engineering puts 6 or 7 in a term): the most its terms list.
+    const ld = Math.max(0, ...out.req.filter((x) => /^\d[AB]\s+Term\b/i.test(x.h ?? '')).map((x) => termLoad(x.r)));
+    if (ld > 5) out.ld = Math.min(7, ld);
     const cant = (combos?.get(p.pid) ?? []).flatMap((o) => o.to.map((q) => q.slug)).filter((s) => s !== p.slug);
     if (cant.length) out.cant = [...new Set(cant)];
     return out;
   });
+  // Co-op sequences end up on the majors they're for; the degree charts they came from aren't needed after.
+  const coop = coopSequences(list);
+  for (const p of list) {
+    if (p.t === 'Major') {
+      if (coop.has(p.s)) p.seq = coop.get(p.s);
+      else delete p.seq;
+    } else delete p.seq;
+  }
+  return list;
 }
 
 // ---------------- the page ----------------
