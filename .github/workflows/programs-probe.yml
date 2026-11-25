@@ -1,0 +1,39 @@
+name: Programs probe
+
+# One-off: reads the calendar's programs raw from Kuali (scripts/probe-programs.mjs) into data/probe/, so the
+# degree planner can be built on their real shape. Runs when the probe is pushed, and by hand any time.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/probe-programs.mjs
+      - .github/workflows/programs-probe.yml
+
+permissions:
+  contents: write # commit data/probe
+
+concurrency:
+  group: programs-probe
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Read the programs
+        run: node scripts/probe-programs.mjs
+      - name: Commit
+        run: |
+          if [ -n "$(git status --porcelain -- data/probe)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/probe
+            git commit -m "Programs probe: raw calendar programs"
+            for i in 1 2 3; do git pull --rebase --quiet && git push && break; sleep 5; done
+          fi
