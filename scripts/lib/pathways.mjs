@@ -9,6 +9,7 @@
 //                       follows the requirements of the year they started.
 //   prereq, coreq: compact requisite trees (engine.js describes the shape); antireq: the codes it rules out
 //   seasons: [Fall, Winter, Spring] terms with sections in the last 4 academic years, plus any published term
+import { FACULTY } from './opendata.mjs';
 import { shell } from './render.mjs';
 import { esc, find, findAll, norm, parseHtml, textOf } from './requisites.mjs';
 import { termName } from './terms.mjs';
@@ -91,7 +92,9 @@ export function compact(nodes) {
         const [k, num] = kindOf(n.lead);
         const c = [...new Set(n.courses.map((x) => x.code).filter(Boolean))];
         if (!c.length) return n.lead ? hints(n.lead) : null;
-        return { r: k, ...(num != null ? { n: num } : {}), c };
+        // "Earned a minimum grade of 60% in each of the following": mg, checked against grades someone enters.
+        const mg = /minimum grade of (\d+(?:\.\d+)?)\s*%/i.exec(n.lead ?? '')?.[1];
+        return { r: k, ...(num != null ? { n: num } : {}), c, ...(mg ? { mg: Number(mg) } : {}) };
       }
       const t = norm(n.text);
       return t ? hints(t) : null;
@@ -196,6 +199,9 @@ export function sequences(html) {
 /** How many courses a term's rules list: all of a list, n of a choice, the number in words. */
 const termLoad = (nodes) => (nodes ?? []).reduce((t, n) => t + (n.g === 'all' ? termLoad(n.i) : n.g === 'n' ? n.n ?? 1 : n.r === 'all' ? n.c.length : n.r === 'n' ? n.n ?? 1 : n.nc ?? (n.u ? Math.round(n.u / 0.5) : 0)), 0);
 
+/** "Faculty of Arts" → 'art'. */
+const facultyKey = (f) => FACULTY_WORDS[String(f ?? '').replace(/^Facult(?:y|ies) of /, '').split(/ and | with /)[0].trim().toLowerCase()] ?? null;
+
 const nameKey = (s) => String(s).toLowerCase().replace(/[^a-z0-9/&]+/g, ' ').trim();
 /** The names a chart's Plan cell lists: "Management, Mechanical, Mechatronics", "Computer Science; Data Science",
  *  "Honours Arts co-op majors of Economics, English, Fine Arts". */
@@ -269,7 +275,7 @@ const oldTitle = (r) => r?.od?.title ?? r?.arch?.title ?? r?.ga?.title ?? '';
  * undergraduate catalog (its courses); schedules: code → {terms}; published: {term: Set of codes} (this term
  * and next, from Open Data); curTerm: e.g. '1269'; years: [{year, label, file}] for every calendar with programs.
  */
-export function pathwaysData({ programs, combos, catalog, schedules, published = {}, curTerm, retired = new Map(), years = [] }) {
+export function pathwaysData({ programs, combos, catalog, schedules, published = {}, curTerm, retired = new Map(), years = [], faculty = new Map() }) {
   const from = String(Number(curTerm) - 40); // four academic years back
   const courses = {};
   for (const [code, c] of catalog.courses) {
@@ -300,7 +306,147 @@ export function pathwaysData({ programs, combos, catalog, schedules, published =
   };
   for (const p of programs.list) for (const s of p.sections) walkSection(s);
   const list = pathwaysPrograms({ programs, combos });
-  return { cat: catalog.label, term: curTerm, year: catalog.start ?? null, years, courses, programs: list };
+  // Each subject's faculty ('art', 'mat'…), from Open Data's course groups: for "any course from another
+  // faculty" and averages over a faculty's courses.
+  const votes = new Map();
+  for (const [code, group] of faculty) {
+    const f = FACULTY[group];
+    const subj = /^[A-Z]+/.exec(code)?.[0];
+    if (!f || !subj) continue;
+    const v = votes.get(subj) ?? new Map();
+    v.set(f, (v.get(f) ?? 0) + 1);
+    votes.set(subj, v);
+  }
+  // Without Open Data there's no map: the app checks faculty averages by hand then.
+  const sf = Object.fromEntries([...votes].map(([subj, v]) => [subj, [...v].sort((a, b) => b[1] - a[1])[0][0]]));
+  return { cat: catalog.label, term: curTerm, year: catalog.start ?? null, years, courses, programs: list, sf };
+}
+
+// ---------------- averages, breadth, and units by level ----------------
+
+const plainText = (html) => String(html ?? '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;|&#160;/g, ' ').replace(/&amp;/g, '&').replace(/&#39;|&rsquo;/g, '’').replace(/\s+/g, ' ').trim();
+const SUBJECT_NAMES = { physics: ['PHYS'], biology: ['BIOL'], chemistry: ['CHEM'], 'earth sciences': ['EARTH'], psychology: ['PSYCH'], economics: ['ECON'], 'computer science': ['CS'], statistics: ['STAT'], 'actuarial science': ['ACTSC'] };
+const CODE = /^[A-Z]{2,8}\d{3}[A-Z]?$/;
+const RANGE = /^([A-Z]{2,8})(\d{3})-(\d{3})$/;
+const FACULTY_WORDS = { math: 'mat', mathematics: 'mat', arts: 'art', science: 'sci', engineering: 'eng', environment: 'env', health: 'hea' };
+
+/**
+ * A program's minimum averages (its "Minimum Average(s) Required"): [{k, min, ...}], k one of
+ *   overall  "A minimum cumulative overall average of 60.0%"
+ *   term     "A minimum term average of 60.0%"
+ *   plan     "major/minor/option/diploma/specialization average of 65.0%" (the courses that count toward it)
+ *   subj     "…average of 70.0% in all AVIA, ENVS, GDS, and GEOG courses", "a Physics average" (subj: [...])
+ *   fac      "…: all math courses", "in Faculty of Arts courses", "a Science average" (fac: 'mat')
+ *   codes    "a combined average of 65.0% in CHEM264 and CHEM265", "…in two or more of the following courses:
+ *            CS136, CS138, CS240-299…" (c: codes, rg: [[subject, from, to]], n: how many before it applies)
+ *   hand     anything else, kept as written (t) to check by hand
+ */
+export function averages(html) {
+  const text = plainText(html);
+  const out = [];
+  for (const m of text.matchAll(/(?:^|[.;]\s+|:\s*)([^.;]*?)\baverage of (\d+(?:\.\d+)?)%([^.]*(?:\.\d[^.]*)*)/g)) {
+    const [, before, num, after] = m;
+    const min = Number(num);
+    const t = `${before} average of ${num}%${after}`.replace(/\s+/g, ' ').trim();
+    const head = `${before.trim()} average`;
+    const what = before.toLowerCase();
+    const label = /\b(special major|major|minor|option|diploma|specialization|certificate)\b/.exec(what)?.[1] ?? /^\s*in the (major|minor|option|diploma|specialization|certificate) courses/i.exec(after)?.[1]?.toLowerCase() ?? null;
+    // A list of courses: every piece a code or a range.
+    const listed = /following courses:\s*(.+)$/i.exec(after)?.[1] ?? /^\s*in\s+(.+)$/i.exec(after)?.[1] ?? '';
+    const parts = listed.split(/[,;]\s*|\s+and\s+|\s+/).map((x) => x.trim()).filter(Boolean);
+    if (parts.length && parts.every((x) => CODE.test(x) || RANGE.test(x))) {
+      const n = /\b(two|three|four) or more of the following/i.exec(after)?.[1];
+      out.push({ k: 'codes', min, c: parts.filter((x) => CODE.test(x)), rg: parts.filter((x) => RANGE.test(x)).map((x) => RANGE.exec(x).slice(1).map((v, i) => (i ? Number(v) : v))), ...(n ? { n: { two: 2, three: 3, four: 4 }[n.toLowerCase()] } : {}), ...(label ? { label } : {}), t });
+      continue;
+    }
+    const subj = /\bin all ([A-Z]{2,8}(?:,?\s*(?:and\s+)?[A-Z]{2,8})*) courses/.exec(after)?.[1]?.split(/[^A-Z]+/).filter(Boolean);
+    const fac = /all (math|mathematics) courses/i.exec(after)?.[1] ?? /Faculty of (\w+) courses/i.exec(after)?.[1] ?? /\bcumulative (Science|Math|Mathematics|Arts|Engineering|Health|Environment) average/i.exec(head)?.[1];
+    const namedRaw = /\bcumulative ([A-Z][A-Za-z]+(?: [A-Z][a-z]+)?) average/.exec(head)?.[1];
+    const named = namedRaw?.toLowerCase();
+    const codeNamed = namedRaw && /^[A-Z]{2,8}$/.test(namedRaw) ? [namedRaw] : null;
+    if (/^if\b/i.test(before.trim()) || /\b(two or more|home department)\b/i.test(t)) out.push({ k: 'hand', min, t });
+    else if (subj?.length) out.push({ k: 'subj', min, subj, ...(label ? { label } : {}), t });
+    else if (fac) out.push({ k: 'fac', min, fac: FACULTY_WORDS[fac.toLowerCase()], ...(label ? { label } : {}), t });
+    else if (named && SUBJECT_NAMES[named]) out.push({ k: 'subj', min, subj: SUBJECT_NAMES[named], t });
+    else if (codeNamed) out.push({ k: 'subj', min, subj: codeNamed, t });
+    else if (/\bterm\s*$/i.test(before)) out.push({ k: 'term', min, t });
+    else if (label) out.push({ k: 'plan', min, label, t });
+    else if (/\boverall\b|^\s*a minimum cumulative\s*$/i.test(before)) out.push({ k: 'overall', min, t });
+    else out.push({ k: 'hand', min, t });
+  }
+  return out;
+}
+
+/**
+ * Rules a degree states in prose rather than as course lists:
+ *   "Three-Year General degrees: … a minimum of 8.0 units at the 200-level or above", "Liberal Studies major: A
+ *   minimum of 12.5 units must be at the 200-level or above", "All other Arts majors: …" → one section each,
+ *   for the majors it's about (only: {type, major, other}), checked over every course (ov: overlay).
+ *   The BA's breadth table (Requirement | Units Required | Subject Codes) and its notes: no more than 1.0 unit
+ *   from one discipline (ms), ARTS160 and PD courses don't count (no, nos), "also any course taken in another
+ *   University of Waterloo faculty" (of).
+ * fac: the degree's own faculty ('art').
+ */
+export function degreeProse(html, fac) {
+  const out = [];
+  const text = plainText(html);
+  // Units at a level, by kind of degree and major.
+  let type = null;
+  let named = [];
+  for (const m of text.matchAll(/(Three-Year General|Four-Year General|Honours) degrees?:|([A-Z][A-Za-z ,'’-]*?) majors?:\s*A minimum of (\d+(?:\.\d+)?) units must be at the (\d)00-level or above|with a minimum of (\d+(?:\.\d+)?) units at the (\d)00-level or above/g)) {
+    if (m[1]) {
+      type = m[1];
+      named = [];
+      continue;
+    }
+    const u = Number(m[3] ?? m[5]);
+    const min = Number(m[4] ?? m[6]);
+    const rule = { t: `A minimum of ${u.toFixed(1)} units at the ${min}00-level or above`, u, min, any: 1, ov: 1 };
+    let only = { ...(type ? { type } : {}) };
+    if (m[2]) {
+      const who = m[2].trim();
+      if (/^all other\b/i.test(who)) only = { ...only, other: [...named] };
+      else {
+        only = { ...only, major: who };
+        named.push(who);
+      }
+    }
+    out.push({ h: 'Units at the 200-level or above'.replace('200', `${min}00`), only, r: [rule], l: [] });
+  }
+  // Breadth: a table of requirement, units and subject codes.
+  for (const table of findAll(parseHtml(String(html ?? '')), (n) => n.tag === 'table')) {
+    const rows = findAll(table, (n) => n.tag === 'tr').map((tr) => tr.children.filter((x) => x.tag === 'td' || x.tag === 'th').map((x) => norm(textOf(x))));
+    const head = rows[0]?.map((x) => x.toLowerCase()) ?? [];
+    const iName = head.findIndex((x) => /requirement/.test(x));
+    const iUnits = head.findIndex((x) => /units/.test(x));
+    const iSubj = head.findIndex((x) => /subject/.test(x));
+    if (iName < 0 || iUnits < 0 || iSubj < 0) continue;
+    const rules = [];
+    for (const row of rows.slice(1)) {
+      const name = row[iName];
+      const u = Number(/(\d+(?:\.\d+)?)\s*units?/i.exec(row[iUnits] ?? '')?.[1]);
+      const cell = row[iSubj] ?? '';
+      const subj = cell.split('.')[0].split(/,\s*/).map((x) => x.trim()).filter((x) => /^[A-Z]{2,8}$/.test(x));
+      if (!name || !u || !subj.length) continue;
+      const other = /any course taken in another University of Waterloo faculty/i.test(cell);
+      rules.push({ t: `${name}: ${u.toFixed(1)} ${u === 1 ? 'unit' : 'units'} of ${subj.join(', ')}${other ? ', or any course from another faculty' : ''}`, u, subj, ...(other && fac ? { of: fac } : {}), name });
+    }
+    if (!rules.length) continue;
+    // Notes under the table.
+    for (const m of text.matchAll(/No more than (\d+(?:\.\d+)?) units? in the same discipline may count towards the ([A-Za-z ,]+?) requirement/g)) {
+      const r = rules.find((x) => x.name.toLowerCase() === m[2].trim().toLowerCase());
+      if (r) r.ms = Number(m[1]);
+    }
+    const no = [...text.matchAll(/\(((?:[A-Z]{2,8}\d{3}[A-Z]?)(?:\s*(?:,|or|and)\s*[A-Z]{2,8}\d{3}[A-Z]?)*)\) do not fulfil any of the breadth/gi)].flatMap((m) => m[1].match(/[A-Z]{2,8}\d{3}[A-Z]?/g));
+    const nos = [...text.matchAll(/\(([A-Z]{2,8})\) courses do not fulfil any of the breadth/gi)].map((m) => m[1]);
+    for (const r of rules) {
+      delete r.name;
+      if (no.length) r.no = no;
+      if (nos.length) r.nos = nos;
+    }
+    out.push({ h: 'Breadth Requirements', r: rules, l: [] });
+  }
+  return out;
 }
 
 /** One calendar's programs, in the shape the app reads. */
@@ -323,7 +469,17 @@ export function pathwaysPrograms({ programs, combos }) {
     if (p.type === 'Degree Requirements') {
       const tt = totalUnits(p.text.degreeRequirements, { all: true });
       if (tt.length) out.tt = tt;
+      // Breadth and units by level, from the degree's prose, as sections of their own.
+      out.req.push(...degreeProse(p.text.degreeRequirements, facultyKey(p.faculty)));
     }
+    const avg = averages(p.text.minimumAverageSRequired);
+    if (avg.length) out.avg = avg;
+    // "Maximum failed or excluded course units (excluding COOP, PD): 2.0", "Maximum of unusable attempts: 5.0 units".
+    const all = plainText(Object.values(p.text).join(' '));
+    const fx = /Maximum failed or excluded course units \(excluding COOP, PD\): (\d+(?:\.\d+)?)/i.exec(all)?.[1] ?? /maximum of (\d+(?:\.\d+)?) units of failed or excluded courses/i.exec(all)?.[1];
+    const ua = /Maximum of unusable attempts: (\d+(?:\.\d+)?) units/i.exec(all)?.[1] ?? /maximum of (\d+(?:\.\d+)?) units of unusable course attempts/i.exec(all)?.[1];
+    if (fx) out.fx = Number(fx);
+    if (ua) out.ua = Number(ua);
     const seq = sequences(p.text.coOperativeRequirementsUndergraduate);
     if (seq.length) out.seq = seq;
     // Systems of study: co: 1 when there's co-op, re: 1 when there's a regular (no co-op) way through.

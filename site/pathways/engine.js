@@ -82,6 +82,7 @@ const atLeast = (vals, n) => {
   return yes + vals.filter((v) => v === null).length >= n ? null : false;
 };
 const has = (have, code, ctx) => have.has(code) || (ctx.equiv?.get(code) ?? []).some((c) => have.has(c));
+const lowGrade = (n, code, ctx) => Boolean(n.mg && ctx.grades?.has(code) && ctx.grades.get(code) < n.mg);
 
 function holdsNode(n, have, ctx) {
   if (n.g) {
@@ -89,7 +90,8 @@ function holdsNode(n, have, ctx) {
     return n.g === 'n' ? atLeast(vals, n.n ?? 1) : all(vals);
   }
   if (n.r) {
-    const hits = n.c.filter((c) => has(have, c, ctx)).length;
+    // "Earned a minimum grade of 60% in CS136": a grade below that doesn't count (no grade yet: assume it will).
+    const hits = n.c.filter((c) => has(have, c, ctx) && !lowGrade(n, c, ctx)).length;
     if (n.r === 'all') return hits === n.c.length;
     if (n.r === 'n') return hits >= (n.n ?? 1);
     if (n.r === 'not') return hits === 0;
@@ -123,19 +125,27 @@ export const missing = (nodes, have, ctx = {}) => why(nodes, have, ctx).codes;
 /** Why a requisite tree fails: {codes: courses to add, level: 'nX' needed, plans: ["H-Software Engineering"…]}. */
 export function why(nodes, have, ctx = {}) {
   const codes = new Set();
+  const groups = [];
+  const low = [];
   let level = null;
   const plans = new Set();
   const walk = (list) => {
     for (const n of list ?? []) {
       if (holdsNode(n, have, ctx) !== false) continue;
       if (n.g) walk(n.i);
-      else if (n.r && n.r !== 'not') for (const c of n.c) if (!has(have, c, ctx)) codes.add(c);
+      else if (n.r && n.r !== 'not') {
+        // Each unmet list on its own: "one of MATH 128, 138, 148" and "one of MATH 136, 146" are both needed.
+        const miss = n.c.filter((c) => !has(have, c, ctx) || lowGrade(n, c, ctx));
+        for (const c of miss) codes.add(c);
+        if (miss.length) groups.push(n.r === 'all' ? miss.map((c) => [c]) : [miss]);
+        for (const c of miss) if (lowGrade(n, c, ctx)) low.push({ code: c, need: n.mg, got: ctx.grades.get(c) });
+      }
       if (n.lv && (!level || levelRank(n.lv) > levelRank(level))) level = n.lv;
       if (n.en) plans.add(n.en);
     }
   };
   walk(nodes);
-  return { codes: [...codes], level, plans: [...plans] };
+  return { codes: [...codes], groups: groups.flat(), level, plans: [...plans], ...(low.length ? { low } : {}) };
 }
 
 // ---------------- programs ----------------
@@ -146,7 +156,7 @@ export function why(nodes, have, ctx = {}) {
  * need and have count courses (units ÷ 0.5); rows describe every requirement for the checklist; unknown is
  * true while a requirement in words isn't ticked (those aren't in need: they may not be a course).
  */
-export function evaluate(program, planned, { ticked = new Set(), courses = {} } = {}) {
+export function evaluate(program, planned, { ticked = new Set(), courses = {}, faculty = {} } = {}) {
   const used = new Set();
   const rows = [];
   // Trying a group's children one by one mustn't write rows: quiet > 0 while trying.
@@ -168,18 +178,35 @@ export function evaluate(program, planned, { ticked = new Set(), courses = {} } 
     }
     return got;
   };
-  const takeUnits = (codes, units) => {
+  // overlay: a rule that only checks a total ("8.0 units at the 200-level or above") counts courses other rules
+  // use, and uses none. perSubject: at most that many units from one subject ("no more than 1.0 unit in the
+  // same discipline").
+  const takeUnits = (codes, units, { overlay = false, perSubject = null } = {}) => {
     const got = [];
     let sum = 0;
+    const bySubj = new Map();
     for (const c of codes) {
       if (sum >= units - 1e-9) break;
-      if (planned.has(c) && !used.has(c)) {
-        got.push(c);
-        sum += unitsOf(c);
-      }
+      if (!planned.has(c) || (!overlay && used.has(c))) continue;
+      const subj = numbered(c)?.[0];
+      if (perSubject && (bySubj.get(subj) ?? 0) + unitsOf(c) > perSubject + 1e-9) continue;
+      bySubj.set(subj, (bySubj.get(subj) ?? 0) + unitsOf(c));
+      got.push(c);
+      sum += unitsOf(c);
     }
     return { got, sum };
   };
+  // Any subject at a level, or courses from outside a faculty ("also any course taken in another faculty"). PD
+  // courses, work-term reports and work terms give no academic credit, so they're in neither.
+  const anyPool = (n) =>
+    [...planned.keys()].filter((c) => {
+      const num = numbered(c)?.[1];
+      return !WORK_COURSE.test(c) && (!n.min || (num != null && num >= n.min * 100));
+    });
+  const otherFaculty = (fac) => [...planned.keys()].filter((c) => {
+    const f = faculty[numbered(c)?.[0]];
+    return f && f !== fac && !WORK_COURSE.test(c);
+  });
   const subjectPool = (n) =>
     [...planned.keys()].filter((c) => {
       const m = numbered(c);
@@ -260,17 +287,19 @@ export function evaluate(program, planned, { ticked = new Set(), courses = {} } 
       return { need: 0, have: 0, unknown: false };
     }
     if (n.u || n.nc) {
-      let codes = n.subj || n.rg ? subjectPool(n) : n.pl ? pool : null;
+      let codes = n.any ? anyPool(n) : n.subj || n.rg ? subjectPool(n) : n.pl ? pool : null;
+      if (n.of) codes = [...new Set([...(codes ?? []), ...otherFaculty(n.of)])];
+      if (codes && (n.no || n.nos)) codes = codes.filter((c) => !(n.no ?? []).includes(baseCode(c)) && !(n.nos ?? []).includes(numbered(c)?.[0]));
       // Elective placeholders stand in for what the grid can't check by subject: "from the Faculty of Arts",
       // "approved electives", "from List 1". They go last, after real courses.
       if (n.fa || !(n.subj || n.rg)) {
         const w = electives();
         if (w.length) codes = [...(codes ?? []), ...w];
       }
-      if (codes?.length || n.subj || n.rg) {
+      if (codes?.length || n.subj || n.rg || n.any) {
         if (n.u) {
-          const { got, sum } = takeUnits(codes, n.u);
-          for (const c of got) used.add(c);
+          const { got, sum } = takeUnits(codes ?? [], n.u, { overlay: n.ov, perSubject: n.ms });
+          if (!n.ov) for (const c of got) used.add(c);
           emit({ key, depth, kind: 'units', text: n.t, units: n.u, sum, got });
           return { need: Math.round(n.u / UNIT), have: Math.min(Math.round(n.u / UNIT), Math.round(sum / UNIT)), unknown: false };
         }
@@ -290,6 +319,7 @@ export function evaluate(program, planned, { ticked = new Set(), courses = {} } 
   let have = 0;
   let unknown = false;
   const section = (s, key, depth) => {
+    if (s.skip) return { need: 0, have: 0, unknown: false };
     const at = emit({ key, depth, kind: 'heading', text: s.h, units: s.u });
     // A section's lists ("Choose any of the following", List 1, List 2…) are what its words draw from.
     const pool = [];
@@ -357,14 +387,24 @@ export function evaluate(program, planned, { ticked = new Set(), courses = {} } 
  * students in one of those majors. Sections keep their places, so ticked keys stay put.
  */
 export function forPlans(program, plans) {
-  const has = (secs) => (secs ?? []).some((s) => s.ex || has(s.l));
+  const has = (secs) => (secs ?? []).some((s) => s.ex || s.only || has(s.l));
   if (!has(program.req)) return program;
+  const majors = plans.filter((p) => p.t === 'Major');
+  const key = (x) => String(x ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const sameMajor = (p, name) => [p.fi, p.n.replace(/\s*\(.*$/, '')].some((x) => key(x) === key(name));
+  // A section for some majors only: by kind of degree, by major, or for "all other" majors.
+  const fits = (only) =>
+    majors.some((p) => (!only.type || degreeType(p.n) === only.type) && (!only.major || sameMajor(p, only.major)) && !(only.other ?? []).some((nm) => sameMajor(p, nm)));
   const names = plans.filter((p) => p.t === 'Major').flatMap((p) => [p.fi, p.n.replace(/\s*\(.*$/, '')]).filter(Boolean);
   const esc = (x) => x.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
   const exempt = (ex) => names.find((nm) => new RegExp(`(?:^|,\\s*|\\s+and\\s+|\\s+or\\s+)${esc(nm)}(?=$|,|\\s+and\\s+|\\s+or\\s+)`, 'i').test(ex));
   let changed = false;
   const keep = (secs) =>
     (secs ?? []).map((s) => {
+      if (s.only) {
+        changed = true;
+        if (!fits(s.only)) return { ...s, skip: 1 };
+      }
       const who = s.ex && exempt(s.ex);
       if (who) changed = true;
       return who ? { h: s.h, r: [{ t: `Not required for ${who} students.`, info: 1 }], l: [] } : { ...s, l: keep(s.l) };
@@ -372,6 +412,9 @@ export function forPlans(program, plans) {
   const req = keep(program.req);
   return changed ? { ...program, req } : program;
 }
+
+/** "Mathematics (Bachelor of Mathematics, Three-Year General)" → 'Three-Year General'; honours otherwise. */
+export const degreeType = (name) => (/Three-Year General/i.test(name) ? 'Three-Year General' : /Four-Year General/i.test(name) ? 'Four-Year General' : 'Honours');
 
 const DEGREE_UNITS = 15; // a three-year degree; a program total this big is the degree's
 const rank = (n) => (n.r === 'all' ? 0 : n.g ? 1 : n.r === 'n' ? 2 : n.r === 'not' || n.r === 'max' ? 4 : n.t ? 3 : 5);
@@ -417,6 +460,112 @@ export function evaluateAll(plans, planned, opts = {}) {
   return { evals, avail, capped };
 }
 
+// ---------------- what a requirement draws from ----------------
+
+const nodeCodes = (n) => (n.r && n.r !== 'not' ? n.c : n.i ? n.i.flatMap(nodeCodes) : []);
+const sectionCodes = (s) => [...(s.r ?? []).flatMap(nodeCodes), ...(s.l ?? []).flatMap(sectionCodes)];
+// A section's own lists ("Choose any of the following", "At most 2 of"), not the courses it requires.
+const listy = (n) => (n.r === 'any' || n.r === 'list' || n.r === 'max' ? n.c : n.g ? n.i.flatMap(listy) : []);
+/**
+ * The courses a requirement in words draws from: "from List 1" (or "Lists 1 and 2") is those lists, wherever
+ * they are in the program; "from the lists below" or "Technical Electives" is its own section's lists.
+ */
+function listPool(program, sec, text) {
+  const names = [...String(text ?? '').matchAll(/\bLists?\s+([A-Z0-9]{1,3}(?:(?:,\s*|\s+(?:and|or)\s+)[A-Z0-9]{1,3}\b)*)/g)].flatMap((m) => m[1].split(/,\s*|\s+(?:and|or)\s+/)).map((x) => `list ${x.toLowerCase()}`);
+  if (names.length) {
+    const found = [];
+    const walk = (secs) => {
+      for (const x of secs ?? []) {
+        const h = String(x.h ?? '').toLowerCase().trim();
+        if (names.some((nm) => h === nm || h.startsWith(`${nm}:`) || h.startsWith(`${nm} `))) found.push(...sectionCodes(x));
+        else walk(x.l);
+      }
+    };
+    walk(program.req);
+    if (found.length) return found;
+  }
+  // "Complete 1 approved elective" in a term's section isn't one of that term's required courses.
+  return [...(sec.r ?? []).flatMap(listy), ...(sec.l ?? []).flatMap(sectionCodes)];
+}
+/** Catalog courses a requirement in words fits: subjects ("ECON courses at the 300-level"), or ranges. */
+function fitting(n, courses) {
+  return Object.keys(courses)
+    .filter((c) => {
+      if (courses[c][7]) return false;
+      const [subj, num] = numbered(c) ?? [];
+      if (n.rg) return n.rg.some(([s, lo, hi]) => s === subj && num >= lo && num <= hi);
+      return n.subj.includes(subj) && (!n.min || num >= n.min * 100);
+    })
+    .sort((a, b) => numbered(a)[1] - numbered(b)[1] || a.localeCompare(b));
+}
+const recent = (x) => Boolean(x && !x[7] && x[5]?.[0] + x[5]?.[1] + x[5]?.[2]);
+
+/**
+ * What could still meet each of a program's open requirements, for finding electives: [{key, where, label,
+ * left, codes, kind}]. where: the headings it's under ("Technical Electives List › List 1"); left: courses
+ * still needed; codes: courses not planned yet that would count, from the list itself or, for words, every
+ * course that fits ("2 ECON courses at the 300-level") or the lists it names ("from List 1"). Courses the
+ * program says can't count are left out. kind: 'required', 'choice' or 'words'.
+ */
+export function pools(program, planned, { courses = {}, equiv, avail = planned, faculty = {} } = {}) {
+  const ev = evaluate(program, avail, { courses, faculty });
+  const row = new Map(ev.rows.map((r) => [r.key, r]));
+  const inPlan = (c) => planned.has(c) || (equiv?.get(c) ?? []).some((x) => planned.has(x));
+  const never = new Set();
+  const nots = (ns) => {
+    for (const n of ns ?? []) {
+      if (n.r === 'not') for (const c of n.c) never.add(c);
+      if (n.i) nots(n.i);
+    }
+  };
+  const notSec = (x) => {
+    nots(x.r);
+    for (const l of x.l ?? []) notSec(l);
+  };
+  for (const x of program.req ?? []) notSec(x);
+  const out = [];
+  const push = (key, where, label, left, codes, kind) => {
+    const list = [...new Set(codes)].filter((c) => !inPlan(c) && !never.has(c));
+    if (list.length && left > 0) out.push({ key, where, label, left, codes: list, kind });
+  };
+  const leftOf = (r, n) => {
+    if (!r) return n.nc ?? Math.round((n.u ?? 0) / UNIT);
+    if (r.kind === 'count') return r.want - r.got.length;
+    if (r.kind === 'units') return Math.ceil((r.units - r.sum) / UNIT - 1e-9);
+    return r.done ? 0 : n.nc ?? Math.round((n.u ?? 0) / UNIT);
+  };
+  const node = (n, key, where, sec) => {
+    if (n.g === 'all') return n.i.forEach((c, j) => node(c, `${key}.${j}`, where, sec));
+    if (n.g === 'n') {
+      const r = row.get(key);
+      if (!(r && r.need && r.have >= r.need)) push(key, where, `${n.n ?? 1} of these options`, n.n ?? 1, n.i.flatMap(nodeCodes), 'choice');
+      return;
+    }
+    if (n.r === 'all') {
+      const got = row.get(key)?.got ?? [];
+      const missing = n.c.filter((c) => !got.includes(c));
+      return push(key, where, n.c.length > 1 ? 'All of these' : 'Required', missing.length, missing, 'required');
+    }
+    if (n.r === 'n') {
+      const want = Math.max(1, Math.round(n.n ?? 1));
+      const r = row.get(key);
+      return push(key, where, `${want} of these`, want - (r ? r.got.length : n.c.filter(inPlan).length), n.c, 'choice');
+    }
+    if (n.r || n.info || n.ov || !(n.u || n.nc)) return;
+    const k = leftOf(row.get(key), n);
+    if (n.subj || n.rg) push(key, where, n.t, k, fitting(n, courses).filter((c) => !(n.no ?? []).includes(c) && !(n.nos ?? []).includes(numbered(c)?.[0])), 'words');
+    else if (n.pl) push(key, where, n.t, k, listPool(program, sec, n.t), 'words');
+  };
+  const section = (x, key, path) => {
+    if (x.skip) return;
+    const where = [...path, x.h].filter(Boolean);
+    (x.r ?? []).forEach((n, j) => node(n, `${key}.${j}`, where.join(' › '), x));
+    (x.l ?? []).forEach((l, j) => section(l, `${key}.l${j}`, where));
+  };
+  (program.req ?? []).forEach((x, j) => section(x, `s${j}`, []));
+  return out;
+}
+
 // ---------------- filling in a plan ----------------
 
 /**
@@ -427,8 +576,8 @@ export function evaluateAll(plans, planned, opts = {}) {
  *   picks: n of the options, each {codes: [...]} (one course, or a few that go together) or {ph, count, text}.
  *   words: courses described in words, as placeholders (ph) until picked from cands, the courses that fit.
  */
-export function fillItems(program, planned, { courses = {}, equiv, avail = planned } = {}) {
-  const ev = evaluate(program, avail, { courses });
+export function fillItems(program, planned, { courses = {}, equiv, avail = planned, faculty = {} } = {}) {
+  const ev = evaluate(program, avail, { courses, faculty });
   const row = new Map(ev.rows.map((r) => [r.key, r]));
   const out = { must: [], picks: [], words: [] };
   const inPlan = (c) => planned.has(c) || (equiv?.get(c) ?? []).some((x) => planned.has(x));
@@ -447,22 +596,17 @@ export function fillItems(program, planned, { courses = {}, equiv, avail = plann
   };
   for (const s of program.req ?? []) countSec(s);
   const phFor = (n) => {
-    if (n.fa || !(n.subj || n.rg)) return 'ELECTIVE';
+    // Many subjects to choose from (a breadth requirement): an elective, not the first subject's placeholder.
+    if (n.fa || !(n.subj || n.rg) || (n.subj?.length > 3 && !n.subj.some((x) => named.get(x)))) return 'ELECTIVE';
     if (n.rg) return `${n.rg[0][0]}${Math.floor(Math.min(...n.rg.map((r) => r[1])) / 100)}XX`;
     const subj = [...n.subj].sort((a, b) => (named.get(b) ?? 0) - (named.get(a) ?? 0) || n.subj.indexOf(a) - n.subj.indexOf(b))[0];
     return `${subj}${n.min ? `${n.min}XX` : 'XXX'}`;
   };
-  const cands = (n) => {
-    if (n.fa || !(n.subj || n.rg)) return [];
-    return Object.keys(courses)
-      .filter((c) => {
-        const x = courses[c];
-        if (x[7] || !(x[5]?.[0] + x[5]?.[1] + x[5]?.[2]) || inPlan(c)) return false;
-        const [subj, num] = numbered(c) ?? [];
-        if (n.rg) return n.rg.some(([s, lo, hi]) => s === subj && num >= lo && num <= hi);
-        return n.subj.includes(subj) && (!n.min || num >= n.min * 100);
-      })
-      .sort((a, b) => numbered(a)[1] - numbered(b)[1] || a.localeCompare(b));
+  // Courses to pick from instead of a placeholder: those that fit its subjects, or the lists it draws from.
+  const cands = (n, sec) => {
+    if (n.fa && !n.pl) return [];
+    const from = n.subj || n.rg ? fitting(n, courses) : n.pl ? [...new Set(listPool(program, sec, n.t))] : [];
+    return from.filter((c) => recent(courses[c]) && !inPlan(c));
   };
   const left = (r, n) => {
     if (!r) return n.nc ?? Math.round((n.u ?? 0) / UNIT);
@@ -512,12 +656,16 @@ export function fillItems(program, planned, { courses = {}, equiv, avail = plann
       out.picks.push({ key, n: want - got, options: n.c.filter((c) => !inPlan(c)).map((c) => ({ codes: [c] })), at });
       return;
     }
-    if (n.r || n.info || !(n.u || n.nc)) return;
+    // A total over other courses ("8.0 units at the 200-level or above") isn't more courses to add.
+    if (n.r || n.info || n.ov || !(n.u || n.nc)) return;
     let k = left(row.get(key), n);
     if (n.pl && !(n.subj || n.rg) && !at) k -= listed(sec);
-    if (k > 0) out.words.push({ key, count: k, ph: phFor(n), text: n.t, at, cands: cands(n) });
+    // "No more than 1.0 unit in the same discipline": placeholders take turns among its subjects.
+    const phs = n.ms && n.subj?.length > 1 && n.subj.length <= 6 ? Array.from({ length: k }, (_, i) => `${n.subj[Math.floor((i * UNIT) / n.ms) % n.subj.length]}${n.min ? `${n.min}XX` : 'XXX'}`) : null;
+    if (k > 0) out.words.push({ key, count: k, ph: phFor(n), ...(phs ? { phs } : {}), text: n.t, at, cands: cands(n, sec).filter((c) => !(n.no ?? []).includes(c) && !(n.nos ?? []).includes(numbered(c)?.[0])) });
   };
   const section = (s, key, at) => {
+    if (s.skip) return;
     const here = /^(\d[AB])\s+Term\b/i.exec(s.h ?? '')?.[1]?.toUpperCase() ?? at;
     (s.r ?? []).forEach((n, j) => node(n, `${key}.${j}`, here, s));
     (s.l ?? []).forEach((l, j) => section(l, `${key}.l${j}`, here));
@@ -527,6 +675,9 @@ export function fillItems(program, planned, { courses = {}, equiv, avail = plann
   if (total?.free && total.want > total.got.length) out.words.push({ key: 'total', count: total.want - total.got.length, ph: 'ELECTIVE', text: total.text, at: null, cands: [] });
   return out;
 }
+
+export const WORK_COURSE = /^(PD|WKRPT|COOP)\d/;
+export const WT_SLOTS = 2;
 
 /**
  * Puts courses in a grid. Each goes in the earliest study term in its year or later (a 300-level course in
@@ -539,7 +690,9 @@ export function fillItems(program, planned, { courses = {}, equiv, avail = plann
 export function arrange(rows, want, { courses = {}, load = 5, max = 7, from = 0, equiv, plans = [] } = {}) {
   const lv = levels(rows);
   const study = rows.map((r, i) => (r.kind === 'study' && i >= from ? i : -1)).filter((i) => i >= 0);
-  const cells = rows.map((r) => (r.kind === 'study' ? (r.codes ?? []).filter(Boolean).map(baseCode) : []));
+  // PD courses and work-term reports are taken on work terms (two courses there at most).
+  const work = rows.map((r, i) => (r.kind === 'coop' && i >= from ? i : -1)).filter((i) => i >= 0);
+  const cells = rows.map((r) => (r.kind !== 'off' ? (r.codes ?? []).filter(Boolean).map(baseCode) : []));
   const year = (i) => Number(lv[i]?.slice(0, -1));
   const last = Math.max(0, ...study.map(year));
   const target = (w) => {
@@ -633,7 +786,12 @@ export function arrange(rows, want, { courses = {}, load = 5, max = 7, from = 0,
           else next.push({ ...w, t: { i: w.t.i, exact: false } });
           continue;
         }
-        const i = study.find((x) => x >= w.t.i && cells[x].length < load && (!strict || ok(w.code, x)));
+        // One PD course (and one work-term report) a work term, in order.
+        const kin = numbered(w.code)?.[0];
+        const onWork = WORK_COURSE.test(w.code) && work.length;
+        const i = onWork
+          ? work.find((x) => cells[x].length < WT_SLOTS && !cells[x].some((c) => numbered(c)?.[0] === kin)) ?? work.find((x) => cells[x].length < WT_SLOTS)
+          : study.find((x) => x >= w.t.i && cells[x].length < load && (!strict || ok(w.code, x)));
         if (i != null) put(w, i);
         else next.push(w);
       }

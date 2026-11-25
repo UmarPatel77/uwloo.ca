@@ -210,3 +210,96 @@ main:has(.pw) { max-width: 84rem; }
   .pw-fillprev { border-left: 0; border-top: 1px solid var(--rule); }
   .pw-opts { grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); }
 }
+
+/* find courses: what could meet what's still open */
+.pw-acts { margin: 0.55rem 0 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.pw-findbtn { border: 1px solid var(--ink); background: var(--paper); color: var(--ink); border-radius: 8px; padding: 0.32rem 0.8rem; cursor: pointer; font: inherit; font-weight: 650; }
+.pw-findbtn:hover { background: var(--soft); }
+.pw-browse { font-size: 0.82rem; margin-left: 0.3rem; white-space: nowrap; }
+.pw-ffilters { display: flex; flex-wrap: wrap; gap: 0.45rem 1rem; align-items: center; padding: 0.6rem 1.1rem; border-bottom: 1px solid var(--rule); font-size: 0.9rem; }
+.pw-ffilters label { display: flex; align-items: center; gap: 0.35rem; }
+.pw-freq { flex: 1 1 100%; min-width: 0; }
+.pw-freq select { flex: 1 1 auto; min-width: 0; max-width: 100%; }
+.pw-fsearch input { border: 1px solid var(--rule); border-radius: 6px; padding: 0.25rem 0.45rem; background: var(--paper); min-width: 13rem; }
+.pw-fstatus { margin: 0; padding: 0 1.1rem; font-size: 0.9rem; min-height: 0; }
+.pw-fstatus:not(:empty) { padding: 0.45rem 1.1rem; background: color-mix(in srgb, var(--gold) 22%, var(--paper)); }
+.pw-fres { overflow: auto; padding: 0.3rem 1.1rem 1rem; max-height: calc(92vh - 13rem); }
+.pw-flist { list-style: none; margin: 0; padding: 0; }
+.pw-fr { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.2rem 0.7rem; padding: 0.55rem 0; border-bottom: 1px solid var(--rule); }
+.pw-fr p { margin: 0; }
+.pw-fill .pw-add { align-self: start; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); border-radius: 6px; padding: 0.2rem 0.6rem; cursor: pointer; font-size: 0.85rem; font-weight: 650; }
+.pw-fill .pw-add:hover { background: color-mix(in srgb, var(--ink) 85%, var(--paper)); }
+.pw-ft { font-size: 0.95rem; }
+.pw-ft a { color: inherit; }
+.pw-fmeta { font-size: 0.82rem; display: flex; flex-wrap: wrap; gap: 0.2rem 0.6rem; align-items: center; margin-top: 0.15rem !important; }
+.pw-fmeta .ok { color: var(--d5); }
+.pw-fmeta .no { color: var(--bad); }
+.pw-ss { display: inline-flex; gap: 0.15rem; }
+.pw-ss abbr { text-decoration: none; font-size: 0.72rem; font-weight: 750; width: 1.15rem; text-align: center; border-radius: 3px; background: var(--soft); color: color-mix(in srgb, var(--muted) 55%, transparent); }
+.pw-ss abbr.on { background: color-mix(in srgb, var(--d5) 24%, var(--paper)); color: var(--ink); }
+.pw-fcounts { display: flex; flex-wrap: wrap; gap: 0.15rem 0.8rem; font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem !important; }
+.pw-fcounts .pw-dot { margin-right: 0.25rem; }
+.pw-fnone { padding: 1rem 0; }
+.pw-csugg .pw-dot { margin-left: auto; flex: none; }
+@media (max-width: 52rem) {
+  .pw-fres { max-height: none; overflow: visible; }
+  .pw-find .pw-fillin { overflow: auto; }
+  .pw-fsearch, .pw-fsearch input { flex: 1 1 100%; min-width: 0; }
+}
+
+/* grades: a badge in the cell; while you edit it, the grade is in the text ("CS 135 85") */
+.pw-gr { position: absolute; right: 0.22rem; bottom: 0.14rem; font-size: 0.64rem; font-weight: 750; line-height: 1; padding: 0.06rem 0.2rem; border-radius: 3px; background: var(--soft); color: var(--ink); pointer-events: none; font-variant-numeric: tabular-nums; }
+.pw-gr.fail { background: color-mix(in srgb, var(--bad) 18%, var(--paper)); color: var(--bad); }
+.pw-gr.wait { background: color-mix(in srgb, var(--warn) 18%, var(--paper)); color: var(--warn); }
+.pw-c.graded .pw-in { padding-top: 0.45rem; padding-bottom: 0.75rem; }
+.pw-c.graded .pw-in:focus ~ .pw-gr { display: none; }
+.pw-tavg { display: inline-block; margin-left: 0.35rem; font-size: 0.72rem; font-weight: 700; padding: 0 0.25rem; border-radius: 3px; background: var(--soft); }
+.pw-row.coop .pw-c { background: color-mix(in srgb, var(--soft) 55%, transparent); }
+.pw-row.coop .pw-note .t { font-size: 0.8rem; }
+.pw-from select { max-width: 14rem; }
+
+/* the course card */
+.pw-dmeta { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; align-items: center; margin: 0.15rem 0 0.4rem; font-size: 0.88rem; }
+.pw-dmeta .t { font-size: 0.82rem; }
+.pw-seasons { display: inline-flex; gap: 0.2rem; }
+.pw-season { font-size: 0.75rem; font-weight: 700; padding: 0.05rem 0.35rem; border-radius: 4px; background: color-mix(in srgb, var(--d5) 22%, var(--paper)); }
+.pw-season b { font-weight: 600; margin-left: 0.25rem; }
+.pw-season.none { background: var(--soft); color: var(--muted); }
+.pw-grade { display: inline-flex; gap: 0.35rem; align-items: center; font-weight: 650; }
+.pw-grade input { width: 6.5rem; border: 1px solid var(--rule); border-radius: 6px; padding: 0.15rem 0.4rem; background: var(--paper); }
+.pw-grade input[aria-invalid="true"] { border-color: var(--bad); }
+.pw-reqs { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.15rem 0.7rem; margin: 0.4rem 0; font-size: 0.88rem; }
+.pw-reqs dt { font-weight: 650; color: var(--muted); }
+.pw-reqs dd { margin: 0; }
+.pw-leads { margin-top: 0.5rem; border-top: 1px solid var(--rule); padding-top: 0.35rem; }
+.pw-leads > p { margin: 0.25rem 0; display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: baseline; }
+.pw-leads > p.t { display: block; }
+@media (max-width: 40rem) {
+  .pw-reqs { grid-template-columns: minmax(0, 1fr); }
+  .pw-reqs dd { margin-bottom: 0.3rem; }
+}
+
+/* a plan's minimum averages */
+.pw-avgs h4 { margin: 0.8rem 0 0.25rem; font-size: 0.92rem; }
+.pw-avgs ul { list-style: none; margin: 0; padding: 0; font-size: 0.86rem; }
+.pw-avgs li { padding: 0.2rem 0; display: flex; flex-wrap: wrap; gap: 0.1rem 0.5rem; justify-content: space-between; border-bottom: 1px solid var(--rule); }
+.pw-avgs li.ok > span:first-child::before { content: "✓ "; color: var(--d5); }
+.pw-avgs li.bad { color: var(--bad); }
+.pw-avgs li.hand > span:first-child { color: var(--muted); }
+
+/* printing, or saving as a PDF: the grid and the checklists, without the controls */
+@media print {
+  .bar, footer, .pw-head .lede, .pw-tools, .pw-from, .pw-addplan, .pw-acts, .pw-offer, .pw-hint, .pw-rowtools, .pw-dir, .pw-detail, .pw-sugg, dialog, .pw-plan button, .pw-browse, .pw-more summary { display: none !important; }
+  main:has(.pw) { max-width: none; padding: 0; }
+  .pw-main { display: block; }
+  .pw-gridwrap { overflow: visible; border: 1px solid #999; }
+  .pw-grid { min-width: 0; font-size: 8.5pt; }
+  .pw-grid thead th, .pw-grid tbody th { position: static; box-shadow: none; }
+  .pw-in { padding: 0.25rem 0.2rem; }
+  .pw-row { break-inside: avoid; }
+  .pw-side { display: block; margin-top: 0.8rem; }
+  .pw-box { margin-bottom: 0.6rem; }
+  .pw-bar select { border: 0; appearance: none; padding: 0; background: none; }
+  .pw-head h1 { font-size: 20pt; }
+  a { color: inherit; text-decoration: none; }
+}

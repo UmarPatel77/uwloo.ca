@@ -2047,7 +2047,8 @@ test('pathways: the data file and the page', () => {
   assert.equal(d.programs[0].tu, 2);
   const g = PE.evaluate({ s: 'g', n: 'GSJ Minor', t: 'Minor', req: [], tsub: { u: 1.5, subj: ['GSJ'] } }, new Map([['GSJ101', { units: 0.5 }], ['GSJ205', { units: 0.5 }], ['ECON101', { units: 0.5 }]]));
   assert.deepEqual([g.need, g.have], [3, 2], 'a total in one subject is counted');
-  assert.deepEqual(PE.why([{ g: 'all', i: [{ r: 'n', n: 1, c: ['ECON101', 'MSE263'] }, { t: 'level', lv: '3A' }] }], new Set(), { level: '2A' }), { codes: ['ECON101', 'MSE263'], level: '3A', plans: [] });
+  assert.deepEqual(PE.why([{ g: 'all', i: [{ r: 'n', n: 1, c: ['ECON101', 'MSE263'] }, { t: 'level', lv: '3A' }] }], new Set(), { level: '2A' }), { codes: ['ECON101', 'MSE263'], groups: [['ECON101', 'MSE263']], level: '3A', plans: [] });
+  assert.deepEqual(PE.why([{ r: 'n', n: 1, c: ['MATH128', 'MATH138'] }, { r: 'all', c: ['MATH136', 'CS136'] }], new Set(['CS136'])).groups, [['MATH128', 'MATH138'], ['MATH136']], 'each unmet list on its own');
   const page = PW.pathwaysPage({ cat: { label: '2026–27' }, builtAt: new Date(), version: 'v9', curTerm: '1269' });
   assert.match(page, /<link rel="canonical" href="https:\/\/uwloo\.ca\/pathways\/">/);
   assert.match(page, /src="\/pathways\/app\.js\?v=v9"/);
@@ -2116,6 +2117,71 @@ test('pathways: co-op study/work sequences, from each chart to each major', () =
   assert.deepEqual(show('hist'), ['Co-op:1A,1B,off,2A,2B,WT'], 'the row for majors the other row leaves out');
   assert.equal(got.get('anth'), undefined, 'no co-op, no sequence');
   assert.deepEqual(show('afm'), ['Sequence 1:1A,1B,off,2A', 'Sequence 2:1A,1B,WT,2A'], 'its own chart');
+});
+
+test('pathways: what each open requirement could still take', () => {
+  const prog = {
+    s: 'ec',
+    n: 'Economics',
+    t: 'Major',
+    req: [
+      { h: 'Required Courses', r: [{ g: 'all', i: [{ r: 'all', c: ['ECON101', 'ECON102'] }, { t: 'Complete 2 ECON courses at the 300-level or above', nc: 2, subj: ['ECON'], min: 3 }, { r: 'not', c: ['ECON371'] }] }], l: [] },
+      { h: 'List 1', r: [{ r: 'n', n: 2, c: ['ECON301', 'ECON302', 'ECON303'] }], l: [] },
+      { h: 'Electives', r: [{ t: 'Complete 1 additional course from List 1.', nc: 1, pl: 1 }], l: [] },
+    ],
+  };
+  const courses = { ECON101: ['A', 0.5, 0, 0, 0, [1, 1, 1]], ECON301: ['B', 0.5, 0, 0, 0, [1, 0, 0]], ECON302: ['C', 0.5, 0, 0, 0, [0, 0, 0]], ECON371: ['D', 0.5, 0, 0, 0, [1, 1, 1]], ECON450: ['E', 0.5, 0, 0, 0, [1, 1, 0]], ECON290: ['F', 0.5, 0, 0, 0, [1, 1, 1]], ECON399: ['G', 0.5, 0, 0, 0, [0, 0, 0], [], 1] };
+  const planned = new Map([['ECON101', { units: 0.5 }], ['ECON303', { units: 0.5 }]]);
+  const got = PE.pools(prog, planned, { courses });
+  assert.deepEqual(got.map((x) => [x.where, x.label, x.left, x.codes, x.kind]), [
+    ['Required Courses', 'All of these', 1, ['ECON102'], 'required'],
+    ['Required Courses', 'Complete 2 ECON courses at the 300-level or above', 1, ['ECON301', 'ECON302', 'ECON450'], 'words'],
+    ['List 1', '2 of these', 2, ['ECON301', 'ECON302'], 'choice'],
+    ['Electives', 'Complete 1 additional course from List 1.', 1, ['ECON301', 'ECON302'], 'words'],
+  ], 'ECON303 counts once, toward the first section’s words; ECON371 can’t count; a gone course is left out; "from List 1" is List 1 wherever it is');
+  const f = PE.fillItems(prog, planned, { courses });
+  assert.deepEqual(f.words.find((w) => w.key === 's2.0').cands, ['ECON301'], 'picking from a list: courses that have run lately');
+  const term = { s: 'me', n: 'ME', t: 'Major', req: [{ h: '1B Term', r: [{ g: 'all', i: [{ r: 'all', c: ['ME101', 'ME115'] }, { t: 'Complete 1 approved elective', nc: 1, pl: 1 }] }], l: [] }] };
+  assert.deepEqual(PE.pools(term, new Map(), { courses }).map((x) => x.label), ['All of these'], 'a term’s approved elective doesn’t draw from the courses that term requires');
+});
+
+test('pathways: grades in prerequisites, breadth and units by level', () => {
+  const pre = [{ r: 'all', c: ['CS136'], mg: 60 }];
+  assert.equal(PE.holds(pre, new Set(['CS136']), { grades: new Map([['CS136', 72]]) }), true);
+  assert.equal(PE.holds(pre, new Set(['CS136']), { grades: new Map([['CS136', 55]]) }), false, '55% isn’t the 60% it asks for');
+  assert.equal(PE.holds(pre, new Set(['CS136']), {}), true, 'no grade yet: assume it’ll be enough');
+  assert.deepEqual(PE.why(pre, new Set(['CS136']), { grades: new Map([['CS136', 55]]) }).low, [{ code: 'CS136', need: 60, got: 55 }]);
+  const ba = {
+    s: 'ba',
+    n: 'BA',
+    t: 'Degree Requirements',
+    req: [
+      { h: 'Breadth Requirements', r: [{ t: 'Social Sciences', u: 1, subj: ['ANTH', 'ECON', 'PSYCH'], ms: 0.5 }, { t: 'Transdisciplinary', u: 0.5, subj: ['PACS'], of: 'art', nos: ['PD'] }], l: [] },
+      { h: '200-level', only: { type: 'Honours', other: ['Liberal Studies'] }, r: [{ t: 'A minimum of 1.0 units at the 200-level or above', u: 1, min: 2, any: 1, ov: 1 }], l: [] },
+      { h: '200-level', only: { type: 'Honours', major: 'Liberal Studies' }, r: [{ t: 'A minimum of 1.5 units at the 200-level or above', u: 1.5, min: 2, any: 1, ov: 1 }], l: [] },
+    ],
+  };
+  const econ = { s: 'ec', n: 'Economics (Bachelor of Arts - Honours)', t: 'Major', fi: 'Economics' };
+  const p = PE.forPlans(ba, [econ, ba]);
+  assert.deepEqual(p.req.map((x) => Boolean(x.skip)), [false, false, true], 'the Liberal Studies line is for Liberal Studies');
+  const planned = new Map(['ECON101', 'ECON102', 'PSYCH101', 'ECON201', 'PD1', 'MATH135'].map((c) => [c, { units: 0.5 }]));
+  const ev = PE.evaluate(p, planned, { faculty: { MATH: 'mat', ECON: 'art', PD: 'mat' } });
+  const rows = ev.rows.filter((r) => r.kind === 'units');
+  assert.deepEqual(rows[0].got, ['ECON101', 'PSYCH101'], 'at most 0.5 units from one discipline');
+  assert.deepEqual(rows[1].got, ['MATH135'], 'a course from another faculty counts; PD doesn’t');
+  assert.deepEqual([rows[2].sum, rows[2].got], [0.5, ['ECON201']], 'the 200-level total counts courses other rules used');
+  const f = PE.fillItems(p, new Map(), { courses: {} });
+  assert.deepEqual(f.words.map((w) => [w.count, w.phs ?? w.ph]), [[2, ['ANTHXXX', 'ECONXXX']], [1, 'PACSXXX']], 'no placeholders for a total over other courses; a capped rule spreads over subjects');
+  // Work terms: a PD course goes on one, one a term.
+  const rows2 = [
+    { kind: 'study', season: 'F', codes: [] },
+    { kind: 'study', season: 'W', codes: [] },
+    { kind: 'coop', season: 'S', codes: [] },
+    { kind: 'study', season: 'F', codes: [] },
+    { kind: 'coop', season: 'W', codes: [] },
+  ];
+  const res = PE.arrange(rows2, [{ code: 'PD1' }, { code: 'PD20' }, { code: 'CS135' }], { courses: {} });
+  assert.deepEqual(Object.fromEntries(res.placed.map((x) => [x.code, x.row])), { CS135: 0, PD1: 2, PD20: 4 });
 });
 
 test('pathways: a section with named exceptions', () => {
@@ -2187,4 +2253,75 @@ test('pathways: filling in a plan, and where its courses go', () => {
   assert.deepEqual(PE.fillItems(deg, some).words.map((w) => [w.key, w.count, w.ph]), [['total', 36, 'ELECTIVE']], 'AFM102 is named; 36 more make 40');
   const later = PE.arrange(rows, [{ code: 'MATH135' }, { code: 'ME100', at: '1A' }], { courses: C, from: 3 });
   assert.deepEqual(later.placed.map((p) => PE.levels(rows)[p.row]), ['2A', '2A'], 'nothing goes before the term it fills from');
+});
+
+test('pathways: minimum averages, breadth tables and units by level from the calendar’s prose', async () => {
+  const { averages, degreeProse } = await import('./lib/pathways.mjs');
+  const strip = (list) => list.map(({ t, ...a }) => a);
+  assert.deepEqual(strip(averages('<p>A minimum cumulative overall average of 60.0%. A minimum cumulative major average of 70.0%: all math courses.</p>')), [
+    { k: 'overall', min: 60 },
+    { k: 'fac', min: 70, fac: 'mat', label: 'major' },
+  ]);
+  assert.deepEqual(strip(averages('<p>A minimum cumulative major average of 60.0% in two or more of the following courses: CS136, CS138; CS240-299; AMATH242.</p>')), [{ k: 'codes', min: 60, c: ['CS136', 'CS138', 'AMATH242'], rg: [['CS', 240, 299]], n: 2, label: 'major' }]);
+  assert.deepEqual(strip(averages('<p>A minimum average of 60.0% in the specialization courses.</p><p>A minimum term average of 60.0%.</p>')), [
+    { k: 'plan', min: 60, label: 'specialization' },
+    { k: 'term', min: 60 },
+  ]);
+  assert.deepEqual(strip(averages('<p>A minimum cumulative Computer Science average of 60.0%.</p>')), [{ k: 'subj', min: 60, subj: ['CS'] }]);
+  const html = `<p>Three-Year General degrees: Complete 15.0 units, with a minimum of 8.0 units at the 200-level or above.</p>
+<p>Honours degrees:</p><p>Liberal Studies major: A minimum of 12.5 units must be at the 200-level or above.</p><p>All other Arts majors: A minimum of 8.0 units must be at the 200-level or above.</p>
+<table><tr><th>Requirement</th><th>Units Required</th><th>Subject Codes</th></tr>
+<tr><td>Humanities</td><td>1.0 unit</td><td>CLAS, ENGL, HIST</td></tr>
+<tr><td>Social Sciences</td><td>2.0 units</td><td>ECON, PSYCH, SOC</td></tr>
+<tr><td>Transdisciplinary Studies</td><td>0.5 units</td><td>ARTS, PACS. Also any course taken in another University of Waterloo faculty.</td></tr></table>
+<p>No more than 1.0 unit in the same discipline may count towards the Social Sciences requirement.</p>
+<p>Arts First courses (ARTS160 and ARTS160E) do not fulfil any of the breadth requirements. Professional Development (PD) courses do not fulfil any of the breadth requirements.</p>`;
+  const secs = degreeProse(html, 'art');
+  assert.deepEqual(secs.filter((s) => s.only).map((s) => [s.only, s.r[0].u]), [
+    [{ type: 'Three-Year General' }, 8],
+    [{ type: 'Honours', major: 'Liberal Studies' }, 12.5],
+    [{ type: 'Honours', other: ['Liberal Studies'] }, 8],
+  ]);
+  const br = secs.find((s) => s.h === 'Breadth Requirements').r;
+  assert.deepEqual(br.map((r) => [r.u, r.subj, r.ms ?? null, r.of ?? null]), [
+    [1, ['CLAS', 'ENGL', 'HIST'], null, null],
+    [2, ['ECON', 'PSYCH', 'SOC'], 1, null],
+    [0.5, ['ARTS', 'PACS'], null, 'art'],
+  ]);
+  assert.deepEqual([br[0].no, br[0].nos], [['ARTS160', 'ARTS160E'], ['PD']]);
+});
+
+test('search: words, stems and pairs, the same at build time and in the browser', async () => {
+  const { stem, terms } = await import('../site/search/text.js');
+  // Porter's own examples.
+  for (const [w, s] of Object.entries({ caresses: 'caress', ponies: 'poni', agreed: 'agre', motoring: 'motor', hopping: 'hop', relational: 'relat', conditional: 'condit', vietnamization: 'vietnam', electrical: 'electr', adjustment: 'adjust', controll: 'control', networks: 'network', learning: 'learn' })) assert.equal(stem(w), s, w);
+  assert.deepEqual(terms('Red-black trees, and C++. CS 135 in 2026!'), ['red', 'black', 'red black', 'tree', 'black tree', 'cplusplu', 'cs']);
+});
+
+test('search: an index from a few courses ranks by words, pairs and what courses are about', async () => {
+  const { searchIndex, searchDocs } = await import('./lib/search.mjs');
+  const { queryTerms, rank, loadVec, respell } = await import('../site/search/rank.js');
+  const { shardOf } = await import('../site/search/text.js');
+  const course = (code, title, description, subjectName) => [code, { cat: { level: 'ug' }, course: { title, description, subject: /^[A-Z]+/.exec(code)[0], subjectName } }];
+  const topics = ['graph algorithms shortest paths greedy', 'linear algebra matrices eigenvalues vectors', 'latin grammar roman authors translation', 'fourier series transforms signals', 'game theory strategic equilibrium auctions'];
+  const list = [];
+  topics.forEach((t, k) => {
+    for (let i = 0; i < 6; i++) list.push(course(`S${k}X${100 + i}`, `${t.split(' ').slice(0, 2).join(' ')} ${i}`, `This course covers ${t}. ${t.split(' ').reverse().join(' ')} and more on ${t.split(' ')[i % 4]}.`, `Subject ${k}`));
+  });
+  list.push(course('CS341', 'Algorithms', 'Dynamic programming, greedy algorithms, graph algorithms and shortest paths.', 'Computer Science'));
+  const docs = searchDocs({ primary: new Map(list), reddit: new Map([['CS341', [{ title: 'CS 341 tips', text: 'dynamic programming is the hardest part' }]]]) });
+  const { files } = searchIndex(docs);
+  const get = (p) => JSON.parse(files.find(([f]) => f === p)[1]);
+  const d = get('search/docs.json');
+  const vec = loadVec(get('search/vec.json'));
+  const ask = (q) => {
+    const qt = queryTerms(q);
+    const entries = new Map([...qt.words, ...qt.pairs].map((x) => [x.t, get(`search/t/${shardOf(x.t)}.json`)[x.t]]));
+    return rank(qt, entries, d, vec);
+  };
+  const top = ask('dynamic programming');
+  assert.equal(d.codes[top.results[0].i], 'CS341');
+  assert.ok(top.results[0].mask & 4 && top.results[0].mask & 16, 'matched in its description and on Reddit');
+  assert.ok(ask('eigenvalues').results.slice(0, 6).every((x) => d.codes[x.i].startsWith('S1')));
+  assert.equal(respell('eigenvaleus', get('search/vocab.json'))?.[0], 'eigenvalues');
 });

@@ -1,0 +1,43 @@
+name: Archive probe
+
+# One-off: reads how the 2021–22 to 2023–24 calendars lay out their programs (academic-calendar-archive, which
+# has no robots.txt), and samples Open Data's important dates and exam schedules (scripts/probe-archive.mjs),
+# into data/probe/, so Pathways can read older start years and the timetable can add deadlines and exams.
+# Runs when the probe is pushed, and by hand any time.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/probe-archive.mjs
+      - .github/workflows/archive-probe.yml
+
+permissions:
+  contents: write # commit data/probe
+
+concurrency:
+  group: archive-probe
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Read the archive and Open Data
+        env:
+          UW_API_KEY: ${{ secrets.UW_API_KEY }}
+        run: node scripts/probe-archive.mjs
+      - name: Commit
+        run: |
+          if [ -n "$(git status --porcelain -- data/probe)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/probe
+            git commit -m "Archive probe: older calendars' program pages, Open Data dates and exams"
+            for i in 1 2 3; do git pull --rebase --quiet && git push && break; sleep 5; done
+          fi

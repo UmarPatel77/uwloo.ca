@@ -315,6 +315,7 @@ h2 { font-size: 1.05rem; font-weight: 700; font-stretch: 87.5%; margin: 2.25rem 
 .results li a .cc { min-width: 5.5rem; font-size: 1.15rem; }
 .results li a[aria-selected="true"], .results li a:hover { background: var(--soft); }
 .results .empty { color: var(--muted); padding: 0.5rem 0; }
+.results li.more a { font-size: 0.95rem; font-weight: 600; color: var(--ink); }
 .home-grid h2 { margin-top: 3rem; }
 
 footer { max-width: 62rem; margin: 0 auto; padding: 1.25rem var(--pad) 3rem; color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--rule); }

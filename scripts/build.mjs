@@ -8,6 +8,7 @@ import { archiveSubjectPage, archiveYearPage, loadArchiveText, textMap } from '.
 import * as kuali from './lib/kuali.mjs';
 import * as programsLib from './lib/programs.mjs';
 import { pathwaysData, pathwaysPage, pathwaysPrograms } from './lib/pathways.mjs';
+import { searchDocs, searchIndex, searchPage } from './lib/search.mjs';
 import { loadReddit, redditSection, SHOWN } from './lib/reddit.mjs';
 import { flowSection, loadFlow } from './lib/uwflow.mjs';
 import { available, entryPages, linksAboutPage, loadResources, publishFiles, resourcePage, resourcesSection, syncFiles } from './lib/resources.mjs';
@@ -348,7 +349,7 @@ async function main() {
           console.warn(`! Pathways: ${cat.label} programs skipped (${err.message})`);
         }
       }
-      const pw = pathwaysData({ programs, combos: byProgram, catalog: progCat, schedules, published, curTerm, retired, years });
+      const pw = pathwaysData({ programs, combos: byProgram, catalog: progCat, schedules, published, curTerm, retired, years, faculty: offerings?.faculty ?? new Map() });
       const json = JSON.stringify(pw);
       pages.push(['pathways/data.json', json]);
       pages.push(['pathways/index.html', pathwaysPage({ ...ctxBase, cat: progCat, curTerm })]);
@@ -591,7 +592,7 @@ async function main() {
 
   // /cs → the current year's CS page (or the newest page that has the subject), as a real file so it isn't a 404.
   // Subjects only in older Graduate Calendars go to the newest term that has them.
-  const RESERVED = new Set(['about', 'archive', 'files', 'reddit', 'vendor']);
+  const RESERVED = new Set(['about', 'archive', 'files', 'reddit', 'search', 'vendor']);
   const allSubjects = new Set();
   for (const cat of [...ug, ...grad, ...oldCats]) for (const s of cat.subjects) if (!RESERVED.has(slug(s))) allSubjects.add(s);
   for (const s of allSubjects) {
@@ -632,6 +633,22 @@ async function main() {
     ...[...retired.values()].map((r) => [r.code, r.od?.title ?? r.ga?.latest.title ?? r.arch?.latest.title ?? '', 1]),
   ].sort((a, b) => byCode(a[0], b[0]));
   pages.push(['search.json', JSON.stringify(search)]);
+
+  // /search/: courses by what they're about (scripts/lib/search.mjs). A failure skips it, not the build.
+  try {
+    const links = new Map();
+    const addLinks = (code, list) => links.set(code, [...(links.get(code) ?? []), ...list]);
+    for (const [code, list] of foundFor) addLinks(code, list.map((l) => ({ title: l.title, url: l.url })));
+    for (const e of shown) for (const [path, p] of entryPages(e)) if (p) for (const c of e.codes) addLinks(c, [{ title: p.title ? `${e.title}: ${p.title}` : e.title, url: path }]);
+    const docs = searchDocs({ primary, older: [...ugOld, ...oldCats], retired, reddit: reddit.map, links });
+    const { files, stats } = searchIndex(docs);
+    pages.push(...files);
+    pages.push(['search/index.html', searchPage({ ...ctxBase, count: docs.length })]);
+    sitemap.push('/search/');
+    console.log(`Search: ${stats.docs} courses, ${stats.terms} terms (${stats.lsaTerms} in LSA, ${(stats.lsaMs / 1000).toFixed(1)} s), ${(stats.bytes / 1e6).toFixed(1)} MB`);
+  } catch (err) {
+    console.warn(`! Search skipped: ${err.stack ?? err.message}`);
+  }
 
   // courses.csv: every course, whether it's in the current calendars, and the last term it ran.
   // Courses that haven't run in years are the likeliest to have no outline on outline.uwaterloo.ca.

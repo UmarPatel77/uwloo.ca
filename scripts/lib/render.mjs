@@ -505,6 +505,7 @@ export function homePage({ current, catalogs, gradCatalogs, groups, courseCount,
 <p class="lede">Prerequisites, what a course leads to, and when it actually runs, for ${courseCount.toLocaleString('en-CA')} Waterloo undergraduate and graduate courses.</p>
 <ol id="results" class="results" role="listbox" aria-label="Matching courses"></ol>
 ${planner ? `<p class="plan-link home-plan"><a href="/calendar/">Plan your ${esc(planner)} timetable</a> <span class="t">Add your courses; see every schedule that fits, best first.</span></p>` : ''}
+<p class="plan-link home-plan"><a href="/search/">Search courses by topic</a> <span class="t">“dynamic programming”, “latin”, “fourier series”: what courses are about, from their descriptions, course websites and r/uwaterloo.</span></p>
 ${programCount ? `<p class="plan-link home-plan"><a href="/pathways/">Map out your degree</a> <span class="t">Your major, minors and specializations, term by term: prerequisites, course loads, and what’s still open.</span></p>
 <p class="plan-link home-plan"><a href="/programs/">Browse all ${programCount} programs</a> <span class="t">Majors, minors, options and specializations, with their courses and what can’t be combined.</span></p>` : ''}
 <div class="home-grid">

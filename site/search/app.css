@@ -1,0 +1,41 @@
+/* uwloo.ca/search. Builds on style.css (--ink, --paper, --rule, --soft, --gold, --muted). */
+main:has(.sx) { max-width: 52rem; }
+.sx-form { position: relative; margin: 1.6rem 0 0.4rem; }
+.sx-label { display: block; font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 850; font-stretch: 75%; line-height: 1.05; margin-bottom: 0.7rem; }
+.sx-box { display: flex; gap: 0.4rem; }
+.sx-box input { flex: 1 1 auto; min-width: 0; font: inherit; font-size: 1.15rem; padding: 0.6rem 0.85rem; border: 2px solid var(--ink); border-radius: 10px; background: var(--paper); color: var(--ink); }
+.sx-box input:focus { outline: 3px solid var(--gold); outline-offset: 1px; }
+.sx-box button { font: inherit; font-weight: 700; padding: 0 1.1rem; border: 2px solid var(--ink); border-radius: 10px; background: var(--ink); color: var(--paper); cursor: pointer; }
+.sx-sugg { position: absolute; z-index: 20; left: 0; right: 0; margin: 4px 0 0; padding: 0.25rem; list-style: none; background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; box-shadow: 0 10px 28px rgb(0 0 0 / 0.16); }
+.sx-sugg li { padding: 0.45rem 0.7rem; border-radius: 7px; cursor: pointer; }
+.sx-sugg li[aria-selected="true"], .sx-sugg li:hover { background: var(--soft); }
+.sx-lede { font-size: 0.92rem; margin: 0.5rem 0 1.2rem; max-width: 44rem; }
+.sx-try a, .sx-rel a, .sx-subj a { display: inline-block; margin: 0 0.25rem 0.35rem 0; padding: 0.15rem 0.6rem; border: 1px solid var(--rule); border-radius: 999px; text-decoration: none; font-size: 0.92rem; }
+.sx-try a:hover, .sx-rel a:hover, .sx-subj a:hover { border-color: var(--ink); }
+.sx-try { line-height: 2; }
+.sx-rel, .sx-subj { margin: 0.4rem 0; }
+.sx-rel .t, .sx-subj .t { font-size: 0.85rem; margin-right: 0.35rem; }
+.sx-subj a { background: var(--soft); border-color: transparent; }
+.sx-direct { margin: 0.6rem 0; padding: 0.55rem 0.8rem; border-radius: 10px; background: color-mix(in srgb, var(--gold) 30%, var(--paper)); }
+.sx-direct a { text-decoration: none; }
+.sx-fix, .sx-none { margin: 0.6rem 0; }
+.sx-note { font-size: 0.9rem; }
+.sx-count { font-size: 0.86rem; margin: 1rem 0 0.2rem; }
+.sx-list { list-style: none; margin: 0; padding: 0; }
+.sx-r { padding: 0.85rem 0; border-bottom: 1px solid var(--rule); }
+.sx-r h2 { font-size: 1.08rem; margin: 0; font-weight: 650; line-height: 1.3; }
+.sx-r h2 > a { text-decoration: none; }
+.sx-r h2 > a:hover { text-decoration: underline; }
+.sx-code { font-weight: 800; font-stretch: 87.5%; margin-right: 0.2rem; white-space: nowrap; }
+.sx-also { font-size: 0.85rem; font-weight: 500; color: var(--muted); }
+.sx-meta { margin: 0.1rem 0 0; font-size: 0.85rem; color: var(--muted); }
+.sx-snip { margin: 0.35rem 0 0; font-size: 0.95rem; line-height: 1.45; }
+.sx-r mark { background: color-mix(in srgb, var(--gold) 55%, transparent); color: inherit; border-radius: 2px; padding: 0 1px; }
+.sx-links { list-style: none; margin: 0.35rem 0 0; padding: 0; font-size: 0.9rem; }
+.sx-links li { margin: 0.1rem 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sx-links li::before { content: "↗ "; color: var(--muted); }
+.sx-why { margin: 0.3rem 0 0; font-size: 0.82rem; }
+.sx-r.old h2 { opacity: 0.85; }
+.sx-more { font: inherit; padding: 0.4rem 1rem; border: 1px solid var(--rule); border-radius: 8px; background: none; cursor: pointer; margin-top: 0.8rem; }
+.sx-more:hover { background: var(--soft); }
+#sx-out[aria-busy="true"] { opacity: 0.6; transition: opacity 0.2s 0.15s; }

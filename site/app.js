@@ -35,8 +35,10 @@ function go(value) {
   const v = value.trim();
   if (!v) return;
   const code = normalizeCode(v);
-  location.href = code ? `/${code}/` : `/?q=${encodeURIComponent(v)}`;
+  // Anything but a course code: /search/, which finds courses by what they're about.
+  location.href = code ? `/${code}/` : `/search/?q=${encodeURIComponent(v)}`;
 }
+const searchLink = (q) => `<li class="more"><a href="/search/?q=${encodeURIComponent(q)}">Search what courses are about: “${esc(q)}” →</a></li>`;
 
 // Header jump box on every page. "/" focuses it.
 const jump = document.querySelector('form.jump');
@@ -66,13 +68,15 @@ if (box && list) {
       list.innerHTML = '';
       return;
     }
+    const q = box.value.trim();
+    const topic = q.length >= 3 && !normalizeCode(q);
     if (!rows.length) {
-      list.innerHTML = `<li class="empty">No course matches “${esc(box.value.trim())}”. Try a subject like “math” or a title word like “calculus”.</li>`;
+      list.innerHTML = `<li class="empty">No course matches “${esc(q)}”. Try a subject like “math” or a title word like “calculus”.</li>${topic ? searchLink(q) : ''}`;
       return;
     }
     list.innerHTML = (near ? `<li class="empty">No ${esc(fmt(normalizeCode(box.value)?.toUpperCase() ?? box.value.trim()))}. Nearest:</li>` : '') + rows
       .map(([code, title, old], i) => `<li><a id="r${i}" role="option" href="/${code.toLowerCase()}/" aria-selected="${i === active}"><span class="cc">${esc(fmt(code))}</span><span>${esc(title)}${old ? ' <span class="t">· no longer offered</span>' : ''}</span></a></li>`)
-      .join('');
+      .join('') + (topic && !near ? searchLink(q) : '');
   };
   const update = async () => {
     const idx = await loadIndex();
