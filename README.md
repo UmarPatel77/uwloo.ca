@@ -20,6 +20,7 @@ Waterloo course pages at short URLs. A GitHub Action pulls the university's own 
 | `uwloo.ca/1920`, any year from `9596` to `1920` | That year's front page where Waterloo's archives page links it: `academic-calendar-archive.uwaterloo.ca` for 2007–08 on (ucalendar's own front pages for those years are gone), `www.ucalendar.uwaterloo.ca/0506/` before that |
 | `uwloo.ca/9495/cs`, any year from `6364` to `9495` | That year's CS courses read from the scanned calendar (`/9495/cs241` jumps to CS 241), each linking to its scanned page. Each course links to its scanned page |
 | `uwloo.ca/6263/…` and earlier | Not online; says the archive starts at 1963–64 |
+| `uwloo.ca/pathways` | Map out a whole degree term by term: plans, prerequisites, course loads, and what's still open (below) |
 | `uwloo.ca/programs` | Every major, minor, option, specialization, diploma and certificate in the current Undergraduate Calendar, each with its own page (below) |
 | `uwloo.ca/programs/combinations` | Which credentials can't be taken together, from the calendar's Invalid Credential Combinations |
 | `uwloo.ca/calendar` | The timetable planner: add up to 8 courses for this term or next, and see the timetables that fit, best first (below) |
@@ -210,6 +211,18 @@ Every program in the current Undergraduate Calendar (505 in 2026–27: majors, s
 
 The live calendar's programs refresh weekly, like its courses. If Kuali's programs can't be read, the build carries on without these pages.
 
+## Pathways (`/pathways/`)
+
+A whole degree in a grid you type into like a spreadsheet: one row per term from your start term (Study, Co-op or Off; the calendar's co-op sequence charts can set them), up to 7 courses a term.
+
+- **Your plans:** any mix of major, minors, options, specializations, diplomas and degree requirements, with the "can't be combined" rules and "this specialization is for X majors". Each gets a checklist of its requirements, filled from the grid: required courses, "2 of these", unit and course counts from its lists or from subjects at a level ("1.5 units of ECON at the 300-level or above"), totals ("4.0 units of GSJ courses"), and what can't count. Requirements in words it can't check are ticked by hand.
+- **Each cell:** red when its prerequisites (or corequisites) aren't in earlier terms, including "level 3A or higher" and "Enrolled in…" (checked against your plans); amber when it hasn't run in that season in the last four years (from the term history) or can't count toward a plan; antirequisite clashes; dots for the plans it counts toward. Select a cell for the reasons.
+- **Loads and length:** each term's courses and units, marked at 6 (overload) and 7+ (heavy); how many courses your plans still need against the degree's total units, whether they fit at 5 a term, and if not how many extra terms or overloads that means.
+- **Still open:** every minor, option, specialization, diploma or major, ranked by how many courses you'd still need with what's planned through a term you pick ("after 2A"), with the ones that can't go with your plans last.
+- Saved in your browser; "Copy link" shares the whole plan in the address; "Copy as a table" pastes into Excel or Google Sheets.
+
+The build writes `/pathways/data.json` (`scripts/lib/pathways.mjs`): every current course (title, units, requisites, which seasons it ran in the last four years) and every program's requirements in the shape `site/pathways/engine.js` reads. The rules run in the browser, so plans aren't sent anywhere.
+
 ## Courses no longer offered
 
 A course that's in none of the current calendars uwloo has (2024–25 on) still gets a page if Waterloo ever listed it: `uwloo.ca/msci452`. It says when it was in the course catalog or the older Graduate Calendars, the terms it ran, its description and requirements as last listed, which of today's courses still mention it (usually as an antirequisite), its r/uwaterloo discussions, and links to its last calendar entry on ucalendar and to the scanned calendars it's in. Today's pages link to it too, greyed out.
@@ -310,6 +323,7 @@ tools/links/                   reddit_links.py (r/uwaterloo dump → data/links/
 data/links/                    where the finder looks, what it found, and what's been removed
 scripts/lib/planner.mjs        the timetable planner's page and its per-term data files
 scripts/lib/programs.mjs       programs: reading them, combinations, their pages, "Counts toward"
+scripts/lib/pathways.mjs       Pathways' data file and page; site/pathways/ is the app (engine.js, app.js)
 site/calendar/                 the planner in the browser: solve.js (the search), planner.js (the page), ics.js, plans.js (saved plans)
 site/                          CSS, client JS, the URL router used by 404.html
 ```

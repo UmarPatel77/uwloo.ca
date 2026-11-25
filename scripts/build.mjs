@@ -7,6 +7,7 @@ import { dirname, join } from 'node:path';
 import { archiveSubjectPage, archiveYearPage, loadArchiveText, textMap } from './lib/archive.mjs';
 import * as kuali from './lib/kuali.mjs';
 import * as programsLib from './lib/programs.mjs';
+import { pathwaysData, pathwaysPage } from './lib/pathways.mjs';
 import { loadReddit, redditSection, SHOWN } from './lib/reddit.mjs';
 import { flowSection, loadFlow } from './lib/uwflow.mjs';
 import { available, entryPages, linksAboutPage, loadResources, publishFiles, resourcePage, resourcesSection, syncFiles } from './lib/resources.mjs';
@@ -73,7 +74,7 @@ async function main() {
   const rjs = await readFile('site/reddit.js');
   const vjs = await readFile('site/viewer.js');
   const hash = createHash('sha1').update(css).update(js).update(rjs).update(vjs);
-  for (const f of (await readdir('site/calendar')).sort()) hash.update(await readFile(join('site/calendar', f)));
+  for (const dir of ['site/calendar', 'site/pathways']) for (const f of (await readdir(dir)).sort()) hash.update(await readFile(join(dir, f)));
   const version = hash.digest('hex').slice(0, 8);
 
   // 1. Calendars (Kuali): undergrad by academic year, grad by term.
@@ -323,6 +324,18 @@ async function main() {
     if (icc.rows.length) {
       pages.push(['programs/combinations/index.html', programsLib.combinationsPage({ ...ctxBase, icc, cat: progCat, known: linkable, programs })]);
       sitemap.push('/programs/combinations/');
+    }
+    // Pathways (/pathways/): the degree grid, with every program and current course in one file.
+    try {
+      const published = Object.fromEntries(Object.entries(sections).map(([t, s]) => [t, new Set(Object.keys(s))]));
+      const pw = pathwaysData({ programs, combos: byProgram, catalog: progCat, schedules, published, curTerm, retired });
+      const json = JSON.stringify(pw);
+      pages.push(['pathways/data.json', json]);
+      pages.push(['pathways/index.html', pathwaysPage({ ...ctxBase, cat: progCat, curTerm })]);
+      sitemap.push('/pathways/');
+      console.log(`Pathways: ${Object.keys(pw.courses).length} courses, ${pw.programs.length} programs, ${(json.length / 1e6).toFixed(1)} MB`);
+    } catch (err) {
+      console.warn(`! Pathways skipped: ${err.message}`);
     }
   } catch (err) {
     console.warn(`! Programs skipped: ${err.message}`);

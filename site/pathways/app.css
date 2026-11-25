@@ -1,0 +1,129 @@
+/* uwloo.ca/pathways: the degree grid. Builds on style.css (--ink, --paper, --rule, --soft, --gold, --muted). */
+:root {
+  --d0: #c60078; --d1: #0033be; --d2: #b83700; --d3: #00707c;
+  --d4: #57058b; --d5: #4c5d00; --d6: #a8102f; --d7: #6b5000;
+  --bad: #b3261e; --warn: #8a5a00;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --d0: #ff5cb0; --d1: #8aa6ff; --d2: #ff8c52; --d3: #4fcad6;
+    --d4: #c49bff; --d5: #bccd52; --d6: #ff7a8a; --d7: #f3c93f;
+    --bad: #ff8a80; --warn: #f3c93f;
+  }
+}
+main:has(.pw) { max-width: 84rem; }
+.d0 { --dc: var(--d0); } .d1 { --dc: var(--d1); } .d2 { --dc: var(--d2); } .d3 { --dc: var(--d3); }
+.d4 { --dc: var(--d4); } .d5 { --dc: var(--d5); } .d6 { --dc: var(--d6); } .d7 { --dc: var(--d7); }
+.pw button, .pw select, .pw input { font: inherit; color: inherit; }
+.pw select { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 0.25rem 0.35rem; }
+.pw-head h1 { font-size: clamp(2.2rem, 7vw, 4rem); font-weight: 850; font-stretch: 62.5%; margin: 0.5rem 0 0; }
+
+/* top bar */
+.pw-bar { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: center; margin: 1.2rem 0 0.8rem; }
+.pw-bar label { display: flex; gap: 0.45rem; align-items: center; font-weight: 600; min-width: 0; max-width: 100%; }
+.pw-bar select { min-width: 0; max-width: min(100%, 26rem); }
+.pw-tools { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-left: auto; }
+.pw-tools button, .pw-rowtools button { border: 1px solid var(--rule); background: none; border-radius: 8px; padding: 0.3rem 0.7rem; cursor: pointer; }
+.pw-tools button:hover, .pw-rowtools button:hover { background: var(--soft); }
+
+/* plans */
+.pw-plans { margin-bottom: 1rem; }
+.pw-plans > ul { list-style: none; margin: 0 0 0.5rem; padding: 0; display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.pw-plan { display: flex; align-items: baseline; gap: 0.45rem; padding: 0.3rem 0.3rem 0.3rem 0.7rem; border-radius: 8px; border-left: 5px solid var(--dc); background: color-mix(in srgb, var(--dc) 10%, var(--paper)); }
+.pw-plan a { text-decoration: none; font-weight: 650; }
+.pw-plan .t { font-size: 0.82rem; }
+.pw-plan button { border: 0; background: none; cursor: pointer; font-size: 1.1rem; line-height: 1; color: var(--muted); padding: 0 0.35rem; }
+.pw-addplan { position: relative; max-width: 34rem; }
+.pw-addplan input { width: 100%; padding: 0.45rem 0.7rem; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
+.pw-sugg { position: absolute; z-index: 30; left: 0; right: 0; top: 100%; margin: 3px 0 0; padding: 0.25rem; list-style: none; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.16); }
+.pw-sugg li { padding: 0.4rem 0.55rem; border-radius: 6px; cursor: pointer; display: flex; gap: 0.6rem; align-items: baseline; }
+.pw-sugg li span { color: var(--muted); font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pw-sugg li[aria-selected="true"], .pw-sugg li:hover { background: var(--soft); }
+.pw-csugg { right: auto; width: 22rem; max-width: 90vw; }
+.pw-hint { margin: 0.5rem 0 0; font-size: 0.95rem; }
+.pw-warn { margin: 0.5rem 0 0; padding: 0.45rem 0.7rem; border-left: 4px solid var(--bad); background: color-mix(in srgb, var(--bad) 8%, var(--paper)); border-radius: 0 6px 6px 0; }
+.pw-linkbtn { border: 0; background: none; padding: 0; text-decoration: underline; cursor: pointer; font-weight: 600; }
+
+/* layout */
+.pw-main { display: grid; grid-template-columns: minmax(0, 1fr) 19.5rem; gap: 1.3rem; align-items: start; }
+@media (max-width: 70rem) { .pw-main { grid-template-columns: minmax(0, 1fr); } }
+.pw-app { position: relative; }
+
+/* the grid */
+.pw-gridwrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 10px; }
+.pw-grid { border-collapse: collapse; width: 100%; min-width: 46rem; font-variant-numeric: tabular-nums; font-size: 0.9rem; }
+.pw-grid th, .pw-grid td { border-bottom: 1px solid var(--rule); padding: 0; }
+.pw-grid thead th { font-size: 0.78rem; color: var(--muted); font-weight: 600; padding: 0.35rem 0.4rem; text-align: left; background: var(--soft); position: sticky; top: 0; }
+.pw-grid tbody th { text-align: left; font-weight: 600; font-size: 0.86rem; padding: 0 0.55rem; white-space: nowrap; }
+/* The term column stays put while the courses scroll sideways, like a frozen column. */
+.pw-grid tbody th, .pw-grid thead th:first-child { position: sticky; left: 0; z-index: 2; background: var(--paper); box-shadow: 1px 0 0 var(--rule); }
+.pw-grid thead th:first-child { z-index: 3; background: var(--soft); }
+.pw-grid .pw-extra { background: color-mix(in srgb, var(--gold) 7%, transparent); }
+.pw-lv { white-space: nowrap; padding: 0 0.3rem !important; width: 2.8rem; }
+.pw-kind { border: 1px solid transparent; background: none; border-radius: 5px; padding: 0.15rem 0.3rem; font-weight: 750; font-stretch: 87.5%; cursor: pointer; min-width: 2.3rem; }
+.pw-kind:hover { border-color: var(--rule); }
+.pw-kind.c, .pw-kind.o { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+.pw-c { position: relative; border-left: 1px solid var(--rule); min-width: 5.3rem; }
+.pw-in { width: 100%; box-sizing: border-box; border: 0; background: transparent; padding: 0.55rem 0.35rem 0.65rem; font-size: 0.86rem; font-weight: 650; font-stretch: 87.5%; letter-spacing: -0.01em; text-transform: uppercase; }
+.pw-in::placeholder { color: transparent; }
+.pw-in:focus { outline: 2px solid var(--ink); outline-offset: -2px; background: var(--paper); }
+.pw-c.bad { background: color-mix(in srgb, var(--bad) 12%, transparent); }
+.pw-c.bad::after, .pw-c.warn::after, .pw-c.check::after { content: ""; position: absolute; top: 0; right: 0; border: 6px solid transparent; border-top-color: var(--bad); border-right-color: var(--bad); }
+.pw-c.warn::after { border-top-color: var(--warn); border-right-color: var(--warn); }
+.pw-c.check::after { border-top-color: var(--muted); border-right-color: var(--muted); opacity: 0.6; }
+.pw-dots { position: absolute; left: 0.45rem; bottom: 0.22rem; display: flex; gap: 2px; pointer-events: none; }
+.pw-dots i, .pw-dot { display: inline-block; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--dc); }
+.pw-dot { margin-right: 0.4rem; width: 0.65rem; height: 0.65rem; }
+.pw-row.coop th, .pw-row.off th { color: var(--muted); font-weight: 500; }
+.pw-note { color: var(--muted); font-size: 0.86rem; padding: 0.45rem 0.6rem !important; font-style: italic; }
+.pw-row.coop .pw-note { background: repeating-linear-gradient(135deg, var(--soft) 0 8px, transparent 8px 16px); font-style: normal; }
+.pw-load { white-space: nowrap; padding: 0 0.6rem !important; font-weight: 700; border-left: 1px solid var(--rule); }
+.pw-load small { display: block; font-size: 0.72rem; color: var(--warn); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+.pw-load.heavy small { color: var(--bad); }
+.pw-rowtools { display: flex; flex-wrap: wrap; gap: 0.5rem 0.8rem; align-items: center; margin: 0.6rem 0 0; }
+.pw-rowtools .t { font-size: 0.86rem; }
+
+/* the selected course */
+.pw-detail:empty { display: none; }
+.pw-dcard { margin-top: 0.9rem; padding: 0.7rem 0.9rem; border: 1px solid var(--rule); border-radius: 10px; }
+.pw-dcard h3 { margin: 0 0 0.4rem; font-size: 1.05rem; }
+.pw-issues { margin: 0.3rem 0; padding-left: 1.1rem; }
+.pw-issues .bad { color: var(--bad); }
+.pw-issues .warn { color: var(--warn); }
+.pw-counts { list-style: none; margin: 0.2rem 0 0; padding: 0; }
+
+/* side panel */
+.pw-side { display: grid; gap: 0.9rem; }
+.pw-box { border: 1px solid var(--rule); border-radius: 10px; padding: 0.7rem 0.9rem; }
+.pw-box h2 { font-size: 1.05rem; margin: 0 0 0.4rem; }
+.pw-box p { margin: 0.3rem 0; }
+.pw-ok { color: var(--d5); font-weight: 600; }
+.pw-check summary { cursor: pointer; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.5rem; }
+.pw-check summary b { flex: 1 1 10rem; }
+.pw-prog { display: block; flex: 1 1 100%; height: 5px; margin: 0.2rem 0; background: var(--soft); border-radius: 3px; overflow: hidden; }
+.pw-prog > span { display: block; height: 100%; background: var(--ink); }
+.pw-check h4 { font-size: 0.92rem; margin: 0.8rem 0 0.25rem; padding-left: calc(var(--d, 0) * 0.6rem); }
+.pw-g, .pw-info { margin: 0.4rem 0 0.15rem; padding-left: calc(var(--d, 0) * 0.6rem); font-size: 0.86rem; color: var(--muted); }
+.pw-r { margin: 0.3rem 0; padding-left: calc(var(--d, 0) * 0.6rem); display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: baseline; }
+.pw-r p { margin: 0; flex-basis: 100%; font-size: 0.9rem; }
+.pw-r.done > .pw-lead::before { content: "✓ "; color: var(--d5); }
+.pw-r.bad > .pw-lead { color: var(--bad); }
+.pw-lead { font-size: 0.82rem; color: var(--muted); margin-right: 0.2rem; }
+.pw-tick { display: flex; gap: 0.45rem; font-size: 0.9rem; cursor: pointer; }
+.pw-tick input { margin-top: 0.2rem; }
+.pw-tick.done { color: var(--muted); }
+.pw-chip { border: 1px solid var(--rule); background: none; border-radius: 5px; padding: 0.05rem 0.35rem; font-size: 0.8rem; font-weight: 650; font-stretch: 87.5%; cursor: pointer; }
+.pw-chip.ok { background: color-mix(in srgb, var(--d5) 18%, var(--paper)); border-color: transparent; }
+.pw-chip.el { background: var(--soft); border-style: dashed; }
+.pw-chip.bad { color: var(--bad); border-color: var(--bad); }
+.pw-chip.no:hover { border-color: var(--ink); }
+.pw-more summary { cursor: pointer; font-size: 0.8rem; color: var(--muted); }
+.pw-tabs { display: flex; flex-wrap: wrap; gap: 3px; margin: 0.3rem 0 0.5rem; }
+.pw-tabs button { border: 1px solid var(--rule); background: none; border-radius: 999px; padding: 0.15rem 0.6rem; font-size: 0.85rem; cursor: pointer; }
+.pw-tabs button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.pw-dirlist { margin: 0; padding-left: 1.3rem; font-size: 0.92rem; }
+.pw-dirlist li { padding: 0.25rem 0; border-bottom: 1px solid var(--rule); }
+.pw-dirlist .pw-left { font-weight: 700; white-space: nowrap; }
+.pw-dirlist li.blocked { opacity: 0.6; }
+.pw-dirlist .pw-allbtn { list-style: none; border: 0; padding-top: 0.5rem; margin-left: -1.3rem; }
+.pw-no { color: var(--bad); font-size: 0.85rem; }

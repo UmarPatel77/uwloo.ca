@@ -632,6 +632,7 @@ export function programPage({ p, programs, combos, cat, known, builtAt, version 
   <p class="kicker"><a href="/programs/">Programs</a> · ${esc(p.type)}</p>
   <h1>${h1}</h1>
   <dl class="facts">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
+  <p class="plan-link"><a href="/pathways/#add=${esc(p.slug)}">Map it out term by term in Pathways</a></p>
 </header>
 ${p.text.specialNotice ? `<div class="gone-note">${text('specialNotice')}</div>` : ''}
 ${prose('graduationRequirements', 'Graduation requirements', 'grad-h')}
@@ -710,10 +711,10 @@ export function programsIndexPage({ programs, cat, builtAt, version }) {
     .map((f) => {
       const list = byFaculty.get(f);
       const types = [...new Set([...TYPE_ORDER, ...list.map((p) => p.type)])].filter((t) => list.some((p) => p.type === t));
-      return `<section class="pgroup"><h2>${esc(f)}</h2>${types
+      return `<section class="pgroup"><h2>${esc(f)} <span class="t">${list.length}</span></h2>${types
         .map(
           (t) =>
-            `<h3>${esc(typePlural(t))}</h3><ul class="plist">${
+            `<h3>${esc(typePlural(t))} <span class="t">${list.filter((p) => p.type === t).length}</span></h3><ul class="plist">${
               t === 'Major'
                 ? majorLines(list.filter((p) => p.type === t))
                 : list
@@ -727,7 +728,7 @@ export function programsIndexPage({ programs, cat, builtAt, version }) {
     .join('');
   const body = `<h1>Programs</h1>
 <p class="lede">Every major, minor, option, specialization, diploma and certificate in the ${esc(cat.label)} Undergraduate Calendar: ${counts.map(([t, n]) => `${n} ${esc(typePlural(t).toLowerCase())}`).join(', ')}.</p>
-<p><a href="/programs/combinations/">What can’t be combined</a></p>
+<p><a href="/pathways/">Map out your degree in Pathways</a> · <a href="/programs/combinations/">What can’t be combined</a></p>
 <div class="pfilter"><label for="pf">Filter</label><input id="pf" type="search" placeholder="economics, minor, co-op…" autocomplete="off" spellcheck="false"></div>
 ${groups}
 <p class="none" id="pnone" hidden>No program matches.</p>
