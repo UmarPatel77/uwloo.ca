@@ -192,6 +192,41 @@ h2 { font-size: 1.05rem; font-weight: 700; font-stretch: 87.5%; margin: 2.25rem 
 .out a { font-weight: 600; }
 .out small { color: var(--muted); font-size: 0.9rem; }
 
+/* Programs (/programs/): majors, minors, specializations… and "Counts toward" on course pages */
+.kicker { margin: 0.6rem 0 0.2rem; color: var(--muted); font-weight: 600; font-stretch: 87.5%; }
+.kicker a { color: inherit; }
+.program h1 .title { display: block; font-size: clamp(1.9rem, 5.5vw, 3rem); font-weight: 850; font-stretch: 75%; line-height: 1.05; }
+.psub { display: block; margin-top: 0.45rem; font-size: clamp(1.05rem, 2.6vw, 1.35rem); font-weight: 600; color: var(--muted); }
+.psec { margin: 0.6rem 0 1.2rem; }
+.psec h3 { font-size: 1.05rem; margin: 1.3rem 0 0.4rem; }
+.psec h4, .psec h5 { font-size: 0.98rem; margin: 1rem 0 0.35rem; color: var(--muted); }
+.psec .psec { margin: 0.4rem 0 0.8rem; padding-left: 0.9rem; border-left: 2px solid var(--rule); }
+.plinks { list-style: none; margin: 0.3rem 0 0; padding: 0; }
+.plinks li { padding: 0.35rem 0; border-bottom: 1px solid var(--rule); }
+.plinks li:first-child { border-top: 1px solid var(--rule); }
+.plinks .t { font-size: 0.88rem; }
+.counts h3 { font-size: 1rem; margin: 1.1rem 0 0.35rem; }
+.counts h3 .t, .counts summary .t { font-weight: 500; }
+.counts-g summary { cursor: pointer; font-weight: 700; margin: 1.1rem 0 0.35rem; }
+.notes h4 { font-size: 1rem; margin: 1rem 0 0.3rem; }
+.notes table { border-collapse: collapse; font-size: 0.88rem; margin: 0.6rem 0; display: block; overflow-x: auto; }
+.notes th, .notes td { border: 1px solid var(--rule); padding: 0.25rem 0.5rem; text-align: left; vertical-align: top; }
+.pfilter { margin: 1.4rem 0 0.4rem; display: flex; flex-wrap: wrap; gap: 0.5rem 0.8rem; align-items: center; }
+.pfilter label { font-weight: 600; }
+.pfilter input { font: inherit; padding: 0.45rem 0.7rem; border: 1px solid var(--rule); border-radius: 8px; width: min(100%, 24rem); background: var(--paper); color: var(--ink); }
+.pgroup h2 { margin-top: 2.2rem; }
+.pgroup h3 { font-size: 0.98rem; color: var(--muted); margin: 1.1rem 0 0.3rem; }
+.plist { list-style: none; margin: 0; padding: 0; columns: 2 19rem; column-gap: 2rem; }
+.plist li { break-inside: avoid; padding: 0.18rem 0; }
+.pbase { font-weight: 600; margin-right: 0.15rem; }
+.pv { white-space: nowrap; }
+.icc h3 { font-size: 1.1rem; margin: 1.6rem 0 0.4rem; }
+.icc-table { border-collapse: collapse; width: 100%; font-size: 0.93rem; margin-top: 1rem; }
+.icc-table caption { text-align: left; font-weight: 700; padding-bottom: 0.5rem; }
+.icc-table th, .icc-table td { text-align: left; vertical-align: top; padding: 0.5rem 0.9rem 0.5rem 0; border-bottom: 1px solid var(--rule); }
+.icc-table thead th { color: var(--muted); border-bottom: 2px solid var(--ink); }
+.icc-table td ul { margin: 0; padding-left: 1.05rem; }
+
 .ver-h { font-size: 0.95rem; font-weight: 600; color: var(--muted); margin: 0.9rem 0 0.3rem; }
 .versions { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3rem 1.4rem; }
 .versions li { margin: 0; }

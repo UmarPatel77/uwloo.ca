@@ -253,6 +253,7 @@ ${desc ? `<p class="desc">${linkCodes(desc, known)}</p>` : ''}
   </div>
   <section aria-labelledby="leads-h"><h2 id="leads-h">Leads to</h2>${leads}</section>
 </div>
+${version ? '' : ctx.counts ?? ''}
 ${sectionBlocks}
 ${version ? '' : ctx.offerings ?? ''}
 ${version ? '' : ctx.resources ?? ''}
@@ -496,7 +497,7 @@ ${subjectList(`/${cat.term}/`, subjects)}`;
   });
 }
 
-export function homePage({ current, catalogs, gradCatalogs, groups, courseCount, builtAt, version, planner = null }) {
+export function homePage({ current, catalogs, gradCatalogs, groups, courseCount, builtAt, version, planner = null, programCount = 0 }) {
   const body = `<form class="go" action="/" role="search">
   <label for="home-q">Type a course code or title</label>
   <div class="url"><span aria-hidden="true">uwloo.ca/</span><input id="home-q" name="q" placeholder="cs135" autocomplete="off" autocapitalize="none" spellcheck="false" role="combobox" aria-controls="results" aria-expanded="true" autofocus></div>
@@ -504,6 +505,7 @@ export function homePage({ current, catalogs, gradCatalogs, groups, courseCount,
 <p class="lede">Prerequisites, what a course leads to, and when it actually runs, for ${courseCount.toLocaleString('en-CA')} Waterloo undergraduate and graduate courses.</p>
 <ol id="results" class="results" role="listbox" aria-label="Matching courses"></ol>
 ${planner ? `<p class="plan-link home-plan"><a href="/calendar/">Plan your ${esc(planner)} timetable</a> <span class="t">Add your courses; see every schedule that fits, best first.</span></p>` : ''}
+${programCount ? `<p class="plan-link home-plan"><a href="/programs/">Browse all ${programCount} programs</a> <span class="t">Majors, minors, options and specializations, with their courses and what can’t be combined.</span></p>` : ''}
 <div class="home-grid">
 ${groups
   .map(

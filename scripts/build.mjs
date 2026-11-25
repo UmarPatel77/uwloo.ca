@@ -6,6 +6,7 @@ import { cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { archiveSubjectPage, archiveYearPage, loadArchiveText, textMap } from './lib/archive.mjs';
 import * as kuali from './lib/kuali.mjs';
+import * as programsLib from './lib/programs.mjs';
 import { loadReddit, redditSection, SHOWN } from './lib/reddit.mjs';
 import { flowSection, loadFlow } from './lib/uwflow.mjs';
 import { available, entryPages, linksAboutPage, loadResources, publishFiles, resourcePage, resourcesSection, syncFiles } from './lib/resources.mjs';
@@ -300,6 +301,35 @@ async function main() {
   }
   const planFor = (code) => (planTerms.some((t) => t.has.has(code)) ? planTerms.map((t) => ({ t: t.term, n: t.name, f: t.from, h: t.has.has(code) ? 1 : 0 })) : null);
 
+  // Programs (majors, minors, options, specializations…) in the current undergraduate calendar: a page each,
+  // /programs/ and /programs/combinations/, and "Counts toward" on course pages. A failure here skips them
+  // rather than the whole build.
+  const progCat = ug.find((c) => c.status === 'current') ?? ug.at(-1);
+  let programs = null;
+  let counts = new Map();
+  try {
+    programs = await programsLib.loadPrograms(progCat);
+    counts = programsLib.countsToward(programs);
+    const policy = await programsLib.loadPolicy(progCat, programsLib.ICC_PID);
+    const icc = programsLib.parseCombinations(policy?.body ?? '');
+    const { byProgram, stats } = programsLib.combosFor(icc.rows, programs, icc.rulesHtml);
+    console.log(`Programs: ${programs.list.length}; combinations table ${stats.rows} rows, ${stats.plans} matched to programs, ${stats.matched}/${stats.names} names`);
+    for (const p of programs.list) {
+      pages.push([`programs/${p.slug}/index.html`, programsLib.programPage({ ...ctxBase, p, programs, combos: byProgram, cat: progCat, known: linkable })]);
+      sitemap.push(`/programs/${p.slug}/`);
+    }
+    pages.push(['programs/index.html', programsLib.programsIndexPage({ ...ctxBase, programs, cat: progCat })]);
+    sitemap.push('/programs/');
+    if (icc.rows.length) {
+      pages.push(['programs/combinations/index.html', programsLib.combinationsPage({ ...ctxBase, icc, cat: progCat, known: linkable, programs })]);
+      sitemap.push('/programs/combinations/');
+    }
+  } catch (err) {
+    console.warn(`! Programs skipped: ${err.message}`);
+    programs = null;
+    counts = new Map();
+  }
+
   for (const [code, { cat, course }] of primary) {
     const history = historyFor(code);
     const strip = offerings
@@ -335,6 +365,7 @@ async function main() {
         uwflow: flowSection(code, flow?.courses[code], { repo }),
         reddit: redditSection(code, reddit.map.get(code), reddit.meta, { repo, slug: slug(code), version }),
         resources: resourcesSection(code, resourcesFor.get(code), { known: linkable, repo, found: foundFor.get(code) }),
+        counts: cat.level === 'grad' ? '' : programsLib.countsSection(code, counts.get(code), progCat),
       }),
     ]);
     sitemap.push(`/${slug(code)}/`);
@@ -550,7 +581,7 @@ async function main() {
   sitemap.push('/calendar/');
   console.log(`Planner: ${planTerms.map((t) => `${t.name} (${t.courses} courses)`).join(', ') || 'no terms with sections'}`);
   pages.push(['about/links/index.html', linksAboutPage({ ...ctxBase, repo, meta: foundFile && { links: foundFile.links.length, courses: foundFor.size, generated: foundFile.generated } })]);
-  pages.push(['index.html', homePage({ ...ctxBase, current, catalogs: ugNav, gradCatalogs: gradNav, groups, courseCount: liveCount, planner: planTerms.at(-1)?.name ?? null })]);
+  pages.push(['index.html', homePage({ ...ctxBase, current, catalogs: ugNav, gradCatalogs: gradNav, groups, courseCount: liveCount, planner: planTerms.at(-1)?.name ?? null, programCount: programs?.list.length ?? 0 })]);
   sitemap.push('/');
 
   const meta = {

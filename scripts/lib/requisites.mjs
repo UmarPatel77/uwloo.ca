@@ -62,7 +62,7 @@ export function parseHtml(src = '') {
 export const textOf = (n) => (n.text !== undefined ? n.text : n.tag === 'br' ? ' ' : n.children.map(textOf).join(''));
 const elems = (n) => n.children.filter((c) => c.tag);
 
-function find(n, pred) {
+export function find(n, pred) {
   for (const c of n.children ?? []) {
     if (c.tag && pred(c)) return c;
     const hit = c.tag ? find(c, pred) : null;
@@ -71,7 +71,7 @@ function find(n, pred) {
   return null;
 }
 
-function findAll(n, pred, out = []) {
+export function findAll(n, pred, out = []) {
   for (const c of n.children ?? []) {
     if (!c.tag) continue;
     if (pred(c)) out.push(c);
@@ -225,7 +225,11 @@ function topLists(node, out = []) {
 /** Kuali requisite HTML → array of nodes, or null when empty. Every rule in the HTML ends up in the tree. */
 export function kualiToTree(html) {
   if (!html || !norm(html.replace(/<[^>]*>/g, ''))) return null;
-  const root = parseHtml(html);
+  return nodeToTree(parseHtml(html));
+}
+
+/** The same, from an already-parsed node (programs.mjs reads one section of a program at a time). */
+export function nodeToTree(root) {
   const items = topLists(root).flatMap(listItems).map(liToNode);
   const outside = tidy(segments(root));
   if (outside.length) {
@@ -288,9 +292,11 @@ function courseItem(c, known) {
 }
 
 /** Tree → nested list HTML, in the calendar's own words. */
+// calendarBase: the calendar page program links resolve against, or a function href → URL (or null for no link).
 function sentence(text, segs, known, calendarBase) {
   if (!segs) return linkCodes(text, known);
-  return segs.map((x) => (x.href && calendarBase ? `<a href="${esc(calendarBase + x.href)}">${esc(x.t)}</a>` : linkCodes(x.t, known))).join('');
+  const to = (href) => (typeof calendarBase === 'function' ? calendarBase(href) : calendarBase ? calendarBase + href : null);
+  return segs.map((x) => (x.href && to(x.href) ? `<a href="${esc(to(x.href))}">${esc(x.t)}</a>` : linkCodes(x.t, known))).join('');
 }
 
 /** Tree → nested list HTML, in the calendar's own words. */

@@ -1797,3 +1797,154 @@ test('planner: saved plans per term; the course page button; the header link', a
   assert.match(page, /<a class="nav-plan" href="\/calendar\/" aria-current="page">Timetable<span class="nav-count" aria-hidden="true"><\/span><\/a>/);
   assert.match(page, /<p class="support">uwloo is free and has no ads\. If it’s useful to you: <a href="https:\/\/buymeacoffee\.com\/umarhq">Buy me a coffee<\/a> · <a href="https:\/\/github\.com\/sponsors\/UmarPatel77">Sponsor on GitHub<\/a><\/p>/);
 });
+
+// ---------------- programs (/programs/, "Counts toward") ----------------
+
+const PR = await import('./lib/programs.mjs');
+// Trimmed from the 2026–27 calendar's Public Policy Specialization and Aging Studies Option.
+const course = (id, code, title, units = '0.50') => `<li><span><a href="#/courses/view/${id}" target="_blank">${code}</a> <!-- -->-<!-- --> <!-- -->${title}<!-- --> <span style="margin-left:5px">(${units})</span></span></li>`;
+const PUBLIC_POLICY = `<div><section><header data-test="grouping-0-header"><div><h2 data-testid="grouping-label"><span>Required Courses</span></h2></div><div><div><button aria-label="Collapse"><i></i></button></div></div></header><div><div><ul><li><span>Complete <!-- -->all<!-- --> of the following</span><ul><li data-test="ruleView-A"><div data-test="ruleView-A-result">Complete all the following: <div><ul style="margin-top:5px;margin-bottom:5px">${course('a1', 'ECON361', 'Cost-Benefit Analysis and Project Evaluation')}${course('a2', 'ECON441', 'Public Economics')}</ul></div></div></li><li data-test="ruleView-B"><div data-test="ruleView-B-result">Complete <span>2</span> of the following: <div><ul>${course('b1', 'ECON351', 'Labour Economics')}${course('b2', 'ECON363', 'The Economics of Social Problems')}${course('b3', 'ECON366', 'Gender and Economics')}</ul></div></div></li></ul></li></ul></div><div></div></div></section></div>`;
+const AGING = `<div><section><header data-test="grouping-1-header"><div><h2 data-testid="grouping-label"><span>Approved Courses List</span></h2></div><div><span>2.5</span><span>Units to Complete</span></div></header><div><div><ul><li data-test="ruleView-A"><div data-test="ruleView-A-result"><div>Complete 5 courses from List 1 and List 2, with no more than 1 course from List 2.</div></div></li></ul></div><div><section><div><header><div><h2>List 1</h2></div><div></div></header><div><div><ul><li data-test="ruleView-B"><div data-test="ruleView-B-result">Choose any of the following: <div><ul>${course('c1', 'BIOL355', 'Biology of Human Aging')}${course('c2', 'GERON218', 'Psychology of Death and Dying')}</ul></div></div></li></ul></div></div></div></section><section><div><header><div><h2>List 2</h2></div></header><div><div><ul><li data-test="ruleView-C"><div data-test="ruleView-C-result">Complete no more than <span>1</span> from the following: <div><ul>${course('d1', 'STAT202', 'Introductory Statistics for Scientists')}</ul></div></div></li></ul></div></div></div></section></div></div></section></div>`;
+const progEntry = (pid, id, code, title, type, field) => ({ pid, id, code, title, undergraduateCredentialType: { name: type }, fieldOfStudy: { name: field } });
+
+test('programs: requirement sections, lists, and what each course is for', () => {
+  const [s] = PR.sectionsOf(PUBLIC_POLICY);
+  assert.equal(s.heading, 'Required Courses');
+  assert.equal(s.tree[0].type, 'group');
+  assert.deepEqual(s.tree[0].items.map((n) => n.lead), ['Complete all the following:', 'Complete 2 of the following:']);
+  const [a] = PR.sectionsOf(AGING);
+  assert.equal(a.heading, 'Approved Courses List');
+  assert.equal(a.units, 2.5);
+  assert.equal(a.tree[0].type, 'text', 'the rule sentence stays in the calendar’s words');
+  assert.deepEqual(a.lists.map((l) => l.heading), ['List 1', 'List 2']);
+  const progs = PR.readPrograms(
+    [progEntry('p1', 'v1', 'ECON-Public Policy Specialization', 'Public Policy Specialization', 'Specialization', 'Economics'), progEntry('p2', 'v2', 'Aging Studies Option', 'Aging Studies Option', 'Option', 'Options: Faculty of Health')],
+    new Map([
+      ['p1', { pid: 'p1', courseRequirementsNoUnits: PUBLIC_POLICY, specializationIsAvailableForStudentsInTheFollowingMajorsRules: '<div><ul><li data-test="ruleView-A"><div data-test="ruleView-A-result"><span><a href="#/programs/view/v9">H-Economics</a></span></div></li></ul></div>' }],
+      ['p2', { pid: 'p2', courseListsNew: AGING, systemsOfStudy: { regular: true } }],
+    ]),
+  );
+  const pp = progs.bySlug.get('econ-public-policy-specialization');
+  assert.equal(pp.name, 'Public Policy Specialization (Economics)');
+  assert.deepEqual(pp.availableTo, [{ id: 'v9', name: 'H-Economics' }]);
+  assert.deepEqual([...PR.courseRoles(pp)], [
+    ['ECON361', ['Required']],
+    ['ECON441', ['Required']],
+    ['ECON351', ['Choose 2 of 3']],
+    ['ECON363', ['Choose 2 of 3']],
+    ['ECON366', ['Choose 2 of 3']],
+  ]);
+  const aging = progs.bySlug.get('aging-studies-option');
+  assert.deepEqual(Object.fromEntries(PR.courseRoles(aging)), { BIOL355: ['List 1'], GERON218: ['List 1'], STAT202: ['List 2: At most 1 from a list'] });
+  const counts = PR.countsToward(progs);
+  assert.deepEqual(counts.get('ECON351').map((x) => [x.p.slug, x.roles]), [['econ-public-policy-specialization', ['Choose 2 of 3']]]);
+  const html = PR.countsSection('ECON351', counts.get('ECON351'), { label: '2026–27' });
+  assert.match(html, /<h3>Specializations <span class="t">1<\/span><\/h3>/);
+  assert.match(html, /<a href="\/programs\/econ-public-policy-specialization\/">Public Policy Specialization \(Economics\)<\/a> <span class="t">Choose 2 of 3<\/span>/);
+  assert.equal(PR.countsSection('CS999', undefined, { label: '2026–27' }), '');
+  assert.equal(PR.programSlug('H-Geography & Environmental Management'), 'h-geography-and-environmental-management');
+  assert.equal(PR.programSlug('Degree Reqs: BSc (Science)'), 'degree-reqs-bsc-science');
+});
+
+test('programs: invalid credential combinations, matched to programs', () => {
+  const list = [
+    progEntry('a', 'va', 'H-Accounting & Financial Management', 'Accounting and Financial Management (Bachelor of Accounting and Financial Management - Honours)', 'Major', 'Accounting and Financial Management'),
+    progEntry('b', 'vb', 'Management Studies Minor', 'Management Studies Minor', 'Minor', 'Management Studies'),
+    progEntry('c', 'vc', 'H-Data Science (BCS)', 'Data Science (Bachelor of Computer Science - Honours)', 'Major', 'Data Science'),
+    progEntry('d', 'vd', 'H-Data Science (BMath)', 'Data Science (Bachelor of Mathematics - Honours)', 'Major', 'Data Science'),
+    progEntry('e', 've', 'GEM-Aviation Specialization', 'Aviation Specialization', 'Specialization', 'Geography and Environmental Management'),
+    progEntry('f', 'vf', 'CEC-Aviation Specialization', 'Aviation Specialization', 'Specialization', 'Climate and Environmental Change'),
+    progEntry('g', 'vg', 'Gerontology Minor', 'Gerontology Minor', 'Minor', 'Gerontology'),
+    progEntry('h', 'vh', 'Gerontology Diploma', 'Diploma in Gerontology', 'Diploma', 'Gerontology'),
+    progEntry('i', 'vi', 'Aging Studies Option', 'Aging Studies Option', 'Option', 'Options: Faculty of Health'),
+    progEntry('j', 'vj', 'ECON-Finance Specialization', 'Finance Specialization', 'Specialization', 'Economics'),
+    progEntry('k', 'vk', 'ECON-Public Policy Specialization', 'Public Policy Specialization', 'Specialization', 'Economics'),
+    progEntry('l', 'vl', 'ECON-Intensive Economics Specialization', 'Intensive Economics Specialization', 'Specialization', 'Economics'),
+    progEntry('m', 'vm', '4G-Communication Studies', 'Communication Studies (Bachelor of Arts - Four-Year General)', 'Major', 'Communication Studies'),
+  ];
+  const progs = PR.readPrograms(list, new Map(list.map((e) => [e.pid, { pid: e.pid }])));
+  const td = (s) => `<td style="width: 30%;">${s}</td>`;
+  const icc = PR.parseCombinations(`<p>Minors are normally open to all undergraduate students.</p><ul><li>No student may enrol in or graduate from: <ul><li>Multiple “topic” specializations offered by the same major in the following majors: <ul><li>Economics (maximum of one topic specialization)</li><li>Mathematical Economics, BA (maximum of one topic specialization)</li></ul></li></ul></li></ul>
+<table border="1"><caption>List</caption><thead><tr><th>Active Plan/Program</th><th>Faculty</th><th>Cannot be Combined With</th></tr></thead><tbody>
+<tr>${td('Accounting and Financial Management, Bachelor of')}${td('Arts')}${td('Arts and Business;<br />Management Studies Minor;<br />Any stand-alone major')}</tr>
+<tr>${td('Aging Studies Option')}${td('Health')}${td('Gerontology, Diploma in;<br />Gerontology Minor')}</tr>
+<tr>${td('Gerontology Minor or Diploma')}${td('Health')}${td('Aging Studies Option')}</tr>
+<tr>${td('Aviation Minor')}${td('Science')}${td('Aviation Specialization (Climate and Environmental Change major; Geography and Environmental Management major)')}</tr>
+<tr>${td('Latin American Studies, Diploma in;')}${td('Arts')}${td('Communications Studies major*')}</tr>
+</tbody></table>`);
+  assert.equal(icc.rows.length, 5);
+  assert.deepEqual(icc.rows[0].cannot, ['Arts and Business', 'Management Studies Minor', 'Any stand-alone major']);
+  assert.deepEqual(icc.rows[3].cannot, ['Aviation Specialization (Climate and Environmental Change major; Geography and Environmental Management major)'], 'not split inside parentheses');
+  assert.equal(icc.rows[4].plan, 'Latin American Studies, Diploma in', 'stray semicolon dropped');
+  assert.doesNotMatch(PR.richText(icc.rulesHtml, { known: new Set() }), /<table/, 'the table is taken out of the rules');
+  const idx = PR.nameIndex(progs);
+  const codes = (name) => PR.matchName(name, idx, progs).map((p) => p.code).sort();
+  assert.deepEqual(codes('Accounting and Financial Management, Bachelor of'), ['H-Accounting & Financial Management']);
+  assert.deepEqual(codes('Data Science (BCS)'), ['H-Data Science (BCS)'], 'a degree in parentheses narrows it');
+  assert.deepEqual(codes('Data Science major (BCS or BMath)'), ['H-Data Science (BCS)', 'H-Data Science (BMath)']);
+  assert.deepEqual(codes('Aviation Specialization (Climate and Environmental Change major; Geography and Environmental Management major)'), ['CEC-Aviation Specialization', 'GEM-Aviation Specialization']);
+  assert.deepEqual(codes('Gerontology Minor or Diploma'), ['Gerontology Diploma', 'Gerontology Minor']);
+  assert.deepEqual(codes('Gerontology, Diploma in'), ['Gerontology Diploma']);
+  assert.deepEqual(codes('Communications Studies major*'), ['4G-Communication Studies'], 'a spelling slip');
+  assert.deepEqual(codes('Any stand-alone major'), []);
+  const { byProgram, stats } = PR.combosFor(icc.rows, progs, icc.rulesHtml);
+  assert.deepEqual(stats, { rows: 5, plans: 3, names: 8, matched: 6 });
+  const of = (code) => byProgram.get(progs.list.find((p) => p.code === code).pid).map((o) => [o.text, o.to.map((p) => p.code)]);
+  assert.deepEqual(of('H-Accounting & Financial Management'), [['Arts and Business', []], ['Management Studies Minor', ['Management Studies Minor']], ['Any stand-alone major', []]]);
+  assert.deepEqual(of('Management Studies Minor'), [['Accounting and Financial Management, Bachelor of', ['H-Accounting & Financial Management']]], 'both ways round');
+  assert.deepEqual(of('Aging Studies Option'), [['Gerontology, Diploma in', ['Gerontology Diploma']], ['Gerontology Minor', ['Gerontology Minor']]], '"Minor or Diploma" collapses into the two it names');
+  assert.deepEqual([...PR.topicMajors(icc.rulesHtml)], ['economics', 'mathematical economics']);
+  assert.deepEqual(of('ECON-Public Policy Specialization'), [['Another Economics topic specialization: one at most', ['ECON-Finance Specialization']]]);
+  assert.deepEqual(of('ECON-Intensive Economics Specialization'), [], 'the intensive one isn’t a topic specialization');
+});
+
+test('programs: prose links, and the pages', () => {
+  const list = [progEntry('p1', 'v1', 'Economics Minor', 'Economics Minor', 'Minor', 'Economics'), progEntry('p2', 'v2', 'H-Economics', 'Economics (Bachelor of Arts - Honours)', 'Major', 'Economics'), progEntry('p3', 'v3', '4G-Economics', 'Economics (Bachelor of Arts - Four-Year General)', 'Major', 'Economics')];
+  const progs = PR.readPrograms(list, new Map([['p1', { pid: 'p1', declarationRequirements: '<p>Before declaring, see <a href="#/policy/S17gweg46">invalid credential combinations</a>, the <a href="#/programs/view/v2">H-Economics</a> plan, <a href="#/courses/view/x">ECON101</a>, <a href="#/policy/abc">Course Load</a> and <a href="https://uwaterloo.ca/economics">the department</a>.</p><h5>Note</h5>' }]]));
+  const cat = { label: '2026–27', pageUrl: 'https://uwaterloo.ca/academic-calendar/undergraduate-studies/catalog' };
+  const known = new Set(['ECON101']);
+  const minor = progs.bySlug.get('economics-minor');
+  const prose = PR.richText(minor.text.declarationRequirements, { known, byId: progs.byId, cat });
+  assert.match(prose, /<a href="\/programs\/combinations\/">invalid credential combinations<\/a>/);
+  assert.match(prose, /<a href="\/programs\/h-economics\/">H-Economics<\/a>/);
+  assert.match(prose, /<a class="cc" href="\/econ101\/">ECON 101<\/a>/);
+  assert.match(prose, /<a href="https:\/\/uwaterloo\.ca\/academic-calendar\/undergraduate-studies\/catalog#\/policy\/abc">Course Load<\/a>/);
+  assert.match(prose, /<a href="https:\/\/uwaterloo\.ca\/economics">the department<\/a>/);
+  assert.match(prose, /<h4>Note<\/h4>/);
+  const page = PR.programPage({ p: minor, programs: progs, combos: new Map(), cat, known, builtAt: new Date('2026-11-25T12:00:00Z'), version: 'v' });
+  assert.match(page, /<link rel="canonical" href="https:\/\/uwloo\.ca\/programs\/economics-minor\/">/);
+  assert.match(page, /<h2 id="dec-h">Declaring<\/h2>/);
+  assert.match(page, /Nothing in the calendar’s table of invalid credential combinations/);
+  assert.match(page, /catalog#\/programs\/p1">Economics Minor<\/a>/);
+  const index = PR.programsIndexPage({ programs: progs, cat, builtAt: new Date(), version: 'v' });
+  assert.match(index, /<span class="pbase">Economics<\/span> <a class="pv" href="\/programs\/4g-economics\/" title="Economics \(Bachelor of Arts - Four-Year General\)">Four-Year General<\/a> · <a class="pv" href="\/programs\/h-economics\/" title="Economics \(Bachelor of Arts - Honours\)">Honours<\/a>/);
+  assert.match(index, /1 minor/);
+});
+
+test('programs: degree names, renamed specializations, and the "and Financial Management" rule', () => {
+  const list = [
+    progEntry('a', 'va', 'Degree Reqs: BMath', 'Bachelor of Mathematics Degree Requirements', 'Degree Requirements', 'Degree Requirements'),
+    progEntry('b', 'vb', 'H-BBA & BCS Double Degree', 'Business Administration and Computer Science Double Degree (Bachelor of Business Administration and Bachelor of Computer Science - Honours)', 'Major', 'Computer Science'),
+    progEntry('c', 'vc', 'BME-Biomechanical & Rehabilitation Engineering Specialization', 'Biomechanical and Rehabilitation Engineering Specialization', 'Specialization', 'Biomedical Engineering'),
+    progEntry('d', 'vd', 'BME-Biomedical Artificial Intelligence Specialization', 'Biomedical Artificial Intelligence Specialization', 'Specialization', 'Biomedical Engineering'),
+    progEntry('e', 've', 'H-Accounting & Financial Management', 'Accounting and Financial Management (Bachelor of Accounting and Financial Management - Honours)', 'Major', 'Accounting and Financial Management'),
+    progEntry('f', 'vf', 'H-Computing & Financial Management', 'Computing and Financial Management (Bachelor of Computing and Financial Management - Honours)', 'Major', 'Computing and Financial Management'),
+    progEntry('g', 'vg', 'SE-Business Specialization', 'Business Specialization', 'Specialization', 'Software Engineering'),
+  ];
+  const progs = PR.readPrograms(list, new Map(list.map((e) => [e.pid, { pid: e.pid }])));
+  const idx = PR.nameIndex(progs);
+  const codes = (name) => PR.matchName(name, idx, progs).map((p) => p.code).sort();
+  assert.deepEqual(codes('Mathematics, Bachelor of'), ['Degree Reqs: BMath']);
+  assert.deepEqual(codes('Business Administration and BCS double degree'), ['H-BBA & BCS Double Degree']);
+  assert.deepEqual(codes('Biomechanics and Rehabilitation Specialization (Biomedical Engineering major)'), ['BME-Biomechanical & Rehabilitation Engineering Specialization'], 'renamed since');
+  assert.deepEqual(codes('Business Specialization (Computer Science major, BCS or BMath; Software Engineering. Bachelor of)'), ['SE-Business Specialization'], 'a full stop where a comma should be');
+  const rules = '<ul><li>No student may enrol in or graduate from: <ul><li>Any two “and Financial Management” bachelor’s degrees.</li></ul></li></ul>';
+  const { byProgram } = PR.combosFor([], progs, rules);
+  const afm = progs.list.find((p) => p.code === 'H-Accounting & Financial Management');
+  assert.deepEqual(byProgram.get(afm.pid).map((o) => [o.text, o.to.map((p) => p.code), o.rule]), [['Another “and Financial Management” degree', ['H-Computing & Financial Management'], true]]);
+  assert.deepEqual(PR.combosFor([], progs, '<p>Nothing about degrees.</p>').byProgram.get(afm.pid), [], 'only when the rules say so');
+  const page = PR.programPage({ p: afm, programs: progs, combos: new Map([[afm.pid, [{ text: 'Chemical Physics major', to: [] }, { text: 'Geomatics major*', to: [] }, { text: 'Any stand-alone major', to: [] }]]]), cat: { label: '2026–27', pageUrl: 'x' }, known: new Set(), builtAt: new Date(), version: 'v' });
+  assert.match(page, /<li>Chemical Physics major <span class="t">\(not in the 2026–27 calendar by this name\)<\/span><\/li>/);
+  assert.match(page, /<li>Geomatics major <span class="t">\(no longer offered\)<\/span><\/li>/);
+  assert.match(page, /<li>Any stand-alone major<\/li>/);
+});

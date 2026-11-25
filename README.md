@@ -20,6 +20,8 @@ Waterloo course pages at short URLs. A GitHub Action pulls the university's own 
 | `uwloo.ca/1920`, any year from `9596` to `1920` | That year's front page where Waterloo's archives page links it: `academic-calendar-archive.uwaterloo.ca` for 2007–08 on (ucalendar's own front pages for those years are gone), `www.ucalendar.uwaterloo.ca/0506/` before that |
 | `uwloo.ca/9495/cs`, any year from `6364` to `9495` | That year's CS courses read from the scanned calendar (`/9495/cs241` jumps to CS 241), each linking to its scanned page. Each course links to its scanned page |
 | `uwloo.ca/6263/…` and earlier | Not online; says the archive starts at 1963–64 |
+| `uwloo.ca/programs` | Every major, minor, option, specialization, diploma and certificate in the current Undergraduate Calendar, each with its own page (below) |
+| `uwloo.ca/programs/combinations` | Which credentials can't be taken together, from the calendar's Invalid Credential Combinations |
 | `uwloo.ca/calendar` | The timetable planner: add up to 8 courses for this term or next, and see the timetables that fit, best first (below) |
 | `uwloo.ca/courses.csv` | Every course: title, level, whether it's in the current calendars, the last term it ran (looking back 7 years), and its outline.uwaterloo.ca search link. Opens in Excel |
 | `uwloo.ca/1269/cs135` | Redirects to `acal.fast.uwaterloo.ca/course/1269/CS/135` whenever uwloo has no page for it (undergrad codes, and terms uwloo doesn't have) |
@@ -198,6 +200,16 @@ Add up to 8 courses and uwloo tries every combination of their sections, then sh
 - **Saved in your browser:** one plan per term (`site/calendar/plans.js`, localStorage `uwloo.plans`). A link to someone else's timetable is shown as it is, and only replaces your plan for that term once you change something.
 
 The build writes one file per term, `/calendar/{term}.json`, from the same Open Data sections the course pages show, so seats are as of the last build. The search runs in the browser (`site/calendar/solve.js`, in a worker), so nothing about anyone's plan is sent anywhere. 
+## Programs (`/programs/`)
+
+Every program in the current Undergraduate Calendar (505 in 2026–27: majors, specializations, minors, options, diplomas, certificates and degree requirements), read from the same Kuali API as the courses (`scripts/lib/programs.mjs`): `/programs/{catalog}` for the list, `/program/{catalog}/{pid}` for each one. Their requirement lists come in the same "ruleView" HTML as prerequisites, in sections ("Required Courses", "List 1", "1A Term"), so `requisites.mjs` reads them too.
+
+- **A page per program** (`/programs/econ-public-policy-specialization/`, from the calendar's own code for it): who it's open to, graduation requirements, every course list (courses link to their uwloo pages), averages, declaring, admission, co-op, notes, and a link to the official entry.
+- **Can't be combined with:** from the calendar's Invalid Credential Combinations policy. Its table names programs in its own words ("Data Science major (BCS or BMath)", "Gerontology Minor or Diploma", "Mathematics, Bachelor of"), so uwloo matches each name to programs: 174 of the 178 rows in 2026–27. The rest, and groups like "Any stand-alone major", are shown as written; a name that reads like one program but isn't in that year's calendar (the table still lists "Chemical Physics major" and "Technical Writing Minor") is marked so. It works both ways round, and adds the general rules it can apply to single programs: one Economics topic specialization at most, no two intensive specializations of one major, no two "and Financial Management" degrees. `/programs/combinations/` has the whole policy with every program linked.
+- **Counts toward** on course pages: every program that names the course, and how ("Required", "Choose 2 of 10", "List 1"). Rules like "any 300-level ECON course" aren't counted there.
+
+The live calendar's programs refresh weekly, like its courses. If Kuali's programs can't be read, the build carries on without these pages.
+
 ## Courses no longer offered
 
 A course that's in none of the current calendars uwloo has (2024–25 on) still gets a page if Waterloo ever listed it: `uwloo.ca/msci452`. It says when it was in the course catalog or the older Graduate Calendars, the terms it ran, its description and requirements as last listed, which of today's courses still mention it (usually as an antirequisite), its r/uwaterloo discussions, and links to its last calendar entry on ucalendar and to the scanned calendars it's in. Today's pages link to it too, greyed out.
@@ -297,6 +309,7 @@ scripts/lib/links.mjs          its rules: course codes in pages and addresses, r
 tools/links/                   reddit_links.py (r/uwaterloo dump → data/links/seeds/) and how the finder works
 data/links/                    where the finder looks, what it found, and what's been removed
 scripts/lib/planner.mjs        the timetable planner's page and its per-term data files
+scripts/lib/programs.mjs       programs: reading them, combinations, their pages, "Counts toward"
 site/calendar/                 the planner in the browser: solve.js (the search), planner.js (the page), ics.js, plans.js (saved plans)
 site/                          CSS, client JS, the URL router used by 404.html
 ```
