@@ -1,0 +1,57 @@
+{
+  "indexEntry": {
+    "code": "Arabic Language I Diploma",
+    "__passedCatalogQuery": true,
+    "undergraduateCredentialType": {
+      "name": "Diploma",
+      "id": "63c825b9487c23218d7c444c"
+    },
+    "dateStart": "2023-09-02",
+    "pid": "S1Mgy0Cs3",
+    "id": "64d14eeaec51f4139a74226c",
+    "title": "Diploma in Arabic Language I",
+    "fieldOfStudy": {
+      "name": "Arabic",
+      "id": "63e55bd9e0347d0016bae50e",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2023-09-01",
+    "_score": 1
+  },
+  "record": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Arts with Renison University College",
+      "id": "64f093ac359a284ae742532b"
+    },
+    "code": "Arabic Language I Diploma",
+    "__passedCatalogQuery": true,
+    "detailsAndNotes": "<ul> <li>Visit the <a href=\"https://uwaterloo.ca/renison/departments-and-programs/culture-and-language-studies\">Culture and Language Studies website</a> for further information.</li> </ul>",
+    "courseRequirementsNoUnits": "<div><section><header data-test=\"grouping-0-header\"><div><h2 data-testid=\"grouping-label\"><span>Required Courses</span></h2></div><div><div><button aria-label=\"Collapse\"><i></i></button></div></div></header><div><div><ul><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\">Complete all the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/69a724a7306256e3f11e4ba1\" target=\"_blank\">ARABIC101R</a> <!-- -->-<!-- --> <!-- -->Introduction to Arabic 1<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/65b01d95edfead92ba33dc1d\" target=\"_blank\">ARABIC102R</a> <!-- -->-<!-- --> <!-- -->Introduction to Arabic 2<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69a7254a13e1b07a8b4f230f\" target=\"_blank\">ARABIC201R</a> <!-- -->-<!-- --> <!-- -->Intermediate Arabic 1<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69a7258688df55191cb0d15c\" target=\"_blank\">ARABIC202R</a> <!-- -->-<!-- --> <!-- -->Intermediate Arabic 2<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li></ul></div><div></div></div></section></div>",
+    "pid": "S1Mgy0Cs3",
+    "title": "Diploma in Arabic Language I",
+    "admissionRequirements": "",
+    "declarationAudience": [
+      {
+        "name": "This credential is open to students enrolled in degree programs or any non- or post-degree academic plan.",
+        "id": "641077eec54ff10399f4274f"
+      }
+    ],
+    "minimumAverageSRequired": "<ul> <li>A minimum cumulative diploma average of 65.0%.</li> </ul>",
+    "undergraduateCredentialType": {
+      "name": "Diploma",
+      "id": "63c825b9487c23218d7c444c"
+    },
+    "dateStart": "2023-09-02",
+    "declarationRequirements": "<ul> <li>Before declaring this academic plan, see <a href=\"#/policy/S17gweg46\">invalid credential combinations</a>.</li> </ul>",
+    "id": "64d14eeaec51f4139a74226c",
+    "fieldOfStudy": {
+      "name": "Arabic",
+      "id": "63e55bd9e0347d0016bae50e",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2023-09-01",
+    "graduationRequirements": "<ul> <li>Complete a total of 2.0 units.</li> </ul>",
+    "_score": 1,
+    "specializations": []
+  }
+}

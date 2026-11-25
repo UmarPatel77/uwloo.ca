@@ -1,0 +1,56 @@
+{
+  "indexEntry": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Science",
+      "id": "648b2328cbc40eb5c7ef4849"
+    },
+    "__passedCatalogQuery": true,
+    "dateStart": "2023-09-02",
+    "pid": "B1YJ9u6Np",
+    "graduateCredentialType": {
+      "name": "PhD",
+      "id": "63c825e9e400391ae717e8d2"
+    },
+    "id": "655ff9e06febcc1d4d1edd04",
+    "title": "Accelerated Doctoral Program in Physics",
+    "graduateFieldOfStudy": {
+      "name": "Physics and Astronomy",
+      "id": "6436b7bbf75faa0015207657",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2023-09-01",
+    "_score": 1
+  },
+  "record": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Science",
+      "id": "648b2328cbc40eb5c7ef4849"
+    },
+    "__passedCatalogQuery": true,
+    "detailsAndNotes": "<ul> <li><a href=\"https://uwaterloo.ca/physics-astronomy/\">Department of Physics and Astronomy website</a></li> </ul>",
+    "groupFilter2": {
+      "name": "Department of Physics and Astronomy",
+      "id": "636423bb4535d300160ffe5f",
+      "customFields": {
+        "Transformation": "PHYS"
+      }
+    },
+    "pid": "B1YJ9u6Np",
+    "title": "Accelerated Doctoral Program in Physics",
+    "graduateFieldOfStudy": {
+      "name": "Physics and Astronomy",
+      "id": "6436b7bbf75faa0015207657",
+      "customFields": {}
+    },
+    "dateStart": "2023-09-02",
+    "graduateCredentialType": {
+      "name": "PhD",
+      "id": "63c825e9e400391ae717e8d2"
+    },
+    "id": "655ff9e06febcc1d4d1edd04",
+    "catalogActivationDate": "2023-09-01",
+    "acceleratedMasterSProgramDetails": "<h4>Acceptance into the Accelerated PhD Program</h4> <p>The Accelerated Doctor of Philosophy (PhD) allows students registered full-time in the Master of Science (MSc) program to transfer directly into the PhD program without completing the MSc degree (note that this option is applicable to all three of the Physics PhD programs). An MSc student can request the acceleration up to 3 full-time terms after initial registration. A request to accelerate can only be made once. The Supervisor and Advisory Committee will consider whether the request for acceleration to the PhD is appropriate and desirable. Funding must be available to support a PhD thesis project.</p> <p>The student must show the potential for independent research necessary to complete a PhD. The Supervisor and Committee must support the request and the criteria that will be used to assess that potential for the accelerated PhD are:</p> <ul> <li>A preliminary research proposal that is appropriate for the PhD and is acceptable to the committee, the Graduate Officer and the Director.</li> <li>Completion of at least 2 graduate level courses and a grade of at least 80% in each.</li> </ul> <h3>Degree requirements</h3> <h4>Graduate Academic Integrity Module (Graduate AIM)</h4> <h4>Courses</h4> <p>Students in the Accelerated PhD program will need to complete the course work requirements of both the MSc and PhD degrees, a total of 6 one-term graduate courses. 3 of the core courses including 1 of PHYS 701, PHYS 704 or PHYS 706 will have been taken by the end of the first year of the PhD program. Biophysics students in the PhD program are required to take 1 core course which must be 1 of PHYS 701, PHYS 704 or PHYS 706.</p> <h4>PhD Comprehensive Examination</h4> <p>The Comprehensive Examination Milestone will be considered complete when students have successfully completed their Qualifying Examination which must occur by term 7 (which includes their MSc terms) of their Accelerated PhD program. Note: Additional information on the PhD Comprehensive Examination is available on the PhD in Physics program page.</p> <h4>PhD Thesis</h4> <p>An acceptable thesis on an advanced research topic must be submitted. The topic of the thesis and the quality of the research will be such as to merit publication in reputable scholarly media. Detailed specifications of the format of the thesis are available from the appropriate Graduate Office.</p> <p>Acceptance of the thesis requires satisfactory completion of a Final Oral Examination.</p>",
+    "_score": 1,
+    "specializations": []
+  }
+}

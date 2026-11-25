@@ -1,0 +1,32 @@
+{
+  "indexEntry": {
+    "__passedCatalogQuery": true,
+    "dateStart": "2023-09-02",
+    "regulationGroupingUndergraduate": {
+      "name": "Regulations for Faculty of Science Students",
+      "id": "654ea1fe376b260016335226",
+      "customFields": {}
+    },
+    "pid": "HJAZfTQpT",
+    "id": "65e64205caf2eb3a953e26ec",
+    "body": "<h3>Degree Upgrade</h3> <p>University of Waterloo graduates who earn a Bachelor of Science (BSc) degree in General Science with minimum cumulative Science and overall averages of 60% are eligible to apply to upgrade their degree to BSc, Honours Science. A petition and academic advice will be required for an upgrade to any other BSc in Science.</p> <p>Minors attached to the General Science degree are not transferable. Students considering a future upgrade should consider refraining from adding a minor to their General Science degree, so that it can be awarded with the Honours Science degree.</p> <p>A student with a BSc degree from the University of Waterloo or any other degree granting institution may not be admitted to a BSc degree plan.</p>",
+    "title": "Science: Second Degrees",
+    "catalogActivationDate": "2023-09-01",
+    "_score": 1
+  },
+  "record": {
+    "__passedCatalogQuery": true,
+    "dateStart": "2023-09-02",
+    "regulationGroupingUndergraduate": {
+      "name": "Regulations for Faculty of Science Students",
+      "id": "654ea1fe376b260016335226",
+      "customFields": {}
+    },
+    "pid": "HJAZfTQpT",
+    "id": "65e64205caf2eb3a953e26ec",
+    "body": "<h3>Degree Upgrade</h3> <p>University of Waterloo graduates who earn a Bachelor of Science (BSc) degree in General Science with minimum cumulative Science and overall averages of 60% are eligible to apply to upgrade their degree to BSc, Honours Science. A petition and academic advice will be required for an upgrade to any other BSc in Science.</p> <p>Minors attached to the General Science degree are not transferable. Students considering a future upgrade should consider refraining from adding a minor to their General Science degree, so that it can be awarded with the Honours Science degree.</p> <p>A student with a BSc degree from the University of Waterloo or any other degree granting institution may not be admitted to a BSc degree plan.</p>",
+    "title": "Science: Second Degrees",
+    "catalogActivationDate": "2023-09-01",
+    "_score": 1
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "indexEntry": {
+    "code": "French Language I Diploma",
+    "__passedCatalogQuery": true,
+    "undergraduateCredentialType": {
+      "name": "Diploma",
+      "id": "63c825b9487c23218d7c444c"
+    },
+    "dateStart": "2026-09-02",
+    "pid": "ryGEl1RAsh",
+    "id": "69aa7de9306256e3f12a14d7",
+    "title": "Diploma in French Language I",
+    "fieldOfStudy": {
+      "name": "French",
+      "id": "63e55dc72d95e9001675fc54",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "_score": 1
+  },
+  "record": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Arts",
+      "id": "648b2302dedb397b7d9b0731"
+    },
+    "code": "French Language I Diploma",
+    "__passedCatalogQuery": true,
+    "detailsAndNotes": "<ul> <li>Visit the <a href=\"https://uwaterloo.ca/french-studies/\">French Studies website</a> for further information.</li> </ul>",
+    "additionalConstraints": "<ol> <li>Students seeking to complete the Diploma in French Language I who do not take FR151 must take an additional course at the 200-level or higher in substitution. The additional course must be taught in French.</li> </ol>",
+    "courseRequirementsNoUnits": "<div><section><header data-test=\"grouping-0-header\"><div><h2 data-testid=\"grouping-label\"><span>Required Courses</span></h2></div><div><div><button aria-label=\"Collapse\"><i></i></button></div></div></header><div><div><ul><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\">Complete all the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/69aa6b7d306256e3f129794e\" target=\"_blank\">FR151</a> <!-- -->-<!-- --> <!-- -->Basic French 1<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa6b7f88fba4af19cb23db\" target=\"_blank\">FR152</a> <!-- -->-<!-- --> <!-- -->Basic French 2<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa6b8188fba4af19cb240e\" target=\"_blank\">FR192A</a> <!-- -->-<!-- --> <!-- -->French Language 1: Module 1<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa6b8413e1b07a8b5abeea\" target=\"_blank\">FR192B</a> <!-- -->-<!-- --> <!-- -->French Language 1: Module 2<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li></ul></div><div></div></div></section></div>",
+    "onlineDegree": [
+      {
+        "name": "This diploma is also available to study online (asynchronous)",
+        "id": "6441d968cc48a046e6a9d552"
+      }
+    ],
+    "pid": "ryGEl1RAsh",
+    "title": "Diploma in French Language I",
+    "declarationAudience": [
+      {
+        "name": "This credential is open to students enrolled in degree programs or any non- or post-degree academic plan.",
+        "id": "641077eec54ff10399f4274f"
+      }
+    ],
+    "minimumAverageSRequired": "<ul> <li>A minimum cumulative diploma average of 65.0%.</li> </ul>",
+    "undergraduateCredentialType": {
+      "name": "Diploma",
+      "id": "63c825b9487c23218d7c444c"
+    },
+    "dateStart": "2026-09-02",
+    "declarationRequirements": "<ul> <li>Before declaring this academic plan, see <a href=\"#/policy/S17gweg46\">invalid credential combinations</a>.</li> </ul>",
+    "id": "69aa7de9306256e3f12a14d7",
+    "fieldOfStudy": {
+      "name": "French",
+      "id": "63e55dc72d95e9001675fc54",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "graduationRequirements": "<ul> <li>Complete a total of 2.0 units.</li> </ul>",
+    "_score": 1,
+    "specializations": []
+  }
+}

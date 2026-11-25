@@ -1,0 +1,88 @@
+{
+  "indexEntry": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Engineering",
+      "id": "648b230afc613edabf8e2eba"
+    },
+    "code": "MASc in Electrical & Computer Engineering-Nanotechnology",
+    "__passedCatalogQuery": true,
+    "dateStart": "2026-09-02",
+    "pid": "S1lse10Aon",
+    "graduateCredentialType": {
+      "name": "Master's",
+      "id": "63c825e17da8f4f5892329d8"
+    },
+    "id": "6a84eb00718cf961a25c4fe4",
+    "title": "Master of Applied Science (MASc) in Electrical and Computer Engineering - Nanotechnology",
+    "graduateFieldOfStudy": {
+      "name": "Electrical and Computer Engineering",
+      "id": "6409ec91e1a6000016d1fdd6",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-08-19",
+    "_score": 1
+  },
+  "record": {
+    "admissionRequirementsApplicationMaterials": "<ul> <li>Résumé</li> <li>Statement of interest</li> <li>Transcript(s)</li> </ul>",
+    "code": "MASc in Electrical & Computer Engineering-Nanotechnology",
+    "__passedCatalogQuery": true,
+    "groupFilter2": {
+      "name": "Department of Electrical and Computer Engineering",
+      "id": "636423b0af5eeb00153137d2",
+      "customFields": {
+        "Transformation": "ECE"
+      }
+    },
+    "pid": "S1lse10Aon",
+    "lengthOfProgram": "<ul> <li>Students are required to complete the program in accordance with the <a href=\"https://uwaterloo.ca/academic-calendar/graduate-studies/catalog#/policy/r1QyLsv0a\">University program time limits</a>.</li> </ul>",
+    "title": "Master of Applied Science (MASc) in Electrical and Computer Engineering - Nanotechnology",
+    "thesisOptionCourseRequirementsRichText": "<ul> <li>Students must complete a total of at least 5 courses (0.50 unit weight) including NANO 600 Introduction to Nanotechnology, 1 nanotechnology elective course and 3 elective courses, the choice of courses must meet with the approval of the supervisor. The electives taken by a student should, however, be from within the Faculties of Engineering, Science or Mathematics.</li> <li>Students who have completed their Bachelor of Applied Science (BASc) degree in Nanotechnology Engineering at the University of Waterloo can not take NANO 600. Instead, they can choose 1 course from the list of nanotechnology elective courses to meet the total course credit requirement.</li> <li>Nanotechnology elective courses: <ul> <li>NANO 601 Characterization of Nanomaterials</li> <li>NANO 602 Structure and Spectroscopy of Nanoscale Materials</li> <li>NANO 603 Nanocomposites</li> <li>NANO 604 Nanomechanics and Molecular Dynamics Simulations</li> <li>NANO 605/SYDE 683 Design of MEMS &amp; NEMS</li> <li>NANO 606/SYDE 682 Advanced MicroElectroMechanical Systems: Physics, Design &amp; Fabrication</li> <li>NANO 707 From Atoms to Crystals, Quantum Wells, Wires and Dots</li> </ul> </li> <li>Students may be required at any time to withdraw from the program if they fail to maintain a minimum grade of 65% in each of the 5 courses and a cumulative average of at least 70% in the coursework portion of their approved study program or if they fail to receive satisfactory progress reports regarding their research activities.</li> <li>The Department may recommend that credit be allowed for courses taken at other institutions. In special cases, 1 course (0.50 unit weight) may be approved.</li> </ul>",
+    "dateStart": "2026-09-02",
+    "registrationOptions": {
+      "partTime": true,
+      "fullTime": true
+    },
+    "graduateCredentialType": {
+      "name": "Master's",
+      "id": "63c825e17da8f4f5892329d8"
+    },
+    "id": "6a84eb00718cf961a25c4fe4",
+    "catalogActivationDate": "2026-08-19",
+    "degreeRequirementsGrad": "<ul> <li>Students must complete the course and milestone requirements listed below in addition to the <a href=\"#/policy/SkOCDGApT\">Graduate Academic Integrity Module (Graduate AIM)</a>.</li> </ul>",
+    "studyOptionsForCalendar": [
+      {
+        "name": "Thesis",
+        "id": "64a4320a5d75774e8176c095"
+      }
+    ],
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Engineering",
+      "id": "648b230afc613edabf8e2eba"
+    },
+    "thesisOptionMilestoneRequirements": "<h4>Nanotechnology Seminar</h4> <ul> <li>This seminar is a forum for student presentation of research results or proposals. The range of topics that will be addressed in the seminar crosses all areas of research in the collaborative program. Each student is required to present at least 1 Nanotechnology research seminar over the course of the degree. The Nanotechnology Seminar may simultaneously count towards the Master’s Seminar requirement of the ECE Department.</li> </ul> <h4>Master's Thesis</h4> <ul> <li>The primary objective of the program is the completion of research work and reporting thereon in a master’s thesis.</li> <li>The topic of the thesis is arranged by students and their faculty supervisor(s). The research work leading to the thesis must be performed under the direction of the faculty supervisor(s).</li> <li>Students must orally defend their thesis before a thesis examination committee for their thesis to be accepted. Candidates first present their research work orally in an organized and informative manner. The presentation is followed by questioning from the examination committee.</li> <li>The thesis examination committee consists of the supervisor(s) as well as a regular faculty member from the Department of Electrical and Computer Engineering and an additional examiner whose expertise can support the evaluation of the master's thesis.</li> <li>The role of the examining committee is to read the thesis and asses its quality in terms of the student’s ability to (i) define a research problem, (ii) provide sufficient understanding of the relevant literature and (iii) critically evaluate and analyse the research outcomes.</li> </ul>",
+    "detailsAndNotes": "<ul> <li><a href=\"https://uwaterloo.ca/electrical-computer-engineering/\">Department of Electrical and Computer Engineering website</a></li> <li><a href=\"https://uwaterloo.ca/future-graduate-students/programs/by-faculty/engineering/electrical-and-computer-engineering-nanotechnology-master\">Master of Applied Science (MASc) in Electrical and Computer Engineering - Nanotechnology future graduate students program page</a></li> </ul>",
+    "graduateFieldOfStudy": {
+      "name": "Electrical and Computer Engineering",
+      "id": "6409ec91e1a6000016d1fdd6",
+      "customFields": {}
+    },
+    "admitTerms": {
+      "spring": true,
+      "winter": true,
+      "fall": true
+    },
+    "admissionRequirements": "<ul> <li>The Department of Electrical and Computer Engineering requires either (i) a 75% overall standing in the last two years, or equivalent, in a relevant four-year Honours Bachelor's degree or equivalent or (ii) a 75% overall standing or equivalent, in a relevant four-year Honours Bachelor's degree or equivalent, as the minimum requirement for admission to a Master's program for applicants educated at a Canadian institution. A 75% overall standing or equivalent, in a relevant four-year Honours Bachelor's degree or equivalent is the minimum requirement for admission to a Master's program for applicants educated outside of Canada.</li> <li>At the time of admission, each student must have a faculty supervisor who has endorsed the recommendation for admission.</li> <li><a href=\"#/policy/SJDLMPJAa\">English language proficiency (ELP)</a> (if applicable)</li> </ul>",
+    "deliveryModes": {
+      "onCampus": true
+    },
+    "programTypesCheckboxes": [
+      {
+        "name": "Collaborative",
+        "id": "6489e926fc613e473b8e284a"
+      }
+    ],
+    "admissionRequirementsReferences": "<ul> <li>Number of references: 2</li> <li>Type of references: at least 1 academic</li> </ul>",
+    "_score": 1,
+    "specializations": []
+  }
+}

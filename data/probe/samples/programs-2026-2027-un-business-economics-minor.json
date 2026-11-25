@@ -1,0 +1,57 @@
+{
+  "indexEntry": {
+    "code": "Business Economics Minor",
+    "__passedCatalogQuery": true,
+    "undergraduateCredentialType": {
+      "name": "Minor",
+      "id": "63c825af7da8f406742329d5"
+    },
+    "dateStart": "2026-09-02",
+    "pid": "Sk4t6h_nJg",
+    "id": "69aa7ca8405ebfa9d2b5b4dd",
+    "title": "Business Economics Minor",
+    "fieldOfStudy": {
+      "name": "Business Economics",
+      "id": "683da1ae181fe70020283591",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "_score": 1
+  },
+  "record": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Arts",
+      "id": "648b2302dedb397b7d9b0731"
+    },
+    "code": "Business Economics Minor",
+    "__passedCatalogQuery": true,
+    "additionalConstraints": "<ol> <li>Students may only complete one course from any cross-listed set.</li> <li>A minimum of 2.0 units must be ECON courses.</li> </ol>",
+    "courseRequirementsNoUnits": "<div><section><header data-test=\"grouping-0-header\"><div><h2 data-testid=\"grouping-label\"><span>Required Courses</span></h2></div><div><div><button aria-label=\"Collapse\"><i></i></button></div></div></header><div><div><ul><li><span>Complete <!-- -->all<!-- --> of the following</span><ul><li data-test=\"ruleView-B\"><div data-test=\"ruleView-B-result\">Complete all the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/69aa6ab9405ebfa9d2b5273e\" target=\"_blank\">ECON201</a> <!-- -->-<!-- --> <!-- -->Microeconomic Theory for Business and Policy<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li><div><span class=\"rules_groupHeader_37\"></span><li><span>Complete <!-- -->1<!-- --> of the following</span><ul><div><span class=\"rules_groupHeader_37\"></span><li><span>Complete <!-- -->all<!-- --> of the following</span><ul><li data-test=\"ruleView-A.1.1\"><div data-test=\"ruleView-A.1.1-result\">Complete <span>1</span> of the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/69aa75b3df9c42c28b6191fb\" target=\"_blank\">COMM103</a> <!-- -->-<!-- --> <!-- -->Principles of Economics<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa78b3df9c42c28b61a365\" target=\"_blank\">ECON100</a> <!-- -->-<!-- --> <!-- -->Principles of Economics<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li><li data-test=\"ruleView-A.1.2\"><div data-test=\"ruleView-A.1.2-result\"><div>Complete 2.0 units from the Approved Courses list</div></div></li></ul></li></div><div><span class=\"rules_groupHeader_37\"></span><li><span>Complete <!-- -->all<!-- --> of the following</span><ul><li data-test=\"ruleView-A.2.1\"><div data-test=\"ruleView-A.2.1-result\">Complete <span>1</span> of the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/69aa6ab1df9c42c28b612b9a\" target=\"_blank\">ECON101</a> <!-- -->-<!-- --> <!-- -->Introduction to Microeconomics<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa6ab55cacac2fbe7fa3b5\" target=\"_blank\">ECON120W</a> <!-- -->-<!-- --> <!-- -->Introduction to Microeconomics (WLU)<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/685c222640950345bed7d3c4\" target=\"_blank\">MSE263</a> <!-- -->-<!-- --> <!-- -->Managerial Economics<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li><li data-test=\"ruleView-A.2.2\"><div data-test=\"ruleView-A.2.2-result\">Complete <span>1</span> of the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/69aa6ab313e1b07a8b5ab67c\" target=\"_blank\">ECON102</a> <!-- -->-<!-- --> <!-- -->Introduction to Macroeconomics<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa6ab7306256e3f1297260\" target=\"_blank\">ECON140W</a> <!-- -->-<!-- --> <!-- -->Introduction to Macroeconomics (WLU)<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li><li data-test=\"ruleView-A.2.3\"><div data-test=\"ruleView-A.2.3-result\"><div>Complete 1.5 units from the Approved Courses list</div></div></li></ul></li></div></ul></li></div><li data-test=\"ruleView-C\"><div data-test=\"ruleView-C-result\">Complete <span>1</span> of the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/682ca86b236dddf2dedd6d1f\" target=\"_blank\">AFM272</a> <!-- -->-<!-- --> <!-- -->Global Capital Markets and Financial Analytics<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/682c9028b6382f0f5c35f03f\" target=\"_blank\">AFM273</a> <!-- -->-<!-- --> <!-- -->Financial Instruments and Capital Markets<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69a721ee8197cc8370996dd9\" target=\"_blank\">AFM274</a> <!-- -->-<!-- --> <!-- -->Introduction to Corporate Finance<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69a720bb5cacac2fbe747ca8\" target=\"_blank\">AFM275</a> <!-- -->-<!-- --> <!-- -->Corporate Finance<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa6ad688fba4af19cb1e67\" target=\"_blank\">ECON371</a> <!-- -->-<!-- --> <!-- -->Business Finance 1<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li><li data-test=\"ruleView-D\"><div data-test=\"ruleView-D-result\">Complete <span>1</span> of the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/663e826e2ed76b5513d8903d\" target=\"_blank\">ACTSC446</a> <!-- -->-<!-- --> <!-- -->Mathematics of Financial Markets<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69a1d2010cc3a4f01d8aafed\" target=\"_blank\">AFM322</a> <!-- -->-<!-- --> <!-- -->Derivative Securities<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa6ad8ab246f872d3c84a6\" target=\"_blank\">ECON372</a> <!-- -->-<!-- --> <!-- -->Business Finance 2<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69a1a64a6dcaceeaae2dde4e\" target=\"_blank\">MATBUS470</a> <!-- -->-<!-- --> <!-- -->Derivatives<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li></ul></li></ul></div><div></div></div></section></div>",
+    "pid": "Sk4t6h_nJg",
+    "title": "Business Economics Minor",
+    "declarationAudience": [
+      {
+        "name": "This credential is open to students enrolled in any degree program. ",
+        "id": "641077f5feb797a29e867c11"
+      }
+    ],
+    "minimumAverageSRequired": "<ul> <li>A minimum cumulative minor average of 65.0%.</li> </ul>",
+    "courseListsNew": "<div><section><header data-test=\"grouping-0-header\"><div><h2 data-testid=\"grouping-label\"><span>Approved Courses List</span></h2></div><div><div><button aria-label=\"Collapse\"><i></i></button></div></div></header><div><div><ul><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\">Choose any of the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/69a5ce9821074e042acf91ff\" target=\"_blank\">ARBUS200</a> <!-- -->-<!-- --> <!-- -->Entrepreneurship Principles and Practices<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa711b17940b8f16d3deb2\" target=\"_blank\">ECON206</a> <!-- -->-<!-- --> <!-- -->Money and Banking 1<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa711f88df55191cbc1aa8\" target=\"_blank\">ECON212</a> <!-- -->-<!-- --> <!-- -->Introduction to Game Theory<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa6ac313e1b07a8b5ab737\" target=\"_blank\">ECON231</a> <!-- -->-<!-- --> <!-- -->Introduction to International Economics<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa6fdd943da42afcc5a9d2\" target=\"_blank\">ECON254</a> <!-- -->-<!-- --> <!-- -->Economics of Sport<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa6ac888fba4af19cb1d7c\" target=\"_blank\">ECON332</a> <!-- -->-<!-- --> <!-- -->International Finance<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa6ad088df55191cbbd6b5\" target=\"_blank\">ECON361</a> <!-- -->-<!-- --> <!-- -->Cost-Benefit Analysis and Project Evaluation<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/65eb4b4ebf387c7a9b69cb66\" target=\"_blank\">ENBUS203</a> <!-- -->-<!-- --> <!-- -->Green Entrepreneurship<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa6abdab246f872d3c838e\" target=\"_blank\">MGMT220</a> <!-- -->-<!-- --> <!-- -->Entrepreneurship and the Creative Workplace<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa747b306256e3f129d80f\" target=\"_blank\">MGMT244</a> <!-- -->-<!-- --> <!-- -->Principles of Marketing<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69cd31698024d749bff6703d\" target=\"_blank\">MGMT345</a> <!-- -->-<!-- --> <!-- -->Marketing Strategy<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li></ul></div><div></div></div></section></div>",
+    "undergraduateCredentialType": {
+      "name": "Minor",
+      "id": "63c825af7da8f406742329d5"
+    },
+    "dateStart": "2026-09-02",
+    "declarationRequirements": "<ul> <li>A minimum average of 65.0% in at least two of the courses from the list of requirements.</li> </ul>",
+    "id": "69aa7ca8405ebfa9d2b5b4dd",
+    "fieldOfStudy": {
+      "name": "Business Economics",
+      "id": "683da1ae181fe70020283591",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "graduationRequirements": "<ul> <li>Complete a total of 4.0 units.</li> </ul>",
+    "_score": 1,
+    "specializations": []
+  }
+}

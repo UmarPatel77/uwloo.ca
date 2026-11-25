@@ -1,0 +1,32 @@
+{
+  "indexEntry": {
+    "__passedCatalogQuery": true,
+    "dateStart": "2026-09-02",
+    "regulationGroupingUndergraduate": {
+      "name": "University of Waterloo's Jurisdiction and Authority",
+      "id": "654ea22e376b26001633522d",
+      "customFields": {}
+    },
+    "pid": "HkCDnmrET",
+    "id": "697a156c9dcff21faa757cc0",
+    "body": "<p>The University of Waterloo may face disruptive events beyond its reasonable control, such as (without limitation) strikes, lock-outs, floods, severe weather, disease or health emergencies, and malicious acts including through the internet. </p> <p>In the event that the University takes decisions in the face of such disruptive events, it will do so having reasonable regard to, among other things, the direction of medical or other authorities as appropriate, and will use its reasonable efforts to minimize the academic consequences to its students.</p> <ul> <li>Tuition and mandatory fees: <ul> <li>Continue to be set regardless of the method of instruction.</li> <li>Will not be refunded or adjusted in the event instruction occurs by an alternate delivery model for all or any part of the same academic term.</li> <li>Will be refunded in the event students voluntarily withdraw for the remainder of the term, in accordance with standard withdrawal timelines.</li> </ul> </li> <li>The University may revise, at any time, the format of course offerings or academic milestones such that courses or milestones are offered in whole or in part on an alternate delivery model to in-person classes, in accordance with University policies, which are subject to change from time to time.</li> </ul>",
+    "title": "Disruptive Events",
+    "catalogActivationDate": "2026-04-02",
+    "_score": 1
+  },
+  "record": {
+    "__passedCatalogQuery": true,
+    "dateStart": "2026-09-02",
+    "regulationGroupingUndergraduate": {
+      "name": "University of Waterloo's Jurisdiction and Authority",
+      "id": "654ea22e376b26001633522d",
+      "customFields": {}
+    },
+    "pid": "HkCDnmrET",
+    "id": "697a156c9dcff21faa757cc0",
+    "body": "<p>The University of Waterloo may face disruptive events beyond its reasonable control, such as (without limitation) strikes, lock-outs, floods, severe weather, disease or health emergencies, and malicious acts including through the internet. </p> <p>In the event that the University takes decisions in the face of such disruptive events, it will do so having reasonable regard to, among other things, the direction of medical or other authorities as appropriate, and will use its reasonable efforts to minimize the academic consequences to its students.</p> <ul> <li>Tuition and mandatory fees: <ul> <li>Continue to be set regardless of the method of instruction.</li> <li>Will not be refunded or adjusted in the event instruction occurs by an alternate delivery model for all or any part of the same academic term.</li> <li>Will be refunded in the event students voluntarily withdraw for the remainder of the term, in accordance with standard withdrawal timelines.</li> </ul> </li> <li>The University may revise, at any time, the format of course offerings or academic milestones such that courses or milestones are offered in whole or in part on an alternate delivery model to in-person classes, in accordance with University policies, which are subject to change from time to time.</li> </ul>",
+    "title": "Disruptive Events",
+    "catalogActivationDate": "2026-04-02",
+    "_score": 1
+  }
+}

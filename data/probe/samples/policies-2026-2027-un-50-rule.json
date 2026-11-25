@@ -1,0 +1,32 @@
+{
+  "indexEntry": {
+    "__passedCatalogQuery": true,
+    "dateStart": "2026-09-02",
+    "regulationGroupingUndergraduate": {
+      "name": "Academic Regulations",
+      "id": "654ea116b15f8600168a03f8",
+      "customFields": {}
+    },
+    "pid": "rJoPVKYNp",
+    "id": "69cd29c9fac29d769b0f3ad6",
+    "body": "<p>At least 50% of the academic course units required to be awarded a University of Waterloo credential (i.e., a degree, major, minor, option, specialization, diploma, or certificate) must have numeric grades that are included in its average(s).</p>",
+    "title": "50% Rule",
+    "catalogActivationDate": "2026-04-02",
+    "_score": 1
+  },
+  "record": {
+    "__passedCatalogQuery": true,
+    "dateStart": "2026-09-02",
+    "regulationGroupingUndergraduate": {
+      "name": "Academic Regulations",
+      "id": "654ea116b15f8600168a03f8",
+      "customFields": {}
+    },
+    "pid": "rJoPVKYNp",
+    "id": "69cd29c9fac29d769b0f3ad6",
+    "body": "<p>At least 50% of the academic course units required to be awarded a University of Waterloo credential (i.e., a degree, major, minor, option, specialization, diploma, or certificate) must have numeric grades that are included in its average(s).</p>",
+    "title": "50% Rule",
+    "catalogActivationDate": "2026-04-02",
+    "_score": 1
+  }
+}

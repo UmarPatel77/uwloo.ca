@@ -1,0 +1,80 @@
+{
+  "indexEntry": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Arts",
+      "id": "648b2302dedb397b7d9b0731"
+    },
+    "code": "MA in Political Science",
+    "__passedCatalogQuery": true,
+    "dateStart": "2026-09-02",
+    "pid": "HJYgk0Ci2",
+    "graduateCredentialType": {
+      "name": "Master's",
+      "id": "63c825e17da8f4f5892329d8"
+    },
+    "id": "6a84e4d3e0f82d2f19bc9099",
+    "title": "Master of Arts (MA) in Political Science",
+    "graduateFieldOfStudy": {
+      "name": "Political Science",
+      "id": "6409ebc7e1a6000016d1fdd4",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-08-19",
+    "_score": 1
+  },
+  "record": {
+    "admissionRequirementsApplicationMaterials": "<ul> <li>Résumé</li> <li>Supplementary information form</li> <li>Transcript(s)</li> <li>Writing sample</li> </ul>",
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Arts",
+      "id": "648b2302dedb397b7d9b0731"
+    },
+    "code": "MA in Political Science",
+    "__passedCatalogQuery": true,
+    "detailsAndNotes": "<ul> <li><a href=\"https://uwaterloo.ca/political-science/\">Political Science website</a></li> <li><a href=\"https://uwaterloo.ca/graduate-studies-postdoctoral-affairs/future-students/programs/political-science-ma-waterloo\">Master of Arts (MA) in Political Science future students program page</a></li> </ul>",
+    "groupFilter2": {
+      "name": "School of Social, Political and Historical Research",
+      "id": "69a85445999a2d7fa446c7ec",
+      "customFields": {
+        "Transformation": "SPHR"
+      }
+    },
+    "pid": "HJYgk0Ci2",
+    "lengthOfProgram": "<ul> <li>3 terms (12 months)</li> </ul>",
+    "masterSResearchPaperOptionCourseRequirementsRichText": "<ul> <li>Students must complete the equivalent of 6 one-term graduate level Political Science courses (0.50 unit weight) including PSCI 600 Political Science Methods and PSCI 601 Research and Writing in Political Science.</li> <li>The overall average achieved in the 6 credit courses should be at least 70%.</li> <li>Reading courses may supplement regular offerings in the program, although it is understood that they will be approved at the discretion of the School. Students will normally be permitted to take 1 reading course as part of their degree.</li> </ul>",
+    "title": "Master of Arts (MA) in Political Science",
+    "graduateFieldOfStudy": {
+      "name": "Political Science",
+      "id": "6409ebc7e1a6000016d1fdd4",
+      "customFields": {}
+    },
+    "admitTerms": {
+      "fall": true
+    },
+    "masterSResearchPaperOptionMilestoneRequirements": "<h4>Master's Research Paper</h4> <ul> <li>The Master's Research Paper is best thought of as a &quot;mini thesis&quot; and is the equivalent of 2 one-term courses (0.50 unit weight). The work is co-supervised by two faculty members who may ask for corrections and who jointly decide on the grade to be awarded upon completion.</li> <li>Students must achieve a grade of 75% or higher on their MRP in order to satisfy the degree requirements for the program.</li> </ul>",
+    "admissionRequirements": "<ul> <li>An Honours Bachelor's degree (or equivalent) in Political Science with at least a 78% overall standing.</li> <li>Statement of Research.</li> <li>Students with an Honours BA in a related discipline will be considered for admission but may be required to complete further work in Political Science before proceeding. Students with a General Bachelor of Arts (BA) in Political Science may be admitted to a qualifying program, and then apply for admission to the Master of Arts (MA) program after completion of that program.</li> <li>Probationary students admitted to the program must achieve at least 75% in 2 predetermined courses in order to continue in the Winter term. Normally a student will not continue on probationary status for more than two terms.</li> <li>Transitional students admitted are normally required to complete additional predetermined undergraduate or graduate courses and achieve at least a 75% average.</li> <li><a href=\"#/policy/SJDLMPJAa\">English language proficiency (ELP)</a> (if applicable)</li> </ul>",
+    "deliveryModes": {
+      "onCampus": true
+    },
+    "admissionRequirementsReferences": "<ul> <li>Number of references: 3</li> <li>Type of references: normally from academic sources</li> </ul>",
+    "dateStart": "2026-09-02",
+    "registrationOptions": {
+      "partTime": true,
+      "fullTime": true
+    },
+    "graduateCredentialType": {
+      "name": "Master's",
+      "id": "63c825e17da8f4f5892329d8"
+    },
+    "id": "6a84e4d3e0f82d2f19bc9099",
+    "catalogActivationDate": "2026-08-19",
+    "degreeRequirementsGrad": "<ul> <li>Students must complete the course and milestone requirements listed below in addition to the <a href=\"#/policy/SkOCDGApT\">Graduate Academic Integrity Module (Graduate AIM)</a>.</li> <li>Note: At the time of application, students are asked to provide the School with a general outline of their research interests, together with a suggested Master’s Research Paper project. There are many opportunities for students and faculty to discuss research interests in the program. Upon arrival, the Graduate Officer assigns a faculty advisor to each student. Although the faculty advisor could become a student's supervisor, the advisor is to assist and offer advice on academic and administrative matters until a research supervisor is chosen.</li> </ul>",
+    "studyOptionsForCalendar": [
+      {
+        "name": "Master's Research Paper",
+        "id": "64a432163bbc4e3ece3eeda2"
+      }
+    ],
+    "_score": 1,
+    "specializations": []
+  }
+}

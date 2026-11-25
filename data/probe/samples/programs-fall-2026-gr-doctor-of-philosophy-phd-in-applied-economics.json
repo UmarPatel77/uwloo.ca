@@ -1,0 +1,81 @@
+{
+  "indexEntry": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Arts",
+      "id": "648b2302dedb397b7d9b0731"
+    },
+    "code": "PhD in Applied Economics",
+    "__passedCatalogQuery": true,
+    "dateStart": "2026-09-02",
+    "pid": "SJYlJRRi3",
+    "graduateCredentialType": {
+      "name": "PhD",
+      "id": "63c825e9e400391ae717e8d2"
+    },
+    "id": "6a8490d76353c290fcebb0d5",
+    "title": "Doctor of Philosophy (PhD) in Applied Economics",
+    "graduateFieldOfStudy": {
+      "name": "Economics",
+      "id": "6409eaf7e1a6000016d1fdd0",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-08-19",
+    "_score": 1
+  },
+  "record": {
+    "milestoneDetails": "<h4>PhD Seminar I</h4> <ul> <li>Completion of the first seminar milestone requires attendance at a minimum of 50% of the School's seminars offered during the Fall and Winter terms.</li> </ul> <h4>PhD Seminar II</h4> <ul> <li>Students must complete 2 seminar presentations of their own work, 1 in year three and 1 in year four, which will fulfill the requirements for the second seminar milestone.</li> </ul> <h4>PhD Qualifying Examination</h4> <ul> <li>The qualifying examination consists of two written examinations covering microeconomic and econometric theory.</li> <li>One re-write per topic, taken in August of the first year, will be allowed. No student will be allowed a third attempt.</li> <li>Normally, three School of Economics members will comprise the Examining Committee.</li> </ul> <h4>PhD Thesis Proposal</h4> <ul> <li>An oral examination covering the student's thesis proposal.</li> <li>A committee of four people including the student's thesis supervisor, two School of Economics faculty members, and one internal/external examiner, comprise the examining committee.</li> <li>When the student has completed the qualifying examination, the thesis proposal, and the required elective courses, they will be admitted to the research portion of the Doctoral program.</li> <li>Normally, the coursework should be completed by the end of the second year, and the thesis proposal examination should be completed by the end of the winter term of the third year.</li> </ul> <h4>PhD Research Paper</h4> <h4>PhD Thesis</h4> <ul> <li>At the conclusion of the thesis research, a final oral examination will be taken. The thesis defence will consist of a public seminar (at which the candidate presents the thesis) and a meeting between the candidate and the appointed Examining Committee.</li> </ul>",
+    "admissionRequirementsApplicationMaterials": "<ul> <li>Statement of interest</li> <li>Transcript(s)</li> <li>Writing sample</li> </ul>",
+    "code": "PhD in Applied Economics",
+    "__passedCatalogQuery": true,
+    "groupFilter2": {
+      "name": "School of Economics",
+      "id": "69a853ac342cec5ea555a6e6",
+      "customFields": {
+        "Transformation": "ECON"
+      }
+    },
+    "graduateResearchFields": "<ul> <li>Public Economic Policy</li> </ul>",
+    "pid": "SJYlJRRi3",
+    "lengthOfProgram": "<ul> <li>The program is designed to be completed within four years.</li> </ul>",
+    "title": "Doctor of Philosophy (PhD) in Applied Economics",
+    "deliveryModeInformation": "",
+    "dateStart": "2026-09-02",
+    "registrationOptions": {
+      "fullTime": true
+    },
+    "graduateCredentialType": {
+      "name": "PhD",
+      "id": "63c825e9e400391ae717e8d2"
+    },
+    "id": "6a8490d76353c290fcebb0d5",
+    "catalogActivationDate": "2026-08-19",
+    "degreeRequirementsGrad": "<ul> <li>Students must complete the course and milestone requirements listed below in addition to the <a href=\"#/policy/SkOCDGApT\">Graduate Academic Integrity Module (Graduate AIM)</a>.</li> </ul>",
+    "studyOptionsForCalendar": [
+      {
+        "name": "Thesis",
+        "id": "64a4320a5d75774e8176c095"
+      }
+    ],
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Arts",
+      "id": "648b2302dedb397b7d9b0731"
+    },
+    "detailsAndNotes": "<ul> <li><a href=\"https://uwaterloo.ca/economics/\">School of Economics website</a></li> <li><a href=\"https://uwaterloo.ca/future-graduate-students/programs/by-faculty/arts/economics-applied-economics-doctor-philosophy-phd\">Doctor of Philosophy (PhD) in Applied Economics future graduate students program page</a></li> </ul>",
+    "graduateCourseRequirements": "<div><div><div><ul><li><span>Complete <!-- -->all<!-- --> of the following</span><ul><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\">Complete all the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/69aa719688fba4af19cb6403\" target=\"_blank\">ECON600</a> <!-- -->-<!-- --> <!-- -->Mathematics for Economists<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa6889306256e3f1296584\" target=\"_blank\">ECON601</a> <!-- -->-<!-- --> <!-- -->Microeconomic Theory I<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa69ad13e1b07a8b5aac3d\" target=\"_blank\">ECON602</a> <!-- -->-<!-- --> <!-- -->Macroeconomic Theory I<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa727e88fba4af19cb6d52\" target=\"_blank\">ECON607</a> <!-- -->-<!-- --> <!-- -->Data Science for Economists<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa69b30cdb8bf7a703e016\" target=\"_blank\">ECON621</a> <!-- -->-<!-- --> <!-- -->Econometrics I<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa6e6b306256e3f1299941\" target=\"_blank\">ECON701</a> <!-- -->-<!-- --> <!-- -->Micro II<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa69be8197cc8370a481ed\" target=\"_blank\">ECON721</a> <!-- -->-<!-- --> <!-- -->Econometrics II<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li><li data-test=\"ruleView-B\"><div data-test=\"ruleView-B-result\">Complete <span>1</span> of the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/69aa6e6d306256e3f129996d\" target=\"_blank\">ECON702</a> <!-- -->-<!-- --> <!-- -->Macro II<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa71cf88fba4af19cb65c1\" target=\"_blank\">ECON703</a> <!-- -->-<!-- --> <!-- -->Advanced Macroeconomics: Problems and Policies<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa70a888df55191cbc165e\" target=\"_blank\">ECON704</a> <!-- -->-<!-- --> <!-- -->Monetary Economics 2<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li><li data-test=\"ruleView-C\"><div data-test=\"ruleView-C-result\"><div>Complete 5 graduate level elective courses\n\nStudents are allowed to take electives outside of the School of Economics, with the approval of the Economics Associate Chair, Graduate Studies.</div></div></li></ul></li></ul></div></div></div>",
+    "graduateFieldOfStudy": {
+      "name": "Economics",
+      "id": "6409eaf7e1a6000016d1fdd0",
+      "customFields": {}
+    },
+    "admitTerms": {
+      "fall": true
+    },
+    "admissionRequirements": "<ul> <li>Master's degree in Economics.</li> <li>Minimum 80%, first class average in Master of Arts (MA) Economics degree.</li> <li>A one-page statement of Academic Interest.</li> <li>A GRE score is not required but is recommended for all international students applying to the program.</li> <li><a href=\"#/policy/SJDLMPJAa\">English language proficiency (ELP)</a> (if applicable)</li> </ul>",
+    "deliveryModes": {
+      "onCampus": true
+    },
+    "admissionRequirementsReferences": "<ul> <li>Number of references: 3</li> <li>Type of references: academic</li> </ul>",
+    "_score": 1,
+    "specializations": []
+  }
+}

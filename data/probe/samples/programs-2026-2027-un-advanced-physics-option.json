@@ -1,0 +1,55 @@
+{
+  "indexEntry": {
+    "code": "Advanced Physics Option",
+    "__passedCatalogQuery": true,
+    "undergraduateCredentialType": {
+      "name": "Option",
+      "id": "63c825aa7da8f487552329d4"
+    },
+    "dateStart": "2026-09-02",
+    "pid": "rJNjxgatgg",
+    "id": "68af709c44b2b06d9493299c",
+    "title": "Advanced Physics Option",
+    "fieldOfStudy": {
+      "name": "Options: Faculty of Science",
+      "id": "63e6b49fe0347d0016bae554",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "_score": 1
+  },
+  "record": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Science",
+      "id": "648b2328cbc40eb5c7ef4849"
+    },
+    "requirements": "<div><section><header data-test=\"grouping-0-header\"><div><h2 data-testid=\"grouping-label\"><span>Required Courses</span></h2></div><div><span>4</span><span>Units to Complete</span></div><div><div><button aria-label=\"Collapse\"><i></i></button></div></div></header><div><div><ul><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\">Complete all the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/6889474d2ad6b80c1e7bd682\" target=\"_blank\">PHYS334</a> <!-- -->-<!-- --> <!-- -->Quantum Physics 2<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/65b672ed7786305d767feea5\" target=\"_blank\">PHYS342</a> <!-- -->-<!-- --> <!-- -->Electricity and Magnetism 2<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/688e2bb2bc00f88a04c1bb24\" target=\"_blank\">PHYS356</a> <!-- -->-<!-- --> <!-- -->Optics 1<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/65b9a313b44f4352e869ebf6\" target=\"_blank\">PHYS363</a> <!-- -->-<!-- --> <!-- -->Intermediate Classical Mechanics<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/65b9a3a3778630598b800167\" target=\"_blank\">PHYS365</a> <!-- -->-<!-- --> <!-- -->Mathematical Physics 2<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/687e7a1192a5a7fea4125ed0\" target=\"_blank\">PHYS376</a> <!-- -->-<!-- --> <!-- -->Relativistic Physics<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/65b9a5a298f0446c511038af\" target=\"_blank\">PHYS434</a> <!-- -->-<!-- --> <!-- -->Quantum Physics 3<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/65b9a5f623cba756cf47c2d3\" target=\"_blank\">PHYS442</a> <!-- -->-<!-- --> <!-- -->Electricity and Magnetism 3<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li></ul></div><div></div></div></section><h3>Grand Total Units:<!-- --> <strong>4</strong></h3></div>",
+    "code": "Advanced Physics Option",
+    "__passedCatalogQuery": true,
+    "detailsAndNotes": "<ul> <li>See list of <a href=\"https://uwaterloo.ca/science-undergraduate-office/student-support/academic-advisors\">academic advisors</a>.</li> </ul>",
+    "pid": "rJNjxgatgg",
+    "title": "Advanced Physics Option",
+    "minimumAverageSRequired": "<ul> <li>A minimum cumulative Physics average of 60.0%.</li> </ul>",
+    "optionIsAvailableForStudentsInTheFollowingDegrees": [
+      {
+        "name": "Bachelor of Science (Science)",
+        "id": "63c827007da8f412872329e2"
+      }
+    ],
+    "undergraduateCredentialType": {
+      "name": "Option",
+      "id": "63c825aa7da8f487552329d4"
+    },
+    "dateStart": "2026-09-02",
+    "id": "68af709c44b2b06d9493299c",
+    "fieldOfStudy": {
+      "name": "Options: Faculty of Science",
+      "id": "63e6b49fe0347d0016bae554",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "graduationRequirements": "<ul> <li>Complete a total of 4.0 units.</li> </ul>",
+    "_score": 1,
+    "specializations": []
+  }
+}

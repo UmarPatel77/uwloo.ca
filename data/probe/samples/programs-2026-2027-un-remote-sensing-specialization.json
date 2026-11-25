@@ -1,0 +1,50 @@
+{
+  "indexEntry": {
+    "code": "GA-Remote Sensing Specialization",
+    "__passedCatalogQuery": true,
+    "undergraduateCredentialType": {
+      "name": "Specialization",
+      "id": "63c825a4d76a2cec43ca6347"
+    },
+    "dateStart": "2026-09-02",
+    "pid": "rkukRRHill",
+    "id": "68c85de0a4000185dddc5b94",
+    "title": "Remote Sensing Specialization",
+    "fieldOfStudy": {
+      "name": "Geography and Aviation",
+      "id": "63e56190516abf001614365a",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "_score": 1
+  },
+  "record": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Environment",
+      "id": "648b231276c4ed317e32b6a9"
+    },
+    "requirements": "<div><section><header data-test=\"grouping-0-header\"><div><h2 data-testid=\"grouping-label\"><span>Required Courses</span></h2></div><div><span>2.5</span><span>Units to Complete</span></div><div><div><button aria-label=\"Collapse\"><i></i></button></div></div></header><div><div><ul><li><span>Complete <!-- -->all<!-- --> of the following</span><ul><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\">Complete all the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/68cec7723ff99cd867c98ff0\" target=\"_blank\">GDS371</a> <!-- -->-<!-- --> <!-- -->Advanced Remote Sensing<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/68cec900a4000185dde953bd\" target=\"_blank\">GDS387</a> <!-- -->-<!-- --> <!-- -->Artificial Intelligence in Geospatial Data Science <!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/68cecb10ada07b116576f5b2\" target=\"_blank\">GDS471</a> <!-- -->-<!-- --> <!-- -->Remote Sensing Project<!-- --> <span style=\"margin-left:5px\">(1.00)</span></span></li></ul></div></div></li><li data-test=\"ruleView-B\"><div data-test=\"ruleView-B-result\">Complete <span>1</span> of the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/68e531cb4c52c90900bfd24b\" target=\"_blank\">AVIA270</a> <!-- -->-<!-- --> <!-- -->Remotely Piloted Aircraft Systems (RPAS) Knowledge Requirements<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/68cec526c7945cade02b53cd\" target=\"_blank\">GDS270</a> <!-- -->-<!-- --> <!-- -->Remotely Piloted Aircraft Systems (RPAS) Knowledge Requirements<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li></ul></li></ul></div><div></div></div></section><h3>Grand Total Units:<!-- --> <strong>2.5</strong></h3></div>",
+    "code": "GA-Remote Sensing Specialization",
+    "__passedCatalogQuery": true,
+    "additionalConstraints": "<ol> <li>Students may only complete one course from any cross-listed set.</li> </ol>",
+    "pid": "rkukRRHill",
+    "title": "Remote Sensing Specialization",
+    "undergraduateCredentialType": {
+      "name": "Specialization",
+      "id": "63c825a4d76a2cec43ca6347"
+    },
+    "declarationRequirements": "<ul> <li>It is recommended that students declare the addition of a specialization as early as possible by submitting a <a href=\"https://uwaterloo.ca/the-centre/forms-and-official-documents/forms-undergraduate-students/plan-modification-form\">Plan Modification Form</a>.</li> </ul>",
+    "dateStart": "2026-09-02",
+    "specializationIsAvailableForStudentsInTheFollowingMajorsRules": "<div><div><div><ul><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\"><span><a href=\"#/programs/view/69a5b9550cc3a4f01dafbaca\" target=\"_blank\">H-Geography &amp; Aviation</a></span></div></li></ul></div></div></div>",
+    "id": "68c85de0a4000185dddc5b94",
+    "fieldOfStudy": {
+      "name": "Geography and Aviation",
+      "id": "63e56190516abf001614365a",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "graduationRequirements": "<ul> <li>Complete a total of 2.5 units.</li> </ul>",
+    "_score": 1,
+    "specializations": []
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "indexEntry": {
+    "__passedCatalogQuery": true,
+    "dateStart": "2025-09-02",
+    "regulationGroupingUndergraduate": {
+      "name": "Admissions",
+      "id": "640f7315ccb19100169a3148",
+      "customFields": {}
+    },
+    "pid": "HynblcxC6",
+    "id": "67d03a0c56cefed3720cfd7b",
+    "body": "<p>Current or former University of Waterloo students are required to submit an <a href=\"https://uwaterloo.ca/the-centre/forms-and-official-documents/forms-undergraduate-students#admission\">Application for Undergraduate Readmission</a> if:</p> <ul> <li>they have received a Failed - Required to Withdraw academic standing decision;</li> <li>they have a voluntary <a href=\"#/policy/ryrxPL54p\">absence from studies</a>;</li> <li>they are seeking to <a href=\"#/policy/BkeD78VVa\">upgrade</a> their undergraduate degree;</li> <li>they are seeking another undergraduate degree (e.g., a <a href=\"#/policy/BkeD78VVa\">second degree</a> in a different discipline); or</li> <li>they are seeking to take courses as a <a href=\"#/policy/BkeD78VVa\">post-degree</a>/non-degree student.</li> </ul>",
+    "title": "Readmission",
+    "catalogActivationDate": "2025-04-02",
+    "_score": 1
+  },
+  "record": {
+    "__passedCatalogQuery": true,
+    "dateStart": "2025-09-02",
+    "regulationGroupingUndergraduate": {
+      "name": "Admissions",
+      "id": "640f7315ccb19100169a3148",
+      "customFields": {}
+    },
+    "pid": "HynblcxC6",
+    "id": "67d03a0c56cefed3720cfd7b",
+    "body": "<p>Current or former University of Waterloo students are required to submit an <a href=\"https://uwaterloo.ca/the-centre/forms-and-official-documents/forms-undergraduate-students#admission\">Application for Undergraduate Readmission</a> if:</p> <ul> <li>they have received a Failed - Required to Withdraw academic standing decision;</li> <li>they have a voluntary <a href=\"#/policy/ryrxPL54p\">absence from studies</a>;</li> <li>they are seeking to <a href=\"#/policy/BkeD78VVa\">upgrade</a> their undergraduate degree;</li> <li>they are seeking another undergraduate degree (e.g., a <a href=\"#/policy/BkeD78VVa\">second degree</a> in a different discipline); or</li> <li>they are seeking to take courses as a <a href=\"#/policy/BkeD78VVa\">post-degree</a>/non-degree student.</li> </ul>",
+    "title": "Readmission",
+    "catalogActivationDate": "2025-04-02",
+    "_score": 1
+  }
+}

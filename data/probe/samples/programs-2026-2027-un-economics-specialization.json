@@ -1,0 +1,51 @@
+{
+  "indexEntry": {
+    "code": "AMATH-Economics Specialization",
+    "__passedCatalogQuery": true,
+    "undergraduateCredentialType": {
+      "name": "Specialization",
+      "id": "63c825a4d76a2cec43ca6347"
+    },
+    "dateStart": "2026-09-02",
+    "pid": "ByQH1y0Asn",
+    "id": "69b1a185306256e3f13d535d",
+    "title": "Economics Specialization",
+    "fieldOfStudy": {
+      "name": "Applied Mathematics",
+      "id": "63e565dec1ecd600158511b8",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "_score": 1
+  },
+  "record": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Mathematics",
+      "id": "648b232258e749e939f21ba4"
+    },
+    "code": "AMATH-Economics Specialization",
+    "__passedCatalogQuery": true,
+    "detailsAndNotes": "",
+    "additionalConstraints": "<ol> <li>ECON courses can be used to fulfil the subject concentration requirement of the Honours Applied Mathematics academic plan.</li> </ol>",
+    "courseRequirementsNoUnits": "<div><section><header data-test=\"grouping-0-header\"><div><h2 data-testid=\"grouping-label\"><span>Required Courses</span></h2></div><div><div><button aria-label=\"Collapse\"><i></i></button></div></div></header><div><div><ul><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\">Choose any of the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/65b85d5123cba71d2b47bab9\" target=\"_blank\">CO250</a> <!-- -->-<!-- --> <!-- -->Introduction to Optimization<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69a1b1a15e731ab599652f0d\" target=\"_blank\">CO255</a> <!-- -->-<!-- --> <!-- -->Introduction to Optimization (Advanced Level)<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li></ul></div><div></div></div></section></div>",
+    "pid": "ByQH1y0Asn",
+    "title": "Economics Specialization",
+    "undergraduateCredentialType": {
+      "name": "Specialization",
+      "id": "63c825a4d76a2cec43ca6347"
+    },
+    "declarationRequirements": "<p>Before declaring this academic plan, see <a href=\"#/policy/S17gweg46\">invalid credential combinations</a>.</p>",
+    "dateStart": "2026-09-02",
+    "specializationIsAvailableForStudentsInTheFollowingMajorsRules": "<div><div><div><ul><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\"><span><a href=\"#/programs/view/67d1c99fcbd87c2831553c68\" target=\"_blank\">H-Applied Mathematics</a></span></div></li></ul></div></div></div>",
+    "id": "69b1a185306256e3f13d535d",
+    "fieldOfStudy": {
+      "name": "Applied Mathematics",
+      "id": "63e565dec1ecd600158511b8",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "graduationRequirements": "<ul> <li>Complete a total of 4.0 units, from the list of courses below or any ECON course. <ul> <li>At least 2.0 units must be at the 300- or 400-level.</li> </ul> </li> </ul>",
+    "_score": 1,
+    "specializations": []
+  }
+}

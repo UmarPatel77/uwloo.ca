@@ -1,0 +1,88 @@
+{
+  "indexEntry": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Arts",
+      "id": "648b2302dedb397b7d9b0731"
+    },
+    "code": "PhD in Religion, Culture, and Society",
+    "__passedCatalogQuery": true,
+    "dateStart": "2026-09-02",
+    "pid": "r1SFgy0Cj3",
+    "graduateCredentialType": {
+      "name": "PhD",
+      "id": "63c825e9e400391ae717e8d2"
+    },
+    "id": "6a7cd42760d9e6afe0f41720",
+    "title": "Doctor of Philosophy (PhD) in Religion, Culture, and Society",
+    "graduateFieldOfStudy": {
+      "name": "Religious Studies",
+      "id": "6409ebe41338df0015b29875",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-08-19",
+    "_score": 1
+  },
+  "record": {
+    "milestoneDetails": "<h4>PhD Language Requirement</h4> <ul> <li>Students must demonstrate knowledge of a second language relevant to the field and/or the dissertation. Whether this knowledge is reading or speaking knowledge (or both) depends on the nature of the proposed research. If the topic of the dissertation makes knowledge of a third language essential, the candidate must demonstrate competence in this language as well. Students are not permitted to defend their dissertation until all language requirements are met.</li> </ul> <h4>PhD Thesis Proposal</h4> <ul> <li>The proposal is a written document outlining the dissertation project. The proposal must be formally accepted by both the student’s Advisory Committee and the Joint Committee before proceeding to the dissertation project. Subsequent, substantive changes in the proposal must be approved by the Advisory Committee and the Joint PhD Program Director.</li> </ul> <h4>PhD Comprehensive Examination I and PhD Comprehensive Examination II</h4> <ul> <li>Students are required to meet the University-level PhD <a href=\"#/policy/rkYE8vD06\">Comprehensive Examination </a>minimum requirements, with certain noted exceptions that are specific to the Faculty of Arts Comprehensive Examination minimum requirements: <ul> <li>Comprehensive examination purpose: Consistent with University-level minimum requirements.</li> <li>Timing: Consistent with University-level minimum requirements.</li> <li>Committee: Consistent with University-level minimum requirements with the exception that in the Faculty of Arts, the Graduate Chair can approve the committee for comprehensive examinations.</li> <li>Who Chairs an examination: Consistent with University-level minimum requirements.</li> <li>Format / Content: Consistent with University-level minimum requirements.</li> <li>Academic integrity: Consistent with University-level minimum requirements.</li> </ul> </li> </ul> <ul> <li>In addition to the University-level and Faculty-level PhD Comprehensive Examination minimum requirements, students in the PhD in Religion, Culture, and Society program are also required to meet the following requirements: <ul> <li>There are two examinations, each based on a bibliography constructed by faculty in consultation with the student. The purpose of the general exam is to ensure breadth and to assess competence in the study of religion, culture, and society. The purpose of the field exam is to focus on an area of specialization containing the dissertation project. A candidate has only two opportunities to complete each of the examinations successfully. These examinations should take place by the end of the candidate’s second year in the doctoral program. To be permitted to take the examinations at a later time, a candidate must petition the Joint PhD Program Director for an extension. Extensions are normally granted only once and then, only for one term.</li> </ul> </li> </ul> <h4>PhD Thesis</h4> <ul> <li>Dissertation Project: the dissertation project consists of three required, closely related parts: the dissertation, the public presentation, and the dissertation defense. Students must pass all three parts. Evaluations, carried out by the Advisory Committee, take into consideration the mastery of both style and content.</li> <li>Doctoral Dissertation: the doctoral dissertation is a piece of research (approximately 50,000-90,000 words in length) aimed at making an original contribution to the study of religion. The dissertation is prepared in consultation with the Advisory Committee, which includes the candidate's supervisor acting as chair, along with two other faculty members, one of whom may be a member of a non-religious studies department/school/program.</li> <li>Public Presentation: the public presentation is a second distinctive feature of the program. The presentation must be accessible to the public, open to questioning and debate, and subject to faculty evaluation. This presentation may take various formats and must demonstrate the candidate's ability to make the results of research publicly intelligible and engaging for a diverse, educated but non-specialist audience. The public presentation is held in a venue and at a time different from that of the dissertation defense. Holding it in an off-campus location is preferable. Evaluation is on a pass/fail basis, and a pass is required to complete the degree. Evaluation of such presentations is by the Advisory Committee on the basis of a set of criteria available from the Joint PhD Program Director. A candidate who fails may attempt the presentation only one additional time.</li> <li>Thesis Defense: the dissertation defense, which is distinct from the public presentation, is an oral review and evaluation of the dissertation. Prior to the defense, an Examining Committee is established. It includes the Advisory Committee plus an internal examiner from another department/school/program at either university. A chair (from the university in which the student is registered) and an external examiner (from another university) are appointed by the appropriate Associate Provost/Dean, Graduate Studies. The Advisory Committee recommends external examiners to the Associate Provost/Dean, Graduate Studies. The decision of the Examining Committee is based on the dissertation and the candidate's ability to defend it orally. A candidate who fails may attempt the presentation only one additional time.</li> </ul>",
+    "admissionRequirementsApplicationMaterials": "<ul> <li>Program-specific questions (PSQ)</li> <li>Résumé/Curriculum vitae</li> <li>Transcript(s) <ul> <li>From all other post-secondary institutions.</li> </ul> </li> <li>Writing sample</li> </ul>",
+    "code": "PhD in Religion, Culture, and Society",
+    "__passedCatalogQuery": true,
+    "groupFilter2": {
+      "name": "School of Social, Political and Historical Research",
+      "id": "69a85445999a2d7fa446c7ec",
+      "customFields": {
+        "Transformation": "SPHR"
+      }
+    },
+    "graduateResearchFields": "",
+    "pid": "r1SFgy0Cj3",
+    "lengthOfProgram": "<ul> <li>The program is designed to take 4 years for completion. Students must enroll in the program full-time, be available for classes and regular on-campus consultation for at least the first two calendar years, and complete a minimum of six terms beyond the Master of Arts (MA). Students are expected to proceed through the program in a timely fashion. Normally, students must complete the course work and finish their proposal in the first year; comprehensive exams and proposal in the second year; and the dissertation project in the third and fourth years. The responsibilities of the supervisor and the Advisory Committee notwithstanding, the candidate is responsible for ensuring that program requirements and deadlines are met in a timely fashion.</li> </ul>",
+    "title": "Doctor of Philosophy (PhD) in Religion, Culture, and Society",
+    "dateStart": "2026-09-02",
+    "specialNotice": "",
+    "additionalProgramInformation": "<ul> <li>Drawing on the combined resources of the Department of Religion and Culture at Wilfrid Laurier University and faculty in the Religion, Culture, and Spirituality program at the University of Waterloo, the Laurier-Waterloo PhD in Religion, Culture, and Society is offered as a joint degree program.</li> </ul>",
+    "registrationOptions": {
+      "fullTime": true
+    },
+    "graduateCredentialType": {
+      "name": "PhD",
+      "id": "63c825e9e400391ae717e8d2"
+    },
+    "id": "6a7cd42760d9e6afe0f41720",
+    "catalogActivationDate": "2026-08-19",
+    "degreeRequirementsGrad": "<ul> <li>Students must complete the course and milestone requirements listed below in addition to the <a href=\"#/policy/SkOCDGApT\">Graduate Academic Integrity Module (Graduate AIM)</a>.</li> </ul>",
+    "studyOptionsForCalendar": [
+      {
+        "name": "Thesis",
+        "id": "64a4320a5d75774e8176c095"
+      }
+    ],
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Arts",
+      "id": "648b2302dedb397b7d9b0731"
+    },
+    "graduateCourseRequirementsRichTextPhd": "<ul> <li>Students must complete a minimum of 4 one-term courses beyond the MA. Students are required to take RS 740 Theories and Methods in the Study of Religion, Culture, and Society and RS 750 Case Studies in Religion, Culture, and Society, as well as 2 electives to be approved by the Graduate Officer.</li> <li>Depending on a student’s goals and admission assessment, additional course work may be required.</li> <li>Students must achieve at least a 75% in each course.</li> </ul>",
+    "detailsAndNotes": "<ul> <li><a href=\"https://uwaterloo.ca/religious-studies/\">Religious Studies website</a></li> <li><a href=\"https://uwaterloo.ca/future-graduate-students/programs/by-faculty/arts/religious-studies-doctor-philosophy-phd\">Doctor of Philosophy (PhD) in Religion, Culture, and Society future graduate students program page</a></li> </ul>",
+    "graduateFieldOfStudy": {
+      "name": "Religious Studies",
+      "id": "6409ebe41338df0015b29875",
+      "customFields": {}
+    },
+    "admitTerms": {
+      "fall": true
+    },
+    "admissionRequirements": "<ul> <li>Only graduates of accredited universities and colleges are eligible for admission.</li> <li>Students apply to the joint program, designating one of the two universities as the preferred home institution. A student may be offered admission to the partner institution if the Joint Committee deems this choice more appropriate because of the student’s interests or the availability of suitable supervisors. Applications are considered by the Joint Committee, and recommendations for admission or rejection are made by the Joint PhD Program Director to the Associate Provost/Dean, Graduate Studies at the proposed home university. Students are governed by the rules of the university in which they are registered, and their degree is granted by that same university; however, students may use faculty and library resources at both universities.</li> <li>Students must normally have a Master's degree or its equivalent in Religious Studies or a closely allied field with an 80% overall standing. Completion of a Master’s thesis is strongly preferred.</li> <li>If the MA is in an allied field, the candidate must have a minimum of 10 one-term (half-credit) courses, or their equivalent, in the academic study of religion.</li> <li>Students lacking the necessary qualifications may be required to complete additional qualifying work to establish academic eligibility to apply for the program. Students allowed to transfer from other doctoral programs must meet all of the degree requirements (or their equivalent, as determined by the Joint Committee); normally, credit for doctoral level work done elsewhere is not transferrable.</li> <li>Students' Advisory Committees normally consist of three members drawn from the University of Waterloo program in Religion, Culture, and Spirituality and/or the Wilfrid Laurier University Department of Religion and Culture. One of the three committee members is the supervisor, who must be at the student's home institution. Such committees are appointed within the student's first year in the program after consultation with the student. Requests for changes in Advisory Committee membership must be addressed to the Joint PhD Program Director and decided upon by the Joint Committee.</li> <li><a href=\"#/policy/SJDLMPJAa\">English language proficiency (ELP)</a> (if applicable)</li> </ul>",
+    "deliveryModes": {
+      "onCampus": true
+    },
+    "programTypesCheckboxes": [
+      {
+        "name": "Joint",
+        "id": "6489e943ed6c707348967d5c"
+      }
+    ],
+    "admissionRequirementsReferences": "<ul> <li>Number of references: 3</li> <li>Type of references: academic</li> </ul>",
+    "_score": 1,
+    "specializations": []
+  }
+}

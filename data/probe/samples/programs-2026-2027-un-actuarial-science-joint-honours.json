@@ -1,0 +1,55 @@
+{
+  "indexEntry": {
+    "code": "JH-Actuarial Science",
+    "__passedCatalogQuery": true,
+    "undergraduateCredentialType": {
+      "name": "Major",
+      "id": "63c8259d3ad5f81006a3bbb3"
+    },
+    "dateStart": "2026-09-02",
+    "pid": "ryHykRAi3",
+    "id": "69b9a2978e55fc02d40e28c0",
+    "title": "Actuarial Science (Joint Honours)",
+    "fieldOfStudy": {
+      "name": "Actuarial Science",
+      "id": "63e565d0ab74160015900efd",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "_score": 1
+  },
+  "record": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Mathematics",
+      "id": "648b232258e749e939f21ba4"
+    },
+    "code": "JH-Actuarial Science",
+    "__passedCatalogQuery": true,
+    "additionalConstraints": "<ol> <li>Students currently or previously enrolled in the Business Administration and Mathematics double degree academic plan may substitute: <ol> <li>BUS121W for MTHEL131.</li> <li>BUS127W for AFM101.</li> <li>BUS362W for ENGL378.</li> <li>BUS393W for ACTSC372.</li> </ol> </li> <li>STAT334 is not an acceptable substitute for STAT330 or STAT333.</li> </ol>",
+    "courseRequirementsNoUnits": "<div><section><header data-test=\"grouping-0-header\"><div><h2 data-testid=\"grouping-label\"><span>Required Courses</span></h2></div><div><div><button aria-label=\"Collapse\"><i></i></button></div></div></header><div><div><ul><li><span>Complete <!-- -->all<!-- --> of the following</span><ul><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\">Complete all the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/689a26296e46caaa6b3f73c3\" target=\"_blank\">ACTSC231</a> <!-- -->-<!-- --> <!-- -->Introductory Financial Mathematics<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/666114b34e23809e429858ef\" target=\"_blank\">ACTSC232</a> <!-- -->-<!-- --> <!-- -->Life Contingencies 1<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/65afea7823cba75c33478d33\" target=\"_blank\">ACTSC331</a> <!-- -->-<!-- --> <!-- -->Life Contingencies 2<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69a7202a405ebfa9d2a9fb9f\" target=\"_blank\">ACTSC363</a> <!-- -->-<!-- --> <!-- -->Casualty and Health Insurance Mathematics 1<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/65b079415a8cf714cf8a3079\" target=\"_blank\">ACTSC372</a> <!-- -->-<!-- --> <!-- -->Investment Science and Corporate Finance<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/68a493496e46caaa6b4dec33\" target=\"_blank\">ACTSC431</a> <!-- -->-<!-- --> <!-- -->Casualty and Health Insurance Mathematics 2<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/663e826e2ed76b5513d8903d\" target=\"_blank\">ACTSC446</a> <!-- -->-<!-- --> <!-- -->Mathematics of Financial Markets<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69a5e4b575fb814e1cfad9fa\" target=\"_blank\">AFM101</a> <!-- -->-<!-- --> <!-- -->Introduction to Financial Accounting<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/69aa70d413e1b07a8b5af87e\" target=\"_blank\">ENGL378</a> <!-- -->-<!-- --> <!-- -->Professional Communications in Statistics and Actuarial Science<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/65b94b2eec4e645218e247c8\" target=\"_blank\">MTHEL131</a> <!-- -->-<!-- --> <!-- -->Introduction to Actuarial Practice<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/68c041e6ba9989b9dc2ac0da\" target=\"_blank\">STAT330</a> <!-- -->-<!-- --> <!-- -->Mathematical Statistics<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/65b9b61eec4e641e8de24ab7\" target=\"_blank\">STAT333</a> <!-- -->-<!-- --> <!-- -->Stochastic Processes 1<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li><li data-test=\"ruleView-C\"><div data-test=\"ruleView-C-result\">Complete <span>1</span> of the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/69a1d0fc4bac9e1d8e75eeec\" target=\"_blank\">MATH237</a> <!-- -->-<!-- --> <!-- -->Calculus 3 for Honours Mathematics<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/65b91c1cfd7afea4850875c8\" target=\"_blank\">MATH247</a> <!-- -->-<!-- --> <!-- -->Calculus 3 (Advanced Level)<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li><li data-test=\"ruleView-D\"><div data-test=\"ruleView-D-result\"><div>Complete 1 additional ACTSC course at the 400-level</div></div></li></ul></li></ul></div><div></div></div></section></div>",
+    "coOperativeRequirementsUndergraduate": "<p>For students in the co-operative system of study, see <a href=\"#/programs/rJj6aXDk6\">Bachelor of Mathematics co-operative education program requirements</a>.</p>",
+    "pid": "ryHykRAi3",
+    "systemsOfStudy": {
+      "coOperative": true,
+      "regular": true
+    },
+    "title": "Actuarial Science (Joint Honours)",
+    "minimumAverageSRequired": "<ul> <li>A minimum cumulative overall average of 60.0%.</li> <li>A minimum cumulative major average of 70.0%: all ACTSC231, ACTSC232, STAT230 or STAT240, STAT231 or STAT241, and all math courses at the 300- or 400-level.</li> </ul>",
+    "undergraduateCredentialType": {
+      "name": "Major",
+      "id": "63c8259d3ad5f81006a3bbb3"
+    },
+    "declarationRequirements": "<ul> <li>Must be combined with at least one other major or joint major (Bachelors of Mathematics).</li> <li>To declare Joint Honours Actuarial Science as a major, students are required to have:<br /> <ul> <li>Completed MTHEL131 with a minimum grade of 60.0%; or, for Business Administration and Mathematics double degree students, a minimum grade of C- in BUS121W.</li> <li>A minimum major average (MAV) of 70.0%; or, if a MAV does not yet exist, a minimum cumulative average of 70.0% with at least 10 passed courses.</li> </ul> </li> <li>Before declaring this academic plan, see <a href=\"#/policy/S17gweg46\">invalid credential combinations</a>.</li> </ul>",
+    "dateStart": "2026-09-02",
+    "id": "69b9a2978e55fc02d40e28c0",
+    "fieldOfStudy": {
+      "name": "Actuarial Science",
+      "id": "63e565d0ab74160015900efd",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "graduationRequirements": "<ul> <li>See <a href=\"#/programs/rJj6aXDk6\">Bachelor of Mathematics (BMath) degree-level requirements</a>.</li> <li>Complete all the required courses listed below.</li> <li>Complete a minimum of 13.0 units of math courses.</li> <li>Complete a minimum of 5.0 units of non-math courses.</li> <li>Complete the requirements for at least one other BMath major or joint major.</li> </ul>",
+    "_score": 1,
+    "specializations": []
+  }
+}

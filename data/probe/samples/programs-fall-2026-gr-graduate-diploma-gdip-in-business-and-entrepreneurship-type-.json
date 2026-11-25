@@ -1,0 +1,84 @@
+{
+  "indexEntry": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Engineering",
+      "id": "648b230afc613edabf8e2eba"
+    },
+    "code": "GDip in Business & Entrepreneurship (Type 3/Direct-entry)",
+    "__passedCatalogQuery": true,
+    "dateStart": "2026-09-02",
+    "pid": "HkilyRCjn",
+    "graduateCredentialType": {
+      "name": "Graduate Diploma",
+      "id": "63c825f069d5e45ceab5745b"
+    },
+    "id": "6a8378370cb593fe687f615a",
+    "title": "Graduate Diploma (GDip) in Business and Entrepreneurship (Type 3/Direct-entry)",
+    "graduateFieldOfStudy": {
+      "name": "Entrepreneurship and Business",
+      "id": "6409ec621338df0015b29877",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-08-19",
+    "_score": 1
+  },
+  "record": {
+    "admissionRequirementsApplicationMaterials": "<ul> <li>Résumé</li> <li>Transcript(s)</li> </ul>",
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Engineering",
+      "id": "648b230afc613edabf8e2eba"
+    },
+    "code": "GDip in Business & Entrepreneurship (Type 3/Direct-entry)",
+    "__passedCatalogQuery": true,
+    "graduateDiplomaCourseRequirementsRichText": "<ul> <li>Students are required to successfully complete any 6 courses from the BE course series for the GDip. BET 580, BET 600 and BET 700 level courses are also eligible to be counted towards the 6 course GDip requirement. However, BET 600 and BET 700 courses are restricted to students enrolled in the MBET program.</li> <li>Students who complete 3 BE courses as part of another graduate qualification may apply to receive a Graduate Certificate of Participation from the Conrad School. Alternatively, they may apply for admission to the GDip program, successfully complete an additional 3 courses, and be awarded the GDip. A student may receive the Graduate Certificate of Participation, or the GDip, but not both. Similarly, BET courses can be counted towards only one graduate certification, diploma or degree.</li> </ul>",
+    "detailsAndNotes": "<ul> <li><a href=\"https://uwaterloo.ca/conrad-school-entrepreneurship-business/\">Conrad School of Entrepreneurship and Business website</a></li> <li><a href=\"https://uwaterloo.ca/graduate-studies-postdoctoral-affairs/future-students/programs/business-and-entrepreneurship-gdip-waterloo\">Graduate Diploma (GDip) in Business and Entrepreneurship future students program page</a></li> </ul>",
+    "groupFilter2": {
+      "name": "Conrad School of Entrepreneurship and Business",
+      "id": "636423ab4535d300160ffe57",
+      "customFields": {
+        "Transformation": "CBET"
+      }
+    },
+    "pid": "HkilyRCjn",
+    "title": "Graduate Diploma (GDip) in Business and Entrepreneurship (Type 3/Direct-entry)",
+    "graduateFieldOfStudy": {
+      "name": "Entrepreneurship and Business",
+      "id": "6409ec621338df0015b29877",
+      "customFields": {}
+    },
+    "admitTerms": {
+      "spring": true,
+      "winter": true,
+      "fall": true
+    },
+    "admissionRequirements": "<ul> <li>A four year undergraduate Honours degree or equivalent from a recognized university.</li> <li>In the case of a three year undergraduate degree or equivalent from a recognized university, a minimum of four years of industry experience may be considered for admission into the program.</li> <li>A minimum average of 75% in the last two years of study.</li> <li><a href=\"#/policy/SJDLMPJAa\">English language proficiency (ELP)</a> (if applicable)</li> </ul>",
+    "deliveryModes": {
+      "onCampus": true
+    },
+    "programTypesCheckboxes": [
+      {
+        "name": "Diploma",
+        "id": "6489e93158e74944cef2152b"
+      }
+    ],
+    "dateStart": "2026-09-02",
+    "registrationOptions": {
+      "partTime": true
+    },
+    "graduateCredentialType": {
+      "name": "Graduate Diploma",
+      "id": "63c825f069d5e45ceab5745b"
+    },
+    "id": "6a8378370cb593fe687f615a",
+    "catalogActivationDate": "2026-08-19",
+    "degreeRequirementsGrad": "<ul> <li>Students must complete the course requirements listed below in addition to the <a href=\"#/policy/SkOCDGApT\">Graduate Academic Integrity Module (Graduate AIM)</a>.</li> </ul>",
+    "studyOptionsForCalendar": [
+      {
+        "name": "Coursework",
+        "id": "64a4321d0f5f457c3e430361"
+      }
+    ],
+    "_score": 1,
+    "specializations": []
+  }
+}

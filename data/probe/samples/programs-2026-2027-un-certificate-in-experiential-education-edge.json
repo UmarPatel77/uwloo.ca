@@ -1,0 +1,45 @@
+{
+  "indexEntry": {
+    "code": "Experiential Education (EDGE) Certificate",
+    "__passedCatalogQuery": true,
+    "undergraduateCredentialType": {
+      "name": "Certificate",
+      "id": "63c825b444e99d6cd86d4091"
+    },
+    "dateStart": "2025-09-02",
+    "pid": "ByliJyCAs3",
+    "id": "67bc9ebc4f3fece031a4dca4",
+    "title": "Certificate in Experiential Education (EDGE)",
+    "fieldOfStudy": {
+      "name": "Experiential Education",
+      "id": "6411256637e5fb00160492e2",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2025-04-02",
+    "_score": 1
+  },
+  "record": {
+    "code": "Experiential Education (EDGE) Certificate",
+    "__passedCatalogQuery": true,
+    "detailsAndNotes": "<ul> <li>The EDGE certificate program is managed by the Centre for Work-Integrated Learning.</li> <li>Students can learn more about, and register for, the EDGE certificate program on the <a href=\"https://uwaterloo.ca/centre-for-work-integrated-learning/edge\">EDGE website</a>.</li> </ul>",
+    "pid": "ByliJyCAs3",
+    "title": "Certificate in Experiential Education (EDGE)",
+    "declarationAudience": [],
+    "undergraduateCredentialType": {
+      "name": "Certificate",
+      "id": "63c825b444e99d6cd86d4091"
+    },
+    "declarationRequirements": "<p>This credential is open to undergraduate students enrolled in the regular (non co-operative) system of study for any degree program.</p>",
+    "dateStart": "2025-09-02",
+    "id": "67bc9ebc4f3fece031a4dca4",
+    "fieldOfStudy": {
+      "name": "Experiential Education",
+      "id": "6411256637e5fb00160492e2",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2025-04-02",
+    "graduationRequirements": "<ul> <li>Students must complete four components: <ol> <li>One skills identification and articulation workshop</li> <li>One career development course</li> <li>Three experiential education courses</li> <li>One capstone component</li> </ol> </li> </ul> <hr /> <h4>Skills Identification and Articulation Workshop</h4> <p>Students earn this milestone by attending a skills identification and articulation workshop offered by the Centre for Career Action or by successfully completing any course which offers the <a href=\"https://uwaterloo.ca/centre-for-work-integrated-learning/edge/eligibility-and-program-requirements#skills-identification-articulation\">skills identification and articulation workshop</a> as part of the course content.</p> <h4>Career Development Course</h4> <p>Students fulfil this component by successfully completing either PD1 (Career Fundamentals) or an alternative from the <a href=\"https://uwaterloo.ca/centre-for-work-integrated-learning/edge/eligibility-and-program-requirements#career-development\">career development courses list</a>.</p> <h4>Experiential Education (EE) Courses</h4> <p>Students fulfil this component by successfully completing <a href=\"https://uwaterloo.ca/centre-for-work-integrated-learning/edge/eligibility-and-program-requirements\">work- or community-based experiential education courses</a>. Alternatively, students may pair a Professional Development (PD) course with an approved extra-curricular or co-curricular experiential education opportunity. For each of the experiences associated with the EE courses, students must submit a performance appraisal completed by their work- or community-based supervisor (or approved delegate). Upon completion of each experiential education opportunity, students produce a reflection assignment. Specific requirements follow:</p> <ul> <li>Students can complete any combination of three work- or community-based experiential education courses or PD courses paired with an approved experience.</li> <li>Students must indicate their interest in counting work- or community-based experiential education courses towards the Certificate in Experiential Education by the end of the course add period.</li> <li>Students pursuing co-curricular or extra-curricular opportunities must have their opportunities approved and must be registered in a PD course by the end of the course add period.</li> <li>To qualify for the Certificate in Experiential Education, co-curricular and extra-curricular activities must involve a minimum of 36 hours in any given term.</li> <li>With the exception of PD 1, PD courses can be taken only when paired with an approved co-curricular or extra-curricular opportunity.</li> <li>Students wishing to take a work- or community-based experiential education course or PD course which would exceed their approved course load may do so with permission of their undergraduate academic advisor.</li> <li>Work- or community-based experiential education courses may be double counted towards the Certificate in Experiential Education and one other credential.</li> <li>Although PD courses carry credit weight, they cannot be counted towards a student’s primary degree.</li> <li>There are many courses that provide optional opportunities for work- and community-based EE. With the approval of the Centre for Work-Integrated Learning's Director or delegate, courses other than those on the approved work or community-based experiential education list may be used towards the course component of the certificate. Students are responsible for demonstrating the experiential nature of their course work.</li> </ul> <h4>EDGE Capstone</h4> <p>Students earn this milestone by completing an online module or by participating in an in-person EDGE capstone workshop. Students must have successfully completed a minimum of four milestones (one skills identification and articulation workshop, one career development course, and at least two work- or community-based experiential courses) before attempting the capstone component.</p>",
+    "_score": 1,
+    "specializations": []
+  }
+}

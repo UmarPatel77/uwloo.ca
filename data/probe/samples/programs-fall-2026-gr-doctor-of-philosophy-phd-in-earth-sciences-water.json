@@ -1,0 +1,87 @@
+{
+  "indexEntry": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Science",
+      "id": "648b2328cbc40eb5c7ef4849"
+    },
+    "code": "PhD in Earth Sciences-Water",
+    "__passedCatalogQuery": true,
+    "dateStart": "2025-09-02",
+    "pid": "H1zbkRAs3",
+    "graduateCredentialType": {
+      "name": "PhD",
+      "id": "63c825e9e400391ae717e8d2"
+    },
+    "id": "69388ee271ba59c52e5e69a8",
+    "title": "Doctor of Philosophy (PhD) in Earth Sciences - Water",
+    "graduateFieldOfStudy": {
+      "name": "Earth and Environmental Sciences",
+      "id": "6436b7aa9b463900167fd219",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2025-08-22",
+    "_score": 1
+  },
+  "record": {
+    "milestoneDetails": "<h4>Collaborative Research Seminar I</h4> <ul> <li>Students are required to present a seminar on their thesis or major paper research proposal and, if appropriate, early stage results to current and past Water students and Water Institute faculty members. Seminars will normally occur following the completion of WATER 601 and WATER 602. Seminars will provide the opportunity for students to discuss how learnings from Water courses were applied in, or influenced, research proposals or research work in the student’s home department. Seminars will normally be poster presentations at Water Institute organized events. The seminar is not an oral examination of the thesis or paper; rather, its purpose is to develop the student's ability to communicate their research in an organized and informative manner.</li> </ul> <h4>Collaborative Research Seminar II</h4> <ul> <li>Students who have completed the Collaborative Research Seminar 1 as part of their Masters Water degree, must complete the Collaborative Research Seminar 2.</li> <li>Students are required to present a seminar on their PhD thesis proposal to current and past water students and Water Institute faculty members. Seminars will normally occur following the completion of required courses and the comprehensive exam. Seminars should present how learnings from the Collaborative Water Program were applied in, or influenced, thesis proposals. Seminars will normally be poster presentations or talks at Water Institute organized events. The seminar is not an oral examination of the thesis proposal; rather, its purpose is to develop the student's ability to communicate their research in an organized and informative manner.</li> </ul> <h4>Collaborative Academic Contribution</h4> <ul> <li>Students who have completed the Collaborative Water Program Research Seminar 1 as part of their Masters Water degree, must complete the Collaborative Academic Contribution milestone.</li> <li>Students are required to make an academic contribution to the Collaborative Water Program. The proposed contribution will be documented by the student and approved by the student’s Supervisor and the Collaborative Water Program Director. Potential contributions may include, but not be limited to: <ul> <li>Development of new or improved curricula or course content;</li> <li>Delivery of a lecture(s);</li> <li>Preparation of a publication;</li> <li>Preparation of a case study;</li> <li>Mentorship of a group of students.</li> </ul> </li> </ul> <h4>PhD Comprehensive Examination</h4> <ul> <li>Students are required to meet the University-level PhD <a href=\"#/policy/rkYE8vD06\">Comprehensive Examination </a>minimum requirements.</li> </ul> <ul> <li>In addition to the University-level PhD Comprehensive Examination minimum requirements, students in the PhD in Earth Sciences - Water program are also required to: <ul> <li>Obtain a reading list, from the Examination Committee at least 8 weeks prior to the exam (questions will focus generally on this material).</li> <li>Questions may cover the entire spectrum of scientific knowledge which the candidate is expected to be familiar with and will probe their in-depth expertise in their area of specialization. In particular, the candidate will be expected to demonstrate a thorough grasp of the fundamental principles underlying their branch of science.</li> </ul> </li> </ul> <h4>PhD Thesis Proposal</h4> <ul> <li>This is a 30 minute presentation by PhD students of an overview of their proposed research. The PhD Thesis Proposal Milestone is to be completed by the student sometime in between terms 4 to 6.</li> </ul> <h4>PhD Thesis</h4> <ul> <li>Students must submit and successfully defend a PhD thesis.</li> </ul>",
+    "admissionRequirementsApplicationMaterials": "<ul> <li>Program-specific questions (PSQ)</li> <li>Résumé</li> <li>Statement of interest</li> <li>Transcript(s)</li> </ul>",
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Science",
+      "id": "648b2328cbc40eb5c7ef4849"
+    },
+    "graduateCourseRequirementsRichTextPhd": "<ul> <li>Students must complete a minimum of 2 one-term 600 level courses (0.50 unit weight) in addition to the 2 Water core courses.</li> <li>Water core courses: <ul> <li>WATER 601 Integrated Water Management</li> <li>WATER 602 Integrated Water Management Project</li> </ul> </li> <li>This degree is offered through the Collaborative Water Program. This program, jointly offered by a range of departments across several academic faculties, promotes the development of interdisciplinary perspectives on water. Collaborative Water Program students complete their specialist training in their respective home departments, while working with colleagues from a variety of other departments in core interdisciplinary courses (WATER 601 and WATER 602).</li> <li>Students who have already completed WATER 601 and WATER 602 as part of their Masters Water degree, must complete the following course requirement: <ul> <li>1 graduate level water course from outside the student’s home Faculty agreed to by the student’s Supervisor and the Collaborative Water Program Director.</li> </ul> </li> <li>The Department will determine whether or not collaborative program courses can be used as electives. It is therefore possible that students will need to take additional courses in order to meet the specific requirements of the program.</li> <li>A grade of a least 70% must be obtained in all graduate level courses. If a lower grade is obtained, the course(s) must be repeated or other requirements met as specified by the Supervisory Committee.</li> <li>In addition to completing the minimum of required courses, students are strongly encouraged to take additional courses outside of their specialty in order to broaden their perspective in science, mathematics, or engineering.</li> <li>Grades from any designated extra courses will not be included in the calculation of the 70% minimum-average requirement.</li> <li>If the student has taken additional courses during the MSc program, these might be credited to the PhD requirements upon recommendation by the Supervisory Committee. Requests should be made at the time the student is applying.</li> </ul>",
+    "code": "PhD in Earth Sciences-Water",
+    "__passedCatalogQuery": true,
+    "detailsAndNotes": "<ul> <li><a href=\"https://uwaterloo.ca/earth-environmental-sciences/\">Department of Earth and Environmental Sciences website</a></li> <li><a href=\"https://uwaterloo.ca/future-graduate-students/programs/by-faculty/science/earth-sciences-water-doctor-philosophy-phd\">Doctor of Philosophy (PhD) in Earth Sciences - Water future graduate students program page</a></li> </ul>",
+    "groupFilter2": {
+      "name": "Department of Earth and Environmental Sciences",
+      "id": "636423b04535d300160ffe5b",
+      "customFields": {
+        "Transformation": "EARTH"
+      }
+    },
+    "pid": "H1zbkRAs3",
+    "title": "Doctor of Philosophy (PhD) in Earth Sciences - Water",
+    "graduateFieldOfStudy": {
+      "name": "Earth and Environmental Sciences",
+      "id": "6436b7aa9b463900167fd219",
+      "customFields": {}
+    },
+    "admitTerms": {
+      "spring": true,
+      "winter": true,
+      "fall": true
+    },
+    "admissionRequirements": "<ul> <li>The program is open to students who have completed a Master of Science (MSc) degree with a 75% average and who have outstanding academic credentials and a demonstrated ability to do original scholarly work.</li> <li>A normal requirement is a background in geology or geological engineering, but other experience relevant to a candidate's research interests will be considered. Candidates will be evaluated on an individual basis.</li> <li>University regulations permit that under exceptional circumstances, outstanding students with a Bachelor of Science (BSc) degree, can be admitted directly into the PhD program.</li> <li>Before applying to the program, students are strongly advised to establish contact with potential supervisors. It is a good strategy to identify whether the potential supervisors that students would like to undertake research with have available positions and funding.</li> <li>Admission from the BSc degree to the Doctoral program: in exceptional cases where a student demonstrates academic excellence including: research potential, scientific maturity and good writing skills, they may be allowed, at the discretion of the graduate committee, to proceed directly to the PhD degree from the BSc, without the completion of the MSc.</li> <li><a href=\"#/policy/SJDLMPJAa\">English language proficiency (ELP)</a> (if applicable)</li> </ul>",
+    "deliveryModes": {
+      "onCampus": true
+    },
+    "programTypesCheckboxes": [
+      {
+        "name": "Collaborative",
+        "id": "6489e926fc613e473b8e284a"
+      }
+    ],
+    "admissionRequirementsReferences": "<ul> <li>Number of references: 3</li> <li>Type of references: academic</li> </ul>",
+    "dateStart": "2025-09-02",
+    "registrationOptions": {
+      "partTime": true,
+      "fullTime": true
+    },
+    "graduateCredentialType": {
+      "name": "PhD",
+      "id": "63c825e9e400391ae717e8d2"
+    },
+    "id": "69388ee271ba59c52e5e69a8",
+    "catalogActivationDate": "2025-08-22",
+    "degreeRequirementsGrad": "<ul> <li>Students must complete the course and milestone requirements listed below in addition to the <a href=\"#/policy/SkOCDGApT\">Graduate Academic Integrity Module (Graduate AIM)</a>.</li> </ul>",
+    "studyOptionsForCalendar": [
+      {
+        "name": "Thesis",
+        "id": "64a4320a5d75774e8176c095"
+      }
+    ],
+    "_score": 1,
+    "specializations": []
+  }
+}

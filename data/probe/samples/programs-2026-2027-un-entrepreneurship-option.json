@@ -1,0 +1,59 @@
+{
+  "indexEntry": {
+    "code": "Entrepreneurship Option",
+    "__passedCatalogQuery": true,
+    "undergraduateCredentialType": {
+      "name": "Option",
+      "id": "63c825aa7da8f487552329d4"
+    },
+    "dateStart": "2026-09-02",
+    "pid": "rJl0Jy0Aj2",
+    "id": "6920b2f3fb9f61ff98ec5c28",
+    "title": "Entrepreneurship Option",
+    "fieldOfStudy": {
+      "name": "Options: Faculty of Engineering",
+      "id": "63e560ca2d95e9001675fc63",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "_score": 1
+  },
+  "record": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Engineering",
+      "id": "648b230afc613edabf8e2eba"
+    },
+    "code": "Entrepreneurship Option",
+    "__passedCatalogQuery": true,
+    "courseRequirementsNoUnits": "<div><section><header data-test=\"grouping-0-header\"><div><h2 data-testid=\"grouping-label\"><span>Required Courses</span></h2></div><div><div><button aria-label=\"Collapse\"><i></i></button></div></div></header><div><div><ul><li><span>Complete <!-- -->all<!-- --> of the following</span><ul><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\">Complete all the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/66d759935d6e70c2e72d22fc\" target=\"_blank\">BET100</a> <!-- -->-<!-- --> <!-- -->Foundations of Entrepreneurial Practice<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/65b11fc35a8cf762cf8a33ae\" target=\"_blank\">BET320</a> <!-- -->-<!-- --> <!-- -->Entrepreneurial Strategy<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/68e510c9a1f0cb5b1ccf9b20\" target=\"_blank\">BET340</a> <!-- -->-<!-- --> <!-- -->Essentials of Entrepreneurial Planning and Execution<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li><li data-test=\"ruleView-B\"><div data-test=\"ruleView-B-result\"><div>Complete at least 1 additional BET course</div></div></li><li data-test=\"ruleView-C\"><div data-test=\"ruleView-C-result\"><div>Complete up to 2 additional BET courses, or courses in an area related to an entrepreneurial endeavor or entrepreneurship, as approved by the Conrad associate director, undergraduate studies</div></div></li></ul></li></ul></div><div></div></div></section></div>",
+    "pid": "rJl0Jy0Aj2",
+    "title": "Entrepreneurship Option",
+    "minimumAverageSRequired": "<ul> <li>A minimum cumulative option average of 60.0%.</li> </ul>",
+    "optionIsAvailableForStudentsInTheFollowingDegrees": [
+      {
+        "name": "Bachelor of Applied Science",
+        "id": "63c826c7d76a2c22deca6351"
+      },
+      {
+        "name": "Bachelor of Software Engineering",
+        "id": "63c82708d76a2c3b8dca6353"
+      }
+    ],
+    "undergraduateCredentialType": {
+      "name": "Option",
+      "id": "63c825aa7da8f487552329d4"
+    },
+    "declarationRequirements": "",
+    "dateStart": "2026-09-02",
+    "id": "6920b2f3fb9f61ff98ec5c28",
+    "fieldOfStudy": {
+      "name": "Options: Faculty of Engineering",
+      "id": "63e560ca2d95e9001675fc63",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "graduationRequirements": "<ul> <li>Complete a total of 3.0 units.</li> </ul>",
+    "_score": 1,
+    "specializations": []
+  }
+}

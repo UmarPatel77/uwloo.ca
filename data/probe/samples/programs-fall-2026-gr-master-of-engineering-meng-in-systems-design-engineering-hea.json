@@ -1,0 +1,93 @@
+{
+  "indexEntry": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Engineering",
+      "id": "648b230afc613edabf8e2eba"
+    },
+    "code": "MEng in Systems Design Engineering-Health Technologies-Co-op",
+    "__passedCatalogQuery": true,
+    "dateStart": "2026-09-02",
+    "pid": "rJ7aCngYgg",
+    "graduateCredentialType": {
+      "name": "Master's",
+      "id": "63c825e17da8f4f5892329d8"
+    },
+    "id": "6a7e42cd2ae73388deaddc95",
+    "title": "Master of Engineering (MEng) in Systems Design Engineering - Health Technologies - Co-operative Program",
+    "graduateFieldOfStudy": {
+      "name": "Systems Design Engineering",
+      "id": "6409ece4d69ef60016575beb",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-08-19",
+    "_score": 1
+  },
+  "record": {
+    "admissionRequirementsApplicationMaterials": "<ul> <li>Program-specific questions (PSQ)</li> <li>Résumé</li> <li>Transcript(s)</li> </ul>",
+    "code": "MEng in Systems Design Engineering-Health Technologies-Co-op",
+    "__passedCatalogQuery": true,
+    "groupFilter2": {
+      "name": "Department of Systems Design Engineering",
+      "id": "636423c34535d300160ffe65",
+      "customFields": {
+        "Transformation": "SYDE"
+      }
+    },
+    "pid": "rJ7aCngYgg",
+    "lengthOfProgram": "<ul> <li>Full-time: 4-5 terms (16-20 months)</li> </ul>",
+    "title": "Master of Engineering (MEng) in Systems Design Engineering - Health Technologies - Co-operative Program",
+    "dateStart": "2026-09-02",
+    "registrationOptions": {
+      "partTime": false,
+      "fullTime": true
+    },
+    "graduateCredentialType": {
+      "name": "Master's",
+      "id": "63c825e17da8f4f5892329d8"
+    },
+    "id": "6a7e42cd2ae73388deaddc95",
+    "catalogActivationDate": "2026-08-19",
+    "degreeRequirementsGrad": "<ul> <li>Students must complete the course and milestone requirements listed below in addition to the <a href=\"#/policy/SkOCDGApT\">Graduate Academic Integrity Module (Graduate AIM)</a>.</li> <li>The MEng in Systems Design Engineering - Health Technologies - Co-operative Program will enable students to combine graduate studies with work experience. The program includes completion of 1-2 required work terms. The work term(s) typically takes place in term 3 (or terms 3 and 4). The work term(s) must meet CEE standard work term requirements and Departmental requirements. Students should apply to jobs related to their program of study. Note: the program must start and end on an academic term. </li> <li>Students are required to complete WIL 601 Career Foundations for Work-Integrated Learning in their first academic term of their co-op program. Students must complete WIL 601 in addition to the program’s course requirements.</li> </ul>",
+    "studyOptionsForCalendar": [
+      {
+        "name": "Coursework",
+        "id": "64a4321d0f5f457c3e430361"
+      }
+    ],
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Engineering",
+      "id": "648b230afc613edabf8e2eba"
+    },
+    "detailsAndNotes": "<ul> <li><a href=\"https://uwaterloo.ca/systems-design-engineering/\">Systems Design Engineering website</a></li> <li><a href=\"https://uwaterloo.ca/future-graduate-students/programs/by-faculty/engineering/systems-design-engineering-health-technologies-co-op-master\">Master of Engineering (MEng) in Systems Design Engineering - Health Technologies - Co-operative Program future graduate students program page</a></li> </ul>",
+    "courseworkOptionCourseRequirementsRichText": "<ul> <li>Students must complete the following graduate courses:<br /> <ul> <li>1 of: <ul> <li>SYDE 660A Systems Design Graduate Workshop 1 - AI and Machine Learning,</li> <li>SYDE 660B Systems Design Graduate Workshop 1 - Biomedical Systems,</li> <li>SYDE 660C Systems Design Graduate Workshop 1 - Human Factors</li> </ul> </li> <li>BME 601 Physiological Systems and Biomedical Design</li> <li>SYDE 610 Design of Biomedical Technologies</li> <li>1 of the following Health Technologies core courses: <ul> <li>ECON 643 Health Economics</li> <li>MSE 619 Healthcare Analytics</li> <li>PHIL 626 Bioethics and Technology</li> </ul> </li> <li>1 of the following Faculty of Engineering Health Technologies elective courses:<br /> <ul> <li>BME 602 Foundations in Biomechanical Engineering</li> <li>CHE 621 Model Building and Response Surface Methodology</li> <li>ECE 608 Quantitative Methods in Biomedical Engineering</li> <li>ENVE 585 Air Quality Engineering and Impacts</li> <li>MSE 630 Human-Computer Interaction</li> </ul> </li> <li>4 SYDE graduate courses and/or from the following list of Health Technologies elective courses:<br /> <ul> <li>HLTH 605B Quantitative Methods and Analysis</li> <li>HLTH 606B Principles of Epidemiology for Public Health</li> <li>HLTH 612 Data Structures and Standards in Health Informatics</li> <li>HLTH 615 Requirements Specifications and Analysis in Health Systems</li> <li>HLTH 633 Digital Health</li> <li>HLTH 657M Application of Artificial Intelligence in Health (0.25) and 658M Machine Learning Techniques in Health (0.25)</li> </ul> </li> </ul> </li> <li>Students must complete graduate courses (0.50 unit weight per course) counting towards degree credit from the University of Waterloo satisfying the following criteria: <ul> <li>At most 2 courses at the 500 level.</li> <li>At least 3 SYDE courses.</li> </ul> </li> <li>All course selections are arranged by the student.</li> <li>Note: these requirements are in addition to satisfactory completion of any transitional courses that may be specified at the time of admission.</li> </ul>",
+    "graduateSpecializations": "",
+    "graduateFieldOfStudy": {
+      "name": "Systems Design Engineering",
+      "id": "6409ece4d69ef60016575beb",
+      "customFields": {}
+    },
+    "admitTerms": {
+      "spring": true,
+      "winter": true,
+      "fall": true
+    },
+    "admissionRequirements": "<ul> <li>A 4-year Honours Bachelor’s degree in engineering. For applicants whose previous degree was completed in Canada, a 75% overall standing in the last two years, or equivalent (at the sole discretion of the University of Waterloo, in all cases), in a four-year Honour’s Bachelor's degree in engineering is the minimum requirement for admission to a Master's program.</li> <li>Due to the variable nature of international credentials, for applicants whose previous degree was completed outside of Canada, a 75% overall standing in a four-year Honours Bachelor's degree in engineering or equivalent is the minimum requirement for admission.</li> <li>Applicants who do not hold a Honours Bachelor’s degree in engineering must justify their suitability by demonstrating formal or informal training in engineering through the supplementary information form (SIF), their resume/CV, or other supporting material.</li> <li><a href=\"#/policy/SJDLMPJAa\">English language proficiency (ELP)</a> (if applicable)</li> </ul>",
+    "deliveryModes": {
+      "onCampus": true
+    },
+    "courseworkOptionMilestoneRequirements": "<h4>Graduate WIL Reflective Report</h4> <ul> <li>The Graduate WIL Reflective Report requires students to critically reflect on their co-op work term experience, connecting academic knowledge to practical tasks and professional development. Students must complete one reflective report per required work term. The report is administered, evaluated, and graded by the Centre for Work-Integrated Learning.</li> <li>Students are responsible for following the <a href=\"https://uwaterloo.ca/co-operative-education/supports-and-resources/co-op-rights-and-responsibilities\">roles and responsibilities of Cooperative and Experiential Education (CEE)</a>.</li> </ul>",
+    "programTypesCheckboxes": [
+      {
+        "name": "Co-operative",
+        "id": "6489e91b12436668e87fef34"
+      },
+      {
+        "name": "Collaborative",
+        "id": "6489e926fc613e473b8e284a"
+      }
+    ],
+    "admissionRequirementsReferences": "<ul> <li>Number of references: 2</li> <li>Type of references: a minimum of 1 academic reference. Applicants who complete their degree five or more years before the application date may submit 2 professional references.</li> </ul>",
+    "_score": 1,
+    "specializations": []
+  }
+}

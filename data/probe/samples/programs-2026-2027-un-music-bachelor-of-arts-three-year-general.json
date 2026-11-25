@@ -1,0 +1,56 @@
+{
+  "indexEntry": {
+    "code": "3G-Music",
+    "__passedCatalogQuery": true,
+    "undergraduateCredentialType": {
+      "name": "Major",
+      "id": "63c8259d3ad5f81006a3bbb3"
+    },
+    "dateStart": "2026-09-02",
+    "pid": "SyGLlJ00jh",
+    "id": "67eec7fd8d3ba57d415bd7d8",
+    "title": "Music (Bachelor of Arts - Three-Year General)",
+    "fieldOfStudy": {
+      "name": "Music",
+      "id": "63e55eb7c0e63b0016313b14",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "_score": 1
+  },
+  "record": {
+    "specializationsList": "<div><div><div><ul><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\"><span><a href=\"#/programs/view/69b1afa517940b8f16e7f38b\" target=\"_blank\">MUSIC-Church Music &amp; Worship Specialization</a>, <a href=\"#/programs/view/69b1afcb17940b8f16e7f449\" target=\"_blank\">MUSIC-Composition Specialization</a>, <a href=\"#/programs/view/69b1aff688df55191cce4e77\" target=\"_blank\">MUSIC-Cultural Context &amp; Analysis Specialization</a>, <!-- -->or <a href=\"#/programs/view/69b1b03eb6dd38094e8f3b48\" target=\"_blank\">MUSIC-Performance Specialization</a></span></div></li></ul></div></div></div>",
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Arts with Conrad Grebel University College",
+      "id": "64f093a1b51c66eced2a6015"
+    },
+    "code": "3G-Music",
+    "__passedCatalogQuery": true,
+    "detailsAndNotes": "<ul> <li>Visit the <a href=\"https://uwaterloo.ca/music/\">Department of Music website</a> for further information.</li> </ul>",
+    "additionalConstraints": "<ol> <li><span><span><span>Students </span><span>electing</span><span> to take Music studio must arrange for an audition before the Music faculty. Normally, a level of performance equ</span></span></span><span><span><span>ivalent</span></span></span><span><span><span> to</span></span></span><span><span><span> about</span></span></span><span><span><span> Grade Eight standing at the Royal Conservatory of Music of Toronto is expected for admission to Music studio. </span></span></span><span><span><span>Non-western musical instruments will also be considered at the discretion of the Department.</span></span></span><span> </span></li> </ol>",
+    "courseRequirementsNoUnits": "<div><section><header data-test=\"grouping-0-header\"><div><h2 data-testid=\"grouping-label\"><span>Required Courses</span></h2></div><div><div><button aria-label=\"Collapse\"><i></i></button></div></div></header><div><div><ul><li><span>Complete <!-- -->all<!-- --> of the following</span><ul><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\">Complete all the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/64a5b9ec69e9ee8e162ae77c\" target=\"_blank\">MUSIC110</a> <!-- -->-<!-- --> <!-- -->How Music Matters<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/64a5b8e364e0fe7a1d173bf0\" target=\"_blank\">MUSIC222</a> <!-- -->-<!-- --> <!-- -->Conducting 1<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/64a5b9ed69e9ee9e042ae781\" target=\"_blank\">MUSIC232</a> <!-- -->-<!-- --> <!-- -->Music as a Global Phenomenon<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/64a5b9ecb9ada28ea31af33f\" target=\"_blank\">MUSIC233</a> <!-- -->-<!-- --> <!-- -->Musical Rhythms of the World<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/66cf42c9f9309207078d66bb\" target=\"_blank\">MUSIC250</a> <!-- -->-<!-- --> <!-- -->European Music History 1: Middle Ages to Classical Period <!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/66cf4ad191a880e52a688e4f\" target=\"_blank\">MUSIC251</a> <!-- -->-<!-- --> <!-- -->European Music History 2: Romantic and Modern Eras <!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/66cf57a0f93092099b8d672d\" target=\"_blank\">MUSIC270</a> <!-- -->-<!-- --> <!-- -->Music Theory 1<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/66cf5a18358847512633368f\" target=\"_blank\">MUSIC271</a> <!-- -->-<!-- --> <!-- -->Music Theory 2<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li><li data-test=\"ruleView-B\"><div data-test=\"ruleView-B-result\"><div>Complete 2.0 additional units of MUSIC courses at the 300-level or above </div></div></li></ul></li></ul></div><div></div></div></section></div>",
+    "pid": "SyGLlJ00jh",
+    "systemsOfStudy": {
+      "regular": true
+    },
+    "title": "Music (Bachelor of Arts - Three-Year General)",
+    "minimumAverageSRequired": "<ul> <li>A minimum cumulative overall average of 60.0%.</li> <li>A minimum cumulative major average of 65.0%.</li> </ul>",
+    "undergraduateCredentialType": {
+      "name": "Major",
+      "id": "63c8259d3ad5f81006a3bbb3"
+    },
+    "declarationRequirements": "<ul> <li><span>Though not required, for students considering a Performance Specialization it is normally a good idea to include Music studio courses in first year. However, acceptance into studio courses does not itself constitute admission to a Music academic plan.</span></li> </ul>",
+    "dateStart": "2026-09-02",
+    "specializationDetails": "<p>Students may choose to focus their elective choices by completing one of four available specializations.</p>",
+    "id": "67eec7fd8d3ba57d415bd7d8",
+    "fieldOfStudy": {
+      "name": "Music",
+      "id": "63e55eb7c0e63b0016313b14",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "graduationRequirements": "<ul> <li>See <a href=\"#/programs/SyLzAe5R3\">Bachelor of Arts degree-level requirements</a>.</li> <li>Complete a total of 6.0 units of MUSIC courses.</li> <li>Participate in a least four terms of Music Ensemble: which may not be counted towards the total 6.0 units.</li> </ul>",
+    "_score": 1,
+    "specializations": []
+  }
+}

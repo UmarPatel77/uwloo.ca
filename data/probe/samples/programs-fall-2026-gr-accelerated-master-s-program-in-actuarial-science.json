@@ -1,0 +1,56 @@
+{
+  "indexEntry": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Mathematics",
+      "id": "648b232258e749e939f21ba4"
+    },
+    "__passedCatalogQuery": true,
+    "dateStart": "2023-09-02",
+    "pid": "SJrGjz3V6",
+    "graduateCredentialType": {
+      "name": "Master's",
+      "id": "63c825e17da8f4f5892329d8"
+    },
+    "id": "655e9b0c4be341a58867692b",
+    "title": "Accelerated Master's Program in Actuarial Science",
+    "graduateFieldOfStudy": {
+      "name": "Statistics and Actuarial Science",
+      "id": "6436b766e774110015a12f64",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2023-09-01",
+    "_score": 1
+  },
+  "record": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Mathematics",
+      "id": "648b232258e749e939f21ba4"
+    },
+    "__passedCatalogQuery": true,
+    "detailsAndNotes": "<ul> <li><a href=\"https://uwaterloo.ca/statistics-and-actuarial-science/\">Department of Statistics and Actuarial Science website</a></li> </ul>",
+    "groupFilter2": {
+      "name": "Department of Statistics and Actuarial Science",
+      "id": "636423c2b37a0f0016dd64d5",
+      "customFields": {
+        "Transformation": "STATACTSC"
+      }
+    },
+    "pid": "SJrGjz3V6",
+    "title": "Accelerated Master's Program in Actuarial Science",
+    "graduateFieldOfStudy": {
+      "name": "Statistics and Actuarial Science",
+      "id": "6436b766e774110015a12f64",
+      "customFields": {}
+    },
+    "dateStart": "2023-09-02",
+    "graduateCredentialType": {
+      "name": "Master's",
+      "id": "63c825e17da8f4f5892329d8"
+    },
+    "id": "655e9b0c4be341a58867692b",
+    "catalogActivationDate": "2023-09-01",
+    "acceleratedMasterSProgramDetails": "<p>The Accelerated Master’s Program is designed for students who have demonstrated a strong performance by the time they have completed third year of an Honours Actuarial Science Major program, and who are interested in going to a graduate program. The intention is to allow such students to take two courses at the graduate level, either ACTSC 4xx/8xx at the 8xx level or ACTSC 9xx courses, in their fourth year. These courses do not count towards their undergraduate degree which will continue to require 40 courses, but do count towards their Master’s degree. Students could, for example, take one or two extra undergraduate courses during work terms, while doing Undergraduate Student Research Assistantships, or by taking six courses in a term. In total, these students will need to complete at least 42 courses by the end of their 4B term, two of which are the 8xx versions of ACTSC 4xx/8xx courses or ACTSC 9xx courses.</p> <p>Students in the program should be strong candidates for NSERC or OGS funding and would be encouraged to apply.</p> <h4><strong>Admission requirements</strong></h4> <p>Students will be admitted to the Accelerated Master’s Program normally in their third year, but no later than their 4A term. Admission requirements for the Accelerated Master’s program in Actuarial Science include:</p> <ul> <li>A completed application form.</li> <li>A Minimum Special Major Average (SMAV) ≥ 85%.</li> <li>Satisfactory completion of the third year of an Honours Actuarial Science major plan.</li> <li>Three letters of reference.</li> <li>A plan of study for the remainder of their undergraduate program that includes the ACTSC 4xx/8xx or ACTSC 9xx courses to be taken before completion of their undergraduate degree. This plan must be approved by the Associate Chair of Actuarial Science and the Associate Chair Graduate Studies. Normally, a supervisor for an Accelerated Master’s students will be assigned at the time the student is admitted.</li> </ul> <h4><strong>Continuing to Graduate School</strong></h4> <p>To continue in a Master of Mathematics in Actuarial Science program, students admitted to the Accelerated Master’s of Mathematics program in Actuarial Science must:</p> <ul> <li>Complete an Honours Actuarial Science Degree.</li> <li>Normally continue to the Master of Mathematics in Actuarial Science program in the term following the completion of their undergraduate degree. With permission of the Chair of Graduate Studies, a student may defer the start of the Master’s program for one academic term.</li> <li>Obtain credit according to graduate course requirements for at least one ACTSC 8xx or ACTSC 9xx course during their undergraduate degree. Credit for ACTSC 8xx or ACTSC 9xx courses taken during their undergraduate degree will count towards their Master’s degree providing all the regular requirements for graduate level courses are met. Students who fail to complete at least one ACTSC 8xx or ACTSC 9xx course during their undergraduate degree may have their offer of admission to the Master of Mathematics in Actuarial Science program revoked. Continuation in the Master’s program is subject to the conditions that apply to the relevant Master’s program in the Department of Statistics and Actuarial Science.</li> </ul> <h4><strong>Graduation from the Master’s program</strong></h4> <p>Students must meet all degree requirements for the relevant Master’s program.</p>",
+    "_score": 1,
+    "specializations": []
+  }
+}

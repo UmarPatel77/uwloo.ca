@@ -1,0 +1,50 @@
+{
+  "indexEntry": {
+    "code": "ME-Welding & Joining Specialization",
+    "__passedCatalogQuery": true,
+    "undergraduateCredentialType": {
+      "name": "Specialization",
+      "id": "63c825a4d76a2cec43ca6347"
+    },
+    "dateStart": "2026-09-02",
+    "pid": "r1MCkJA0ih",
+    "id": "69b1b2570cdb8bf7a716a167",
+    "title": "Welding and Joining Specialization",
+    "fieldOfStudy": {
+      "name": "Mechanical Engineering",
+      "id": "63e55fe5516abf0016143654",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "_score": 1
+  },
+  "record": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Engineering",
+      "id": "648b230afc613edabf8e2eba"
+    },
+    "code": "ME-Welding & Joining Specialization",
+    "__passedCatalogQuery": true,
+    "courseRequirementsNoUnits": "<div><section><header data-test=\"grouping-0-header\"><div><h2 data-testid=\"grouping-label\"><span>Required Courses</span></h2></div><div><div><button aria-label=\"Collapse\"><i></i></button></div></div></header><div><div><ul><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\">Complete all the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/65b9226d7405c40f85ac5944\" target=\"_blank\">ME435</a> <!-- -->-<!-- --> <!-- -->Industrial Metallurgy<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/65b922917405c4d654ac5946\" target=\"_blank\">ME436</a> <!-- -->-<!-- --> <!-- -->Welding and Joining Processes<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/678fe175c9b6049ee5c588f6\" target=\"_blank\">ME526</a> <!-- -->-<!-- --> <!-- -->Fatigue and Fracture Analysis<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/65b923c85c947959a7e56fcb\" target=\"_blank\">ME535</a> <!-- -->-<!-- --> <!-- -->Welding Metallurgy<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/65b923eff81cd8c4401317ac\" target=\"_blank\">ME538</a> <!-- -->-<!-- --> <!-- -->Welding Design, Fabrication and Quality Control<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li></ul></div><div></div></div></section></div>",
+    "pid": "r1MCkJA0ih",
+    "title": "Welding and Joining Specialization",
+    "minimumAverageSRequired": "<ul> <li>A minimum average of 60.0% in the specialization courses.</li> </ul>",
+    "undergraduateCredentialType": {
+      "name": "Specialization",
+      "id": "63c825a4d76a2cec43ca6347"
+    },
+    "declarationRequirements": "",
+    "dateStart": "2026-09-02",
+    "specializationIsAvailableForStudentsInTheFollowingMajorsRules": "<div><div><div><ul><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\"><span><a href=\"#/programs/view/678fe7dc5f8db4ecafe26126\" target=\"_blank\">H-Mechanical Engineering</a></span></div></li></ul></div></div></div>",
+    "id": "69b1b2570cdb8bf7a716a167",
+    "fieldOfStudy": {
+      "name": "Mechanical Engineering",
+      "id": "63e55fe5516abf0016143654",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "graduationRequirements": "<ul> <li>Complete a total of five courses according to the requirements below.</li> </ul>",
+    "_score": 1,
+    "specializations": []
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "indexEntry": {
+    "code": "SRF-Human Services Practicum Specialization",
+    "__passedCatalogQuery": true,
+    "undergraduateCredentialType": {
+      "name": "Specialization",
+      "id": "63c825a4d76a2cec43ca6347"
+    },
+    "dateStart": "2026-09-02",
+    "pid": "rk-vg1ARin",
+    "id": "69c6e4db0a439dfb51d9e0ff",
+    "title": "Human Services Practicum Specialization",
+    "fieldOfStudy": {
+      "name": "Sexualities, Relationships, and Families",
+      "id": "66f55e0295a125001769cfe9",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "_score": 1
+  },
+  "record": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Arts with St. Jerome's University",
+      "id": "64f093c3b478ee409af01285"
+    },
+    "code": "SRF-Human Services Practicum Specialization",
+    "__passedCatalogQuery": true,
+    "detailsAndNotes": "<ul> <li>Students may enrol in either the Human Services Practicum Specialization or the Intensive Research Specialization, but not both. However, students who choose the Human Services Practicum Specialization may also apply to enrol in the SRF thesis courses.</li> <li>Visit the <a href=\"https://uwaterloo.ca/st-jeromes/srf\">Sexualities, Relationships, and Families website</a> for further information.</li> </ul>",
+    "additionalConstraints": "<ol> <li>SRF490 and SRF491 include both a weekly seminar component (three hours) and a weekly unpaid practicum placement (15 hours).</li> <li>Students may be required to compete against students from this and other institutions for placements; community agencies reserve the right to interview student candidates and select successful candidate(s) for the position(s).</li> </ol>",
+    "courseRequirementsNoUnits": "<div><section><header data-test=\"grouping-0-header\"><div><h2 data-testid=\"grouping-label\"><span>Required Courses</span></h2></div><div><div><button aria-label=\"Collapse\"><i></i></button></div></div></header><div><div><ul><li><span>Complete <!-- -->all<!-- --> of the following</span><ul><li data-test=\"ruleView-B\"><div data-test=\"ruleView-B-result\">Complete all the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/66490d22f867c0e5ee7a9ac0\" target=\"_blank\">SRF490</a> <!-- -->-<!-- --> <!-- -->Practicum and Professional Ethics<!-- --> <span style=\"margin-left:5px\">(0.75)</span></span></li><li><span><a href=\"#/courses/view/66490d5a16a0042c90b5e805\" target=\"_blank\">SRF491</a> <!-- -->-<!-- --> <!-- -->Practicum and Applied Theory<!-- --> <span style=\"margin-left:5px\">(0.75)</span></span></li></ul></div></div></li><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\">Complete <span>1</span> of the following: <div><ul style=\"margin-top:5px;margin-bottom:5px\"><li><span><a href=\"#/courses/view/699df6e275fb814e1ccd5448\" target=\"_blank\">SRF494</a> <!-- -->-<!-- --> <!-- -->Seminar in Sexualities<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li><li><span><a href=\"#/courses/view/699df75621074e042aa27ec1\" target=\"_blank\">SRF496</a> <!-- -->-<!-- --> <!-- -->Seminar in the Study of Families<!-- --> <span style=\"margin-left:5px\">(0.50)</span></span></li></ul></div></div></li><li data-test=\"ruleView-C\"><div data-test=\"ruleView-C-result\"><div>Complete 0.5 unit of additional SRF courses at the 300-level</div></div></li></ul></li></ul></div><div></div></div></section></div>",
+    "pid": "rk-vg1ARin",
+    "title": "Human Services Practicum Specialization",
+    "minimumAverageSRequired": "<ul> <li>A minimum cumulative Sexualities, Relationships, and Families major average of 75.0%.</li> <li>Students who have completed courses toward this specialization but do not meet the required 75.0% minimum cumulative major average - and who still qualify for Honours standing - will normally be permitted to continue in the Honours Sexualities, Relationships, and Families major without the specialization.</li> </ul>",
+    "undergraduateCredentialType": {
+      "name": "Specialization",
+      "id": "63c825a4d76a2cec43ca6347"
+    },
+    "dateStart": "2026-09-02",
+    "specializationIsAvailableForStudentsInTheFollowingMajorsRules": "<div><div><div><ul><li data-test=\"ruleView-A\"><div data-test=\"ruleView-A-result\"><span><a href=\"#/programs/view/698b3fd95cb99aece593482d\" target=\"_blank\">H-Sexualities, Relationships, &amp; Families</a></span></div></li></ul></div></div></div>",
+    "id": "69c6e4db0a439dfb51d9e0ff",
+    "fieldOfStudy": {
+      "name": "Sexualities, Relationships, and Families",
+      "id": "66f55e0295a125001769cfe9",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2026-04-02",
+    "graduationRequirements": "<ul> <li>Complete an additional 2.5 units, as described below, for a total of 10.5 units in Sexualities, Relationships, and Families courses.</li> </ul>",
+    "_score": 1,
+    "specializations": []
+  }
+}

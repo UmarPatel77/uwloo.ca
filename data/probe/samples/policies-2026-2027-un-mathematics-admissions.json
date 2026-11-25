@@ -1,0 +1,32 @@
+{
+  "indexEntry": {
+    "__passedCatalogQuery": true,
+    "dateStart": "2024-09-01",
+    "regulationGroupingUndergraduate": {
+      "name": "Regulations for Faculty of Mathematics Students",
+      "id": "654ea1f012bbd00015b725d4",
+      "customFields": {}
+    },
+    "pid": "S1PtUDmp6",
+    "id": "65e76c84f34cd47e867abf6a",
+    "body": "<h3>Mature Students</h3> <p>A student who has been away from formal education for more than two years may apply as a mature student. Although the University of Waterloo does not automatically offer admission to mature applicants, the admissions committee carefully considers previous academic records, résumés, and other biographical material before determining a candidate's suitability for university studies. Students must be able to demonstrate recent academic proficiency in mathematics at the senior high school level.</p>",
+    "title": "Mathematics: Admissions",
+    "catalogActivationDate": "2024-04-02",
+    "_score": 1
+  },
+  "record": {
+    "__passedCatalogQuery": true,
+    "dateStart": "2024-09-01",
+    "regulationGroupingUndergraduate": {
+      "name": "Regulations for Faculty of Mathematics Students",
+      "id": "654ea1f012bbd00015b725d4",
+      "customFields": {}
+    },
+    "pid": "S1PtUDmp6",
+    "id": "65e76c84f34cd47e867abf6a",
+    "body": "<h3>Mature Students</h3> <p>A student who has been away from formal education for more than two years may apply as a mature student. Although the University of Waterloo does not automatically offer admission to mature applicants, the admissions committee carefully considers previous academic records, résumés, and other biographical material before determining a candidate's suitability for university studies. Students must be able to demonstrate recent academic proficiency in mathematics at the senior high school level.</p>",
+    "title": "Mathematics: Admissions",
+    "catalogActivationDate": "2024-04-02",
+    "_score": 1
+  }
+}

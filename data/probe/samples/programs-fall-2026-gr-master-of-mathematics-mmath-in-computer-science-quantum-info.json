@@ -1,0 +1,87 @@
+{
+  "indexEntry": {
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Mathematics",
+      "id": "648b232258e749e939f21ba4"
+    },
+    "code": "MMath in Computer Science-Quantum Information",
+    "__passedCatalogQuery": true,
+    "dateStart": "2026-01-01",
+    "pid": "rJeZ1RAj3",
+    "graduateCredentialType": {
+      "name": "Master's",
+      "id": "63c825e17da8f4f5892329d8"
+    },
+    "id": "69406c95d1f78fa9ecb0b1d4",
+    "title": "Master of Mathematics (MMath) in Computer Science - Quantum Information",
+    "graduateFieldOfStudy": {
+      "name": "Computer Science",
+      "id": "6436b70e9b463900167fd213",
+      "customFields": {}
+    },
+    "catalogActivationDate": "2025-12-17",
+    "_score": 1
+  },
+  "record": {
+    "admissionRequirementsApplicationMaterials": "<ul> <li>Program-specific questions (PSQ)</li> <li>Résumé</li> <li>Statement of interest</li> <li>Transcript(s)</li> </ul>",
+    "facultyCalendarDisplay": {
+      "name": "Faculty of Mathematics",
+      "id": "648b232258e749e939f21ba4"
+    },
+    "thesisOptionMilestoneRequirements": "<h4>Master's Thesis</h4> <ul> <li>Students must complete a Master's thesis in Quantum Information.</li> <li>Students must present their research topic in a publicly announced seminar.</li> </ul> <h4>Other requirements</h4> <ul> <li>Fast-track admission to the PhD in Computer Science – Quantum Information: the School of Computer Science offers excellent students an opportunity to transfer from the MMath program to the Doctor of Philosophy (PhD) program. This transfer enables the student to begin doctoral research, bypassing the MMath thesis. To apply for this transfer, a student submits a letter of application to the Associate Director of Graduate Studies, any time after the completion of the second term of registration in the MMath program or earlier in exceptional circumstances. The application must be strongly supported by the student's proposed PhD supervisor. A successful applicant would normally be in the thesis option and have an excellent academic record. Evidence must be available that the student has begun a viable research program. If accepted for transfer to the PhD program, the student is expected to meet the requirements for a PhD student entering directly from a Bachelor's degree.</li> </ul>",
+    "code": "MMath in Computer Science-Quantum Information",
+    "__passedCatalogQuery": true,
+    "detailsAndNotes": "<ul> <li><a href=\"https://cs.uwaterloo.ca/\">David R. Cheriton School of Computer Science website</a></li> <li><a href=\"https://uwaterloo.ca/future-graduate-students/programs/by-faculty/math/computer-science-quantum-information-master-math-mmath\">Master of Mathematics (MMath) in Computer Science - Quantum Information future graduate students program page</a></li> </ul>",
+    "groupFilter2": {
+      "name": "David R. Cheriton School of Computer Science",
+      "id": "636423afaf5eeb00153137d0",
+      "customFields": {
+        "Transformation": "CS"
+      }
+    },
+    "pid": "rJeZ1RAj3",
+    "title": "Master of Mathematics (MMath) in Computer Science - Quantum Information",
+    "graduateFieldOfStudy": {
+      "name": "Computer Science",
+      "id": "6436b70e9b463900167fd213",
+      "customFields": {}
+    },
+    "admitTerms": {
+      "spring": true,
+      "winter": true,
+      "fall": true
+    },
+    "admissionRequirements": "<ul> <li>An Honours Bachelor degree (or equivalent) in Computer Science with at least a 78% standing.</li> <li><a href=\"#/policy/SJDLMPJAa\">English language proficiency (ELP)</a> (if applicable)</li> </ul>",
+    "deliveryModes": {
+      "onCampus": true
+    },
+    "thesisOptionCourseRequirementsRichText": "<ul> <li>Computer Science courses: students must complete 4 one-term (0.50 unit weight) Computer Science graduate courses: <ul> <li>At least 1 course must be at the 800 level.</li> <li>At most 1 course can be at the 600 level.</li> <li>No more than 2 courses can be taken for degree credit in one area.</li> </ul> </li> </ul> <table style=\"border-collapse: collapse; width: 95%;\" border=\"1\"> <thead> <tr> <th> <p><strong>Category</strong></p> </th> <th> <p><strong>Area</strong></p> </th> <th> <p><strong>Computer Science (CS) Courses</strong></p> </th> </tr> </thead> <tbody> <tr> <td rowspan=\"3\"> <p>Computing Technology</p> </td> <td> <p>Software Engineering</p> </td> <td> <p>CS 645, CS 646, CS 647, CS 745, CS 746, CS 846</p> </td> </tr> <tr> <td> <p>Programming Languages</p> </td> <td> <p>CS 642, CS 644, CS 744, CS 747, CS 842</p> </td> </tr> <tr> <td> <p>Hardware and Software Systems</p> </td> <td> <p>CS 650, CS 651, CS 652, CS 654, CS 655, CS 656, CS 657, CS 658, CS 755, CS 758, CS 854, CS 856, CS 858**,CS 869</p> </td> </tr> <tr> <td rowspan=\"4\"> <p>Mathematics of Computing</p> </td> <td> <p>Algorithms and Complexity</p> </td> <td> <p>CS 662, CS 664, CS 666, CS 758, CS 761, CS 762, CS 763, CS 764, CS 765, CS 767, CS 840, CS 858**, CS 860</p> </td> </tr> <tr> <td> <p>Scientific and Symbolic Computing</p> </td> <td> <p>CS 670, CS 672, CS 675, CS 676, CS 679, CS 687, CS 770, CS 774, CS 775, CS 778, CS 779, CS 780, CS 794, CS 870, CS 887</p> </td> </tr> <tr> <td>Computational Statistics</td> <td>CS 680, CS 685, CS 786, CS 794, CS 885</td> </tr> <tr> <td> <p>Quantum Information and Computation</p> </td> <td> <p>CS 766, CS 768, CS 867</p> </td> </tr> <tr> <td rowspan=\"5\"> <p>Applications</p> </td> <td> <p>Artificial Intelligence</p> </td> <td> <p>CS 679, CS 684, CS 686, CS 784, CS 785, CS 787, CS 886</p> </td> </tr> <tr> <td> <p>Databases</p> </td> <td> <p>CS 640, CS 648, CS 740, CS 741, CS 742, CS 743, CS 848, CS 856*</p> </td> </tr> <tr> <td> <p>Graphics and User Interfaces</p> </td> <td> <p>CS 649, CS 688, CS 781, CS 783, CS 788, CS 789, CS 791, CS 888, CS 889</p> </td> </tr> <tr> <td> <p>Bioinformatics</p> </td> <td> <p>CS 682, CS 782, CS 882</p> </td> </tr> <tr> <td> <p>Health Informatics</p> </td> <td> <p>CS 792</p> </td> </tr> </tbody> </table> <ul> <li>Note: * The versions of CS 856 entitled &quot;Internet-Scale Distributed Data Management&quot; and &quot;Web Data Management&quot; can be used as a Databases course.</li> <li>Note: ** CS 858 can be used as a Hardware and Software Systems course or as an Algorithms and Complexity course, depending on the course offering.</li> <li>Quantum Information courses: students are required to take the 2 Quantum Information core courses listed below. These interdisciplinary courses provide a strong foundation in quantum information science: <ul> <li>CS 768/QIC 710 Quantum Information Processing</li> <li>QIC 750 Quantum Information Processing Devices</li> </ul> </li> <li>Note: CS 768/QIC 710 can be used to fulfill a CS requirement; QIC 750 will not fulfill a CS course requirement.</li> </ul>",
+    "programTypesCheckboxes": [
+      {
+        "name": "Collaborative",
+        "id": "6489e926fc613e473b8e284a"
+      }
+    ],
+    "admissionRequirementsReferences": "<ul> <li>Number of references: 3</li> <li>Type of references: at least 2 academic</li> </ul>",
+    "dateStart": "2026-01-01",
+    "registrationOptions": {
+      "partTime": true,
+      "fullTime": true
+    },
+    "graduateCredentialType": {
+      "name": "Master's",
+      "id": "63c825e17da8f4f5892329d8"
+    },
+    "id": "69406c95d1f78fa9ecb0b1d4",
+    "catalogActivationDate": "2025-12-17",
+    "degreeRequirementsGrad": "<ul> <li>Students must complete the course and milestone requirements listed below in addition to the <a href=\"#/policy/SkOCDGApT\">Graduate Academic Integrity Module (Graduate AIM)</a>.</li> </ul>",
+    "studyOptionsForCalendar": [
+      {
+        "name": "Thesis",
+        "id": "64a4320a5d75774e8176c095"
+      }
+    ],
+    "_score": 1,
+    "specializations": []
+  }
+}
