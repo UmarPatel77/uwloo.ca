@@ -749,6 +749,17 @@ function layout() {
   return laidOut;
 }
 const byField = () => layout().rows;
+let entryCache = null;
+/** What the list is narrowed to: every plan, one faculty's, or an entry program's ({entry: {majors, has}}). */
+function exFilter() {
+  const f = state.exfac ?? '';
+  if (!f.startsWith('entry:')) return { fac: f };
+  const name = f.slice(6);
+  if (entryCache?.P !== P || entryCache.name !== name) entryCache = { P, name, entry: E.entryProgram(name, P) };
+  return entryCache.entry ? { name, entry: entryCache.entry } : { fac: '' };
+}
+/** The majors you've picked, for who a plan is open to. */
+const myMajors = () => state.plans.map((s) => bySlug.get(s)).filter((p) => p?.t === 'Major');
 const facKey = (p) => layout().group.get(p.s) ?? (E.facultyOf(p).group || OTHER);
 const facName = (g) => (g === OTHER ? g : /\band\b/.test(g) ? `Faculties of ${g}` : `Faculty of ${g}`);
 let exLast = null; // {code, r, c}: a course just put in the grid from the list
@@ -763,7 +774,7 @@ function exploreShell() {
   const facs = [...new Set(byField().map((g) => g.group || OTHER))];
   return `<details class="pw-explore" id="pw-explore"${state.explore ? ' open' : ''}><summary><b>Browse every plan</b> <span class="t" id="pw-extease">${esc(exTease || 'by faculty and field: every major, minor, specialization, option and diploma')}</span></summary>
 <div class="pw-exbar"><div class="pw-tabs" role="group" aria-label="Show"><button type="button" data-dir="all" aria-pressed="${view === 'all'}">All, by field</button>${types.map((t) => `<button type="button" data-dir="${t}" aria-pressed="${view === t}">${word(t)}</button>`).join('')}</div>
-<label>Faculty <select id="pw-exfac"><option value="">All faculties</option>${facs.map((g) => `<option value="${esc(g)}"${state.exfac === g ? ' selected' : ''}>${esc(g)}</option>`).join('')}</select></label>
+<label>Show <select id="pw-exfac"><option value="">All faculties</option><optgroup label="One faculty">${facs.map((g) => `<option value="${esc(g)}"${state.exfac === g ? ' selected' : ''}>${esc(g)}</option>`).join('')}</optgroup><optgroup label="A first-year entry program">${E.ENTRY_PROGRAMS.map((e) => `<option value="entry:${esc(e.name)}"${state.exfac === `entry:${e.name}` ? ' selected' : ''}>${esc(e.name)}</option>`).join('')}</optgroup></select></label>
 <span class="pw-exopts" id="pw-exopts"${view === 'all' ? ' hidden' : ''}><label>Order <select id="pw-exorder"><option value="fac"${state.exorder !== 'near' ? ' selected' : ''}>by faculty</option><option value="near"${state.exorder === 'near' ? ' selected' : ''}>closest first</option></select></label>
 <label>Counting <select id="pw-cut"><option value="-1"${state.cut === -1 ? ' selected' : ''}>the whole grid</option>${study.map((x) => `<option value="${x.i}"${state.cut === x.i ? ' selected' : ''}>through ${esc(A.lv[x.i])} (${esc(E.termName(termOf(x.i)))})</option>`).join('')}</select></label></span></div>
 <p class="pw-exlast" id="pw-exlast" role="status"></p>
@@ -790,6 +801,12 @@ function withYourPlans() {
       out.push({ key: `${c.s}:with`, head, note: tw.text, plans: tw.plans, label: named, tease });
     }
     if (c.t !== 'Major') continue;
+    // The options its degree can take (an option lists the degrees it's for: an engineering major's thirteen).
+    const opts = E.optionsFor(c, P).sort((a, b) => E.planParts(a).name.localeCompare(E.planParts(b).name));
+    if (opts.length && !out.some((w) => w.opts && w.plans.length === opts.length && w.plans.every((q, i) => q === opts[i]))) {
+      const picked = opts.some((q) => state.plans.includes(q.s));
+      out.push({ key: `${c.s}:opt`, opts: true, head, note: `${opts.length === 1 ? 'An option' : `${opts.length} options`} for its degree (${kind.split(' ')[0]})`, plans: opts, label: (q) => E.planParts(q).name, tease: picked ? '' : `${plural(opts.length, 'option')} for ${name}` });
+    }
     // Its specializations (the calendar lists which majors each is open to), yours among them ticked.
     const xs = E.openTo(c, P)
       .filter((q) => q.t === 'Specialization')
@@ -805,7 +822,11 @@ function planChip(p, label) {
   if (state.plans.includes(p.s)) return `<span class="pw-fc got" title="${esc(p.n)}: one of your plans">${esc(label)} ✓</span>`;
   const no = state.plans.filter((c) => cant.get(p.s)?.has(c) || cant.get(c)?.has(p.s));
   if (no.length) return `<span class="pw-fc no" title="${esc(p.n)}: can’t go with ${esc(E.planParts(bySlug.get(no[0])).name)}">${esc(label)}</span>`;
-  return `<button type="button" class="pw-fc" data-plan="${esc(p.s)}" title="Add ${esc(p.n)}">${esc(label)}</button>`;
+  // Who it's for, as the calendar says: "Math students only", "paused".
+  const who = E.whoFor(p, myMajors());
+  const tag = who.tag ? ` <small class="pw-ftag">${esc(who.tag)}</small>` : '';
+  if (!who.ok) return `<span class="pw-fc no" title="${esc(p.n)}: ${esc(who.why)}">${esc(label)}${tag}</span>`;
+  return `<button type="button" class="pw-fc" data-plan="${esc(p.s)}" title="Add ${esc(p.n)}${who.why ? `. ${esc(who.why)}` : ''}">${esc(label)}${tag}</button>`;
 }
 /** A plan's name in its field's row: "BA Honours" in Economics, "Literature · BA Honours" in English. */
 function fieldLabel(p, field) {
@@ -820,17 +841,20 @@ function fieldLabel(p, field) {
 }
 /** Every plan by faculty and field, what goes with yours first. */
 function allHtml(withYours) {
-  const fac = state.exfac ?? '';
+  const { fac, name, entry } = exFilter();
   const parts = [];
+  if (entry) parts.push(`<p class="pw-exnote"><b>${esc(name)}</b> is an entry program: first-years in it choose one of these ${entry.majors.length} majors (shown with their minors and specializations), as Waterloo’s <a href="https://uwaterloo.ca/future-students/programs/majors-and-entry-programs">majors and entry programs</a> list them.</p>`);
   if (withYours.length)
     parts.push(
       `<section class="pw-exgroup pw-exwith"><h3>With your plans</h3>${withYours
         .map((w) => `<div class="pw-frow" data-row="${esc(w.key)}"><span class="pw-fname">${esc(w.head)}</span><span class="pw-fchips"><span class="pw-fnote">${esc(w.note)}${w.plans.length ? '' : '.'}</span>${w.plans.map((q) => planChip(q, w.label(q))).join('')}</span></div>`)
         .join('')}</section>`,
     );
-  for (const { group, rows } of byField()) {
+  for (const { group, rows: all } of byField()) {
     const g = group || OTHER;
     if (fac && g !== fac) continue;
+    const rows = entry ? all.map((r) => ({ ...r, plans: r.plans.filter(entry.has) })).filter((r) => r.plans.some((p) => p.t === 'Major')) : all;
+    if (!rows.length) continue;
     const n = rows.reduce((k, r) => k + r.plans.length, 0);
     parts.push(
       `<section class="pw-exgroup"><h3>${esc(facName(g))} <span class="t">${plural(n, 'plan')}</span></h3>${rows
@@ -907,7 +931,7 @@ function renderDirections() {
   const list = document.getElementById('pw-dirlist');
   if (!box || !list) return;
   const view = exView();
-  const fac = state.exfac ?? '';
+  const { fac, entry } = exFilter();
   for (const b of box.querySelectorAll('[data-dir]')) b.setAttribute('aria-pressed', String(b.dataset.dir === view));
   const opts = document.getElementById('pw-exopts');
   if (opts) opts.hidden = view === 'all';
@@ -939,28 +963,30 @@ function renderDirections() {
   const majors = A.plans.filter((p) => p.t === 'Major').map((p) => p.s);
   // Ones open to your majors first; specializations for other majors after; ones that can't combine last.
   const forOthers = (p) => Boolean(p.open?.length && !p.open.some((s) => majors.includes(s)));
-  const inFac = (p) => !fac || facKey(p) === fac;
+  const inFac = (p) => (entry ? entry.has(p) : !fac || facKey(p) === fac);
+  const mine = myMajors();
   const found = E.directions(P.filter(inFac), planned, { chosen: state.plans, cant, courses: C, types: [view] });
   // Every one, with ones whose rules are all in words (no courses to count) after.
   const inWords = P.filter((p) => p.t === view && inFac(p) && !state.plans.includes(p.s) && !found.some((x) => x.p === p)).map((p) => ({ p, need: 0, have: 0, left: 0, unknown: true, blocked: state.plans.filter((c) => cant.get(p.s)?.has(c) || cant.get(c)?.has(p.s)) }));
   const every = [...found, ...inWords]
-    .map((x, i) => ({ ...x, i, other: forOthers(x.p) }))
-    .sort((a, b) => (a.blocked.length > 0) - (b.blocked.length > 0) || a.other - b.other || a.i - b.i);
+    .map((x, i) => ({ ...x, i, other: forOthers(x.p), who: E.whoFor(x.p, mine) }))
+    .map((x) => ({ ...x, shut: x.blocked.length > 0 || !x.who.ok }))
+    .sort((a, b) => a.shut - b.shut || a.other - b.other || a.i - b.i);
   // Closed, the summary still says which are closest: what someone would come looking for.
   const kinds = view === 'Specialization' ? 'specializations' : `${view.toLowerCase()}s`;
-  const near = every.filter((x) => !x.blocked.length && !x.other && x.have > 0 && x.need).slice(0, 2);
+  const near = every.filter((x) => !x.shut && !x.other && x.have > 0 && x.need).slice(0, 2);
   tease.textContent = teaseYours.length ? `With your plans: ${teaseYours.slice(0, 2).join(' · ')}` : near.length ? `${every.length} ${kinds}; closest: ${near.map((x) => `${E.planParts(x.p).name} (${x.left ? `${x.left} to go` : 'done'})`).join(', ')}` : `${every.length} ${kinds} by faculty, with how much of each your grid already covers`;
   if (!box.open) return;
-  const row = ({ p, need, have, left, unknown, blocked, other }) => {
+  const row = ({ p, need, have, left, unknown, blocked, other, who, shut }) => {
     const { name, kind, of } = E.planParts(p);
     const { college } = E.facultyOf(p);
     const open = exShown.has(p.s);
     const sub = p.t === 'Major' ? kind : of ? `(${of})` : '';
     // A specialization says whose it is; other plans only open to some majors say which.
-    const note = blocked.length ? `<span class="pw-no">can’t go with ${esc(E.planParts(bySlug.get(blocked[0])).name)}</span>` : other && p.t !== 'Specialization' ? `<span class="t">for ${esc(p.open.map((s) => bySlug.get(s)?.fi).filter(Boolean).slice(0, 2).join(', '))} majors</span>` : '';
+    const note = blocked.length ? `<span class="pw-no">can’t go with ${esc(E.planParts(bySlug.get(blocked[0])).name)}</span>` : !who.ok ? `<span class="pw-no" title="${esc(who.why)}">${esc(who.tag)}</span>` : who.tag ? `<small class="pw-ftag" title="${esc(who.why)}">${esc(who.tag)}</small>` : other && p.t !== 'Specialization' ? `<span class="t">for ${esc(p.open.map((s) => bySlug.get(s)?.fi).filter(Boolean).slice(0, 2).join(', '))} majors</span>` : '';
     const share = need ? Math.round((100 * have) / need) : 0;
     const prog = need ? `<span class="pw-exprog" title="${have} of ${need}${unknown ? '+' : ''} courses it names"><span class="pw-exmeter" style="--f:${share}%"></span>${left ? `${left} to go` : 'all planned'}</span>` : '<span class="pw-exprog t">rules in words</span>';
-    return `<li data-row="${esc(p.s)}"${blocked.length ? ' class="blocked"' : other ? ' class="other"' : ''}><div class="pw-exrow"><span class="pw-exname"><a href="/programs/${esc(p.s)}/" title="${esc(p.n)}">${esc(name)}</a>${sub ? ` <span class="t">${esc(sub)}</span>` : ''}${college ? ` <span class="pw-col">${esc(college)}</span>` : ''}</span> ${prog}${note ? ` ${note}` : ''} <span class="pw-exacts"><button type="button" class="pw-linkbtn" data-excourses="${esc(p.s)}" aria-expanded="${open}">${open ? 'Hide' : 'Courses'}</button>${blocked.length ? '' : ` <button type="button" class="pw-linkbtn" data-plan="${esc(p.s)}">Add</button>`}</span></div>${open ? exCourses(p, planned) : ''}</li>`;
+    return `<li data-row="${esc(p.s)}"${shut ? ' class="blocked"' : other ? ' class="other"' : ''}><div class="pw-exrow"><span class="pw-exname"><a href="/programs/${esc(p.s)}/" title="${esc(p.n)}">${esc(name)}</a>${sub ? ` <span class="t">${esc(sub)}</span>` : ''}${college ? ` <span class="pw-col">${esc(college)}</span>` : ''}</span> ${prog}${note ? ` ${note}` : ''} <span class="pw-exacts"><button type="button" class="pw-linkbtn" data-excourses="${esc(p.s)}" aria-expanded="${open}">${open ? 'Hide' : 'Courses'}</button>${shut ? '' : ` <button type="button" class="pw-linkbtn" data-plan="${esc(p.s)}">Add</button>`}</span></div>${open ? exCourses(p, planned) : ''}</li>`;
   };
   if (!every.length) return show(`<p class="t">No ${kinds} ${fac ? `in ${esc(facName(fac))}` : 'here'}.</p>`);
   if (state.exorder === 'near') {
@@ -978,7 +1004,7 @@ function renderDirections() {
   show([...groups]
     .sort((a, b) => E.facultyRank(a[0] === OTHER ? '' : a[0]) - E.facultyRank(b[0] === OTHER ? '' : b[0]) || a[0].localeCompare(b[0]))
     .map(([g, xs]) => `<section class="pw-exgroup"><h3>${esc(facName(g))} <span class="t">${xs.length}</span></h3><ul class="pw-exitems">${xs
-      .sort((a, b) => (a.blocked.length > 0) - (b.blocked.length > 0) || a.other - b.other || E.planParts(a.p).name.localeCompare(E.planParts(b.p).name) || a.p.n.localeCompare(b.p.n))
+      .sort((a, b) => a.shut - b.shut || a.other - b.other || E.planParts(a.p).name.localeCompare(E.planParts(b.p).name) || a.p.n.localeCompare(b.p.n))
       .map(row)
       .join('')}</ul></section>`)
     .join(''));
@@ -1286,6 +1312,11 @@ app.addEventListener('click', async (e) => {
       pq.focus({ preventScroll: true });
       if (planType || typed.trim()) planSuggest(pq);
     }
+    return;
+  }
+  const ent = t.closest('#pw-psugg [data-entry]');
+  if (ent) {
+    openEntry(ent.dataset.entry);
     return;
   }
   const pl = t.closest('[data-plan]');
@@ -2283,7 +2314,8 @@ let planType = ''; // a kind of plan the chips narrow the list to, or ''
 let planActive = 0; // the suggestion Enter adds
 /** Plans for what's typed, best first; with a kind picked and nothing typed, every plan of that kind. */
 function planHits(q) {
-  const tokens = E.planTokens(q);
+  const queries = E.planQueries(q);
+  const tokens = queries[0];
   const pool = P.filter((p) => !state.plans.includes(p.s) && (!planType || p.t === planType));
   // Specializations and options open to your majors first ("Finance Specialization" for Math/CPA).
   const other = (p) => (p.open?.length && !p.open.some((s) => state.plans.includes(s)) ? 1 : 0);
@@ -2293,7 +2325,7 @@ function planHits(q) {
   const order = (a, b) => other(a) - other(b) || TYPE_ORDER.indexOf(a.t) - TYPE_ORDER.indexOf(b.t) || degree(a) - degree(b) || E.planWords(a).name.length - E.planWords(b).name.length || a.n.localeCompare(b.n);
   if (!tokens.length) return planType ? pool.sort(order) : [];
   return pool
-    .map((p) => [p, E.planScore(p, tokens)])
+    .map((p) => [p, E.planBest(p, queries)])
     .filter(([, sc]) => sc > 0)
     .sort((a, b) => b[1] - a[1] || order(a[0], b[0]))
     .map(([p]) => p);
@@ -2304,20 +2336,33 @@ function kindChips() {
   return `<div class="pw-ptypes" role="group" aria-label="Show one kind of plan"><button type="button" data-ptype="" aria-pressed="${!planType}">All</button>${kinds.map((t) => `<button type="button" data-ptype="${esc(t)}" aria-pressed="${planType === t}">${esc(PLAN_KINDS[t])} <span>${left(t)}</span></button>`).join('')}</div>`;
 }
 const MAX_SUGG = 12;
+/** Entry programs whose name the words typed start ("life sci", "phys", "honours arts"). */
+function entryHits(typed) {
+  const words = E.planTokens(typed);
+  if (!words.length || typed.trim().length < 3 || planType) return [];
+  return E.ENTRY_PROGRAMS.filter((e) => {
+    const names = E.planTokens(e.name);
+    return words.every((w) => names.some((n) => n.startsWith(w)));
+  });
+}
 function planSuggest(input) {
   const list = document.getElementById('pw-psugg');
   const typed = input.value.trim();
   const hits = planHits(input.value);
   const shown = typed ? hits.slice(0, MAX_SUGG) : hits;
+  const entries = entryHits(typed);
   planActive = 0;
   const faculty = (p) => (p.f ? ` · ${p.f.replace(/^Facult(y|ies) of /, '')}` : '');
+  // An entry program first-years apply to ("Life Sciences") isn't a plan: it opens its majors in the list below.
+  const entryRows = entries.map((e, i) => `<li role="option" id="pw-po${i}" data-entry="${esc(e.name)}" aria-selected="${i === 0}"><b>${esc(e.name)}</b> <span>Entry program · see its ${E.entryProgram(e.name, P)?.majors.length ?? 0} majors</span></li>`);
   list.innerHTML =
-    shown.map((p, i) => `<li role="option" id="pw-po${i}" data-plan="${esc(p.s)}" aria-selected="${i === 0}"><b>${esc(p.n)}</b> <span>${esc(p.t)}${esc(faculty(p))}</span></li>`).join('') +
+    entryRows.join('') +
+    shown.map((p, i) => `<li role="option" id="pw-po${i + entries.length}" data-plan="${esc(p.s)}" aria-selected="${i + entries.length === 0}"><b>${esc(p.n)}</b> <span>${esc(p.t)}${esc(faculty(p))}</span></li>`).join('') +
     (typed && hits.length > MAX_SUGG ? `<li class="pw-smore" aria-hidden="true">${hits.length - MAX_SUGG} more: keep typing${planType ? '' : ', or pick a kind below'}</li>` : '') +
-    (typed && !hits.length ? `<li class="pw-smore" aria-hidden="true">No ${planType ? PLAN_KINDS[planType].toLowerCase() : 'plans'} match “${esc(typed)}”</li>` : '');
+    (typed && !hits.length && !entries.length ? `<li class="pw-smore" aria-hidden="true">No ${planType ? PLAN_KINDS[planType].toLowerCase() : 'plans'} match “${esc(typed)}”</li>` : '');
   list.hidden = !list.children.length;
-  input.setAttribute('aria-expanded', String(shown.length > 0));
-  if (shown.length) input.setAttribute('aria-activedescendant', 'pw-po0');
+  input.setAttribute('aria-expanded', String(shown.length + entries.length > 0));
+  if (shown.length + entries.length) input.setAttribute('aria-activedescendant', 'pw-po0');
   else input.removeAttribute('aria-activedescendant');
 }
 function closePlanSugg() {
@@ -2327,6 +2372,23 @@ function closePlanSugg() {
   list.hidden = true;
   input?.setAttribute('aria-expanded', 'false');
   input?.removeAttribute('aria-activedescendant');
+}
+/** An entry program's majors, in the list under the plan box. */
+function openEntry(name) {
+  state.exfac = `entry:${name}`;
+  state.exview = 'all';
+  state.explore = true;
+  dirAll = false;
+  closePlanSugg();
+  const pq = document.getElementById('pw-pq');
+  if (pq) pq.value = '';
+  exTop = 0;
+  render();
+  clearTimeout(dirTimer);
+  renderDirections();
+  const list = document.getElementById('pw-dirlist');
+  if (list) list.scrollTop = 0;
+  list?.focus({ preventScroll: true });
 }
 function addPlan(slug) {
   if (!state.plans.includes(slug)) {
@@ -2344,6 +2406,10 @@ app.addEventListener('submit', (e) => {
   const list = document.getElementById('pw-psugg');
   if (list?.hidden) planSuggest(document.getElementById('pw-pq'));
   const pick = list?.querySelector('li[aria-selected="true"]') ?? list?.querySelector('li[data-plan]');
+  if (pick?.dataset.entry) {
+    openEntry(pick.dataset.entry);
+    return;
+  }
   if (pick) {
     addPlan(pick.dataset.plan);
     document.getElementById('pw-pq')?.focus();
@@ -2361,7 +2427,7 @@ app.addEventListener('keydown', (e) => {
       }
       return;
     }
-    const items = [...list.querySelectorAll('li[data-plan]')];
+    const items = [...list.querySelectorAll('li[data-plan], li[data-entry]')];
     if (!items.length) return;
     e.preventDefault();
     planActive = (planActive + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
@@ -2377,9 +2443,9 @@ app.addEventListener('keydown', (e) => {
 });
 // The pointer picks too; pressing on the list keeps the box focused, so the click lands.
 app.addEventListener('mousemove', (e) => {
-  const li = e.target.closest('#pw-psugg li[data-plan]');
+  const li = e.target.closest('#pw-psugg li[data-plan], #pw-psugg li[data-entry]');
   if (!li || li.getAttribute('aria-selected') === 'true') return;
-  const items = [...document.querySelectorAll('#pw-psugg li[data-plan]')];
+  const items = [...document.querySelectorAll('#pw-psugg li[data-plan], #pw-psugg li[data-entry]')];
   planActive = items.indexOf(li);
   items.forEach((x) => x.setAttribute('aria-selected', String(x === li)));
   document.getElementById('pw-pq')?.setAttribute('aria-activedescendant', li.id);

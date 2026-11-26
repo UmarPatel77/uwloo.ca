@@ -2,7 +2,9 @@
 // itself is site/pathways/ (engine.js for the rules, app.js for the grid).
 //
 // /pathways/data.json: {cat, term, year, years, courses: {CODE: [title, units, prereq, coreq, antireq, seasons, equiv]},
-//                       programs: [{s, n, t, f, fi, c, req, open, tu, tsub, tt, seq, co, re, cant}]}  (the current
+//                       programs: [{s, n, t, f, fi, c, req, open, deg, lim, soft, notf, nd, paused, who, tu, tsub, tt,
+//                       seq, co, re, cant}]}  (open: majors a specialization is for; deg: degrees an option is for;
+//                       lim/soft/notf/nd/paused/who: who a plan is for, see eligibility) (the current
 //                       calendar's; seq: a co-op major's study/work sequences; co/re: co-op, regular offered;
 //                       ld: the usual courses a term, when a term-by-term program lists more than 5)
 // /pathways/programs-{year}.json: {year, label, programs} for each other calendar year: someone follows the
@@ -450,6 +452,40 @@ export function degreeProse(html, fac) {
   return out;
 }
 
+// Faculty words the calendar uses for its students ("non-math students").
+const FACULTY_WORD = { math: 'Mathematics', mathematics: 'Mathematics', arts: 'Arts', science: 'Science', engineering: 'Engineering', environment: 'Environment', health: 'Health' };
+/**
+ * Who a plan is for, beyond the invalid combinations, from what the calendar says when declaring it: lim, a faculty
+ * whose students alone can take it ("only open to students enrolled in a Faculty of Mathematics academic plan",
+ * "open to students enrolled in any degree program in the Faculty of Mathematics"); soft, one it's mostly for
+ * ("generally not available to students outside the Faculty of Mathematics"); notf, a faculty whose students
+ * can't ("only open to non-math students"); nd, only students outside a degree program (its audience); paused, a
+ * notice that it takes no new students. who: the calendar's sentence.
+ */
+export function eligibility(p) {
+  const out = {};
+  const sentences = (html) => plainText(html).split(/(?<=\.)\s+/);
+  for (const s of sentences(p.text?.specialNotice))
+    if (/\bpaused\b|not open to new (?:entrants|students|applicants|admissions)/i.test(s)) {
+      out.paused = 1;
+      out.who = s;
+    }
+  for (const s of [...sentences(p.text?.declarationRequirements), ...sentences(p.text?.admissionRequirements)]) {
+    let m;
+    if ((m = /\bonly (?:open|available) to students (?:enrolled )?(?:in|within) (?:an? |the )?Faculty of (\w+)/i.exec(s) ?? /\bopen to students enrolled in any degree program in the Faculty of (\w+)/i.exec(s))) out.lim = m[1];
+    else if ((m = /\bgenerally not available to students outside (?:of )?the Faculty of (\w+)/i.exec(s))) out.soft = m[1];
+    else if ((m = /\bonly open to non-(\w+) students/i.exec(s)) && FACULTY_WORD[m[1].toLowerCase()]) out.notf = FACULTY_WORD[m[1].toLowerCase()];
+    else continue;
+    out.who ??= s;
+  }
+  const audience = p.audience ?? [];
+  if (audience.length && audience.every((a) => /open to students enrolled in any non- or post-degree academic plan/i.test(a) && !/degree programs? or/i.test(a))) {
+    out.nd = 1;
+    out.who ??= audience[0];
+  }
+  return out;
+}
+
 /** One calendar's programs, in the shape the app reads. */
 export function pathwaysPrograms({ programs, combos }) {
   const list = programs.list.map((p) => {
@@ -464,6 +500,9 @@ export function pathwaysPrograms({ programs, combos }) {
     };
     const open = p.availableTo.map((r) => programs.byId.get(r.id)?.slug).filter(Boolean);
     if (open.length) out.open = open;
+    // An option's degrees ("Bachelor of Applied Science", "Bachelor of Science (Science)"), and who a plan is for.
+    if (p.degrees?.length) out.deg = p.degrees;
+    Object.assign(out, eligibility(p));
     const tu = totalUnits(p.text.graduationRequirements);
     if (tu?.subj) out.tsub = tu;
     else if (tu) out.tu = tu.u;

@@ -2095,6 +2095,52 @@ test('pathways: every plan by faculty and field, and what each is taken with', (
   assert.ok(older[0].rows.find((r) => r.field === 'Economics').plans.some((p) => p.s === 'old-spec'), 'a plan with no faculty goes with its field’s');
 });
 
+test('pathways: who a plan is for, options by degree, entry programs, other names', () => {
+  // What the calendar says when declaring (2026–27's own sentences).
+  const el = (fields, audience = []) => PW.eligibility({ text: fields, audience });
+  assert.deepEqual(el({ declarationRequirements: '<p>This credential is only open to students enrolled in a Faculty of Mathematics academic plan.</p>' }), { lim: 'Mathematics', who: 'This credential is only open to students enrolled in a Faculty of Mathematics academic plan.' });
+  assert.equal(el({ declarationRequirements: '<p>Before declaring, see the table. This credential is open to students enrolled in any degree program in the Faculty of Mathematics.</p>' }).lim, 'Mathematics');
+  assert.equal(el({ declarationRequirements: '<p>This credential is open to all Honours students and is generally not available to students outside the Faculty of Mathematics because it includes several restricted courses.</p>' }).soft, 'Mathematics');
+  assert.equal(el({ declarationRequirements: '<p>The Joint Honours Mathematics academic plan is only open to non-math students enrolled in an Honours program.</p>' }).notf, 'Mathematics');
+  assert.equal(el({ specialNotice: '<p>As a result, the Diploma in Future Cities is currently paused and is not open to new entrants.</p>' }).paused, 1);
+  assert.equal(el({}, ['This credential is open to students enrolled in any non- or post-degree academic plan.']).nd, 1);
+  assert.deepEqual(el({}, ['This credential is open to students enrolled in degree programs or any non- or post-degree academic plan.']), {}, 'open to everyone');
+  assert.deepEqual(el({ declarationRequirements: '<p>Before declaring this academic plan, see invalid credential combinations.</p>' }), {});
+
+  const major = (s, n, f, fi) => ({ s, n, t: 'Major', f, fi });
+  const meche = major('h-me', 'Mechanical Engineering (Bachelor of Applied Science - Honours)', 'Faculty of Engineering', 'Mechanical Engineering');
+  const kin = major('h-kin', 'Kinesiology (Bachelor of Science - Honours)', 'Faculty of Health', 'Kinesiology');
+  const bio = major('h-bio', 'Biology (Bachelor of Science - Honours)', 'Faculty of Science', 'Biology');
+  const psychBA = major('h-psych-ba', 'Psychology (Bachelor of Arts - Honours)', 'Faculty of Arts', 'Psychology');
+  const psychBSc = major('h-psych-bsc', 'Psychology (Bachelor of Science - Honours)', 'Faculty of Science', 'Psychology');
+  const option = (s, n, deg) => ({ s, n, t: 'Option', f: 'Faculty of Engineering', fi: 'Options: Faculty of Engineering', deg });
+  const programs = [meche, kin, bio, psychBA, psychBSc, option('mech-opt', 'Mechatronics Option', ['Bachelor of Applied Science', 'Bachelor of Software Engineering']), option('micro-opt', 'Microbiology Option', ['Bachelor of Science (Science)']), option('aging-opt', 'Aging Studies Option', ['Bachelor of Science (Health)', 'Bachelor of Public Health'])];
+  assert.deepEqual(PE.degreeNames(kin), ['Bachelor of Science', 'Bachelor of Science (Health)']);
+  assert.deepEqual(PE.optionsFor(meche, programs).map((p) => p.s), ['mech-opt']);
+  assert.deepEqual(PE.optionsFor(bio, programs).map((p) => p.s), ['micro-opt'], 'a BSc in Science');
+  assert.deepEqual(PE.optionsFor(kin, programs).map((p) => p.s), ['aging-opt'], 'a BSc in Health');
+
+  const minor = { s: 'stat-minor', n: 'Statistics Minor', t: 'Minor', lim: 'Mathematics', who: 'Only Math.' };
+  assert.deepEqual(PE.whoFor(minor, []), { ok: true, tag: 'Math students only', why: 'Only Math.' }, 'tagged with no major picked');
+  assert.equal(PE.whoFor(minor, [bio]).ok, false);
+  assert.equal(PE.whoFor(minor, [{ ...bio, f: 'Faculty of Mathematics' }]).ok, true);
+  assert.equal(PE.whoFor({ paused: 1 }, []).ok, false);
+  assert.equal(PE.whoFor({ notf: 'Mathematics' }, [{ ...bio, f: 'Faculty of Mathematics' }]).ok, false);
+
+  const life = PE.entryProgram('Life Sciences', programs);
+  assert.deepEqual(life.majors.map((p) => p.s), ['h-bio', 'h-psych-bsc'], 'Psychology’s BSc, not its BA');
+  assert.ok(life.has({ t: 'Minor', fi: 'Biology' }) && !life.has(psychBA));
+  assert.deepEqual(PE.entryProgram('Honours Arts', programs).majors.map((p) => p.s), ['h-psych-ba']);
+  assert.equal(PE.entryProgram('Nope', programs), null);
+
+  assert.deepEqual(PE.planQueries('Geomatics minor'), [['geomatics', 'minor'], ['geospatial', 'data', 'science', 'minor']]);
+  assert.equal(PE.planQueries('economics').length, 1);
+  const arbus = { s: 'arbus', n: 'Arts and Business', t: 'Major', req: [] };
+  const gbda = { s: 'gbda', n: 'Global Business and Digital Arts (Bachelor of Global Business and Digital Arts - Honours)', t: 'Major', req: [] };
+  const q = PE.planQueries('honours arts and business');
+  assert.ok(PE.planBest(arbus, q) > PE.planBest(gbda, q), 'the name it’s known by first');
+});
+
 test('pathways: the data file and the page', () => {
   const sec = PR.sectionsOf(PUBLIC_POLICY);
   const programs = { list: [{ pid: 'p1', slug: 'econ-pp', name: 'Public Policy Specialization (Economics)', type: 'Specialization', faculty: 'Faculty of Arts', field: 'Economics', code: 'ECON-Public Policy Specialization', sections: sec, availableTo: [], text: { graduationRequirements: '<p>Complete a total of 2.0 units.</p>', coOperativeRequirementsUndergraduate: '' } }], byId: new Map() };

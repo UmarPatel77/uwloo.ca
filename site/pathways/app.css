@@ -180,6 +180,8 @@ ol.pw-exitems { list-style: decimal; padding-left: 1.4rem; }
 .pw-fc.no { cursor: not-allowed; opacity: 0.5; text-decoration: line-through; }
 .pw-flab { font-size: 0.74rem; color: var(--muted); margin: 0 0.1rem 0 0.35rem; }
 .pw-fnote { font-size: 0.8rem; color: var(--muted); flex-basis: 100%; }
+.pw-ftag { font-size: 0.7rem; color: var(--muted); font-weight: 500; white-space: nowrap; }
+.pw-exnote { margin: 0.4rem 0 0.2rem; font-size: 0.86rem; }
 .pw-exwith { margin: 0.2rem -0.8rem 0.4rem; padding: 0 0.8rem 0.3rem; background: color-mix(in srgb, var(--gold) 14%, var(--paper)); }
 .pw-exwith h3 { background: color-mix(in srgb, var(--gold) 14%, var(--paper)); }
 .pw-no { color: var(--bad); font-size: 0.85rem; }

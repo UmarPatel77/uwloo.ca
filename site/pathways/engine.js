@@ -1180,6 +1180,76 @@ export function takenWith(p, programs) {
 /** Plans open only to some majors that are open to this one: its specializations (the only plans that list majors). */
 export const openTo = (major, programs) => programs.filter((q) => q.s !== major.s && q.open?.includes(major.s));
 
+/**
+ * A major's degrees the way an option's "available to" list names them: "Bachelor of Applied Science", and for a
+ * degree more than one faculty gives, with the faculty too ("Bachelor of Science (Science)", "(Health)").
+ */
+export function degreeNames(major) {
+  if (major?.t !== 'Major') return [];
+  const g = facultyOf(major).group;
+  return planParts(major)
+    .of.split(/ and (?=Bachelor of |Doctor of )/)
+    .filter(Boolean)
+    .flatMap((d) => [d, `${d} (${g})`]);
+}
+/** The options open to a major's degree: an engineering major's thirteen, a BSc in Science's five. */
+export function optionsFor(major, programs) {
+  const names = new Set(degreeNames(major));
+  return names.size ? programs.filter((q) => q.t === 'Option' && q.deg?.some((d) => names.has(d))) : [];
+}
+
+const FACULTY_SHORT = { Mathematics: 'Math' };
+/**
+ * Whether a plan is open to someone with these majors, from what the calendar says (scripts/lib/pathways.mjs's
+ * eligibility): {ok, tag, why}. Paused, or only for students outside a degree: not ok. Only for one faculty's
+ * students: not ok once a major in another is picked; with none picked, tagged. → tag: a few words for a chip.
+ */
+export function whoFor(p, majors = []) {
+  const faculties = new Set(majors.map((m) => facultyOf(m).group));
+  const short = (f) => FACULTY_SHORT[f] ?? f;
+  if (p.paused) return { ok: false, tag: 'paused', why: p.who };
+  if (p.nd) return { ok: false, tag: 'not for degree students', why: p.who };
+  if (p.lim) return { ok: !faculties.size || faculties.has(p.lim), tag: `${short(p.lim)} students only`, why: p.who };
+  if (p.notf) return { ok: !faculties.has(p.notf), tag: `not for ${short(p.notf)} students`, why: p.who };
+  if (p.soft) return { ok: true, tag: `mostly ${short(p.soft)} students`, why: p.who };
+  return { ok: true, tag: '', why: '' };
+}
+
+// ---------------- entry programs ----------------
+// What first-years apply to before they choose a major (uwaterloo.ca/future-students/programs/majors-and-entry-
+// programs, as of November 2026; the calendar has majors, not these). Honours Arts leads to any Faculty of Arts BA
+// major; Honours Arts and Business to the honours ones it's taken with (takenWith). The rest are fields, with the
+// degree when a field has majors in two (Psychology's BSc is Life Sciences', its BA Honours Arts').
+export const ENTRY_PROGRAMS = [
+  { name: 'Honours Arts', arts: 'all' },
+  { name: 'Honours Arts and Business', arts: 'arbus' },
+  { name: 'Mathematics', fields: ['Actuarial Science', 'Applied Mathematics', 'Biostatistics', 'Combinatorics and Optimization', 'Computational Mathematics', ['Data Science', 'BMath'], 'Information Technology Management', ['Mathematical Economics', 'BMath'], 'Mathematical Finance', 'Mathematical Optimization', ['Mathematical Physics', 'BMath'], 'Mathematical Studies', 'Mathematics', 'Mathematics and Teaching', 'Pure Mathematics', 'Statistics'] },
+  { name: 'Computer Science', fields: [['Computer Science', 'BCS'], ['Data Science', 'BCS']] },
+  { name: 'Life Sciences', fields: ['Biochemistry', 'Biology', 'Biomedical Sciences', ['Psychology', 'BSc']] },
+  { name: 'Physical Sciences', fields: ['Biological and Medical Physics', 'Chemistry', 'Earth Sciences', 'Materials and Nanosciences', ['Mathematical Physics', 'BSc'], 'Medicinal Chemistry', 'Physics', 'Physics and Astronomy'] },
+  { name: 'Recreation and Leisure Studies', fields: ['Recreation, Leadership, and Health', 'Sport and Recreation Management', 'Therapeutic Recreation'] },
+];
+/**
+ * The majors an entry program leads to, and a test for the plans in their fields (their minors and
+ * specializations too): {majors, has(plan)}.
+ */
+export function entryProgram(name, programs) {
+  const e = ENTRY_PROGRAMS.find((x) => x.name === name);
+  if (!e) return null;
+  const isMajor = (p) => p.t === 'Major';
+  let majors;
+  if (e.arts === 'arbus') majors = takenWith(programs.find((p) => isMajor(p) && p.fi === 'Arts and Business'), programs)?.plans ?? [];
+  else if (e.arts) majors = programs.filter((p) => isMajor(p) && p.fi !== 'Arts and Business' && facultyOf(p).group === 'Arts' && planParts(p).of === 'Bachelor of Arts');
+  else {
+    const want = new Map(e.fields.map((f) => (Array.isArray(f) ? f : [f, ''])));
+    // A joint major is a second plan, not a first-year's choice; nor is a double degree.
+    majors = programs.filter((p) => isMajor(p) && want.has(p.fi) && planParts(p).kind.startsWith(want.get(p.fi)) && !/Joint Honours|^BBA/.test(planParts(p).kind) && !/Double Degree$/.test(planParts(p).name));
+  }
+  const fields = new Set(majors.map((p) => p.fi));
+  const chosen = new Set(majors.map((p) => p.s));
+  return { majors, has: (p) => (isMajor(p) ? chosen.has(p.s) : fields.has(p.fi)) };
+}
+
 // ---------------- finding a plan by name ----------------
 // Names stay the calendar's, but a search (app.js's plan box) finds a plan the way people say it: each word typed
 // is the start of a word in the name ("math/cpa", "bio cpa"), the starts of a run of words in it ("cpa" =
@@ -1188,6 +1258,30 @@ export const openTo = (major, programs) => programs.filter((q) => q.s !== major.
 const PSTOP = new Set(['and', 'of', 'the', 'in', 'for', 'with', 'a', 'an', 'to']);
 // Short forms that aren't the start of anything in the name.
 const PALIAS = { stats: ['statistics'], stat: ['statistics'], tron: ['mechatronics'], ece: ['electrical engineering', 'computer engineering'], bme: ['biomedical engineering'], mgmt: ['management'], biz: ['business'], intl: ['international'], hlth: ['health'], psci: ['political science'], polisci: ['political science'], compsci: ['computer science'] };
+// Names the admissions site, a department's pages or an earlier calendar use for a plan the calendar names
+// otherwise. Searched as well as what's typed, not instead (2021–23's calendars still have Financial Leadership).
+const PLAN_PHRASES = [
+  [/\bgeospatial data analysis\b|\bgeomatics\b/, 'geospatial data science'],
+  [/\barchitecture\b/, 'architectural studies'],
+  [/\bfinancial economics\b/, 'finance specialization economics'],
+  [/\bfinancial leadership\b/, 'enterprise performance and risk'],
+  [/\bhonours arts and business\b/, 'arts and business'],
+  [/\bhonours science\b/, 'science bachelor of science honours'],
+];
+/** The searches for what's typed: itself, then each name it's known by (as planTokens). */
+export function planQueries(text) {
+  const t = String(text ?? '').toLowerCase();
+  const out = [planTokens(t)];
+  for (const [re, to] of PLAN_PHRASES) if (re.test(t)) out.push(planTokens(t.replace(re, to)));
+  return out;
+}
+/** A plan's score for planQueries: the best of them, a name it's known by counting for more than words in common. */
+export function planBest(p, queries) {
+  return Math.max(0, ...queries.map((t, i) => {
+    const sc = planScore(p, t);
+    return sc && i ? sc + 5 : sc;
+  }));
+}
 /** A plan search's words: lowercase, "&" as and, common words out; "c&o" as "co". */
 export const planTokens = (text) =>
   String(text ?? '')
