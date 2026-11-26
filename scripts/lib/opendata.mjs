@@ -3,6 +3,8 @@
 //   GET /Courses/{term}                          every course row for a term (courseId ↔ subject/number, faculty)
 //   GET /ClassSchedules/{term}                   courseIds with at least one scheduled class that term
 //   GET /ClassSchedules/{term}/{subject}/{num}   sections, seats and meeting times for one course
+//   GET /ImportantDates                          every term's dates: classes begin, drop deadlines, holidays, exams
+//   GET /ExamSchedules/{term}                    final exams, once the Registrar publishes them
 // Quest data reaches Open Data within ~48 hours. Instructor names and rooms are withheld for privacy.
 import { ageDays, getJson, HttpError, pool, readCache, writeCache } from './http.mjs';
 
@@ -13,9 +15,9 @@ const CONCURRENCY = Number(process.env.OPENDATA_CONCURRENCY ?? 3);
 
 export const enabled = () => Boolean(KEY);
 
-export async function od(path) {
+export async function od(path, opts = {}) {
   try {
-    return await getJson(`${OPENDATA_BASE}/${path}`, { headers: { 'x-api-key': KEY } });
+    return await getJson(`${OPENDATA_BASE}/${path}`, { ...opts, headers: { 'x-api-key': KEY } });
   } catch (err) {
     if (err instanceof HttpError && err.status === 404) return null; // Open Data's "no data"
     throw err;
@@ -70,6 +72,26 @@ export async function loadOfferings(terms, currentTerm) {
   }
   return out;
 }
+
+/** Read once a day: a fresh copy, or the last one if Open Data fails (or [] if there's none). */
+async function daily(path, file, label, opts) {
+  const hit = await readCache(file);
+  if (hit && ageDays(hit.fetchedAt) < 0.8) return hit.data;
+  try {
+    const data = (await od(path, opts)) ?? [];
+    await writeCache(file, { fetchedAt: new Date().toISOString(), data });
+    return data;
+  } catch (err) {
+    console.warn(`! Open Data ${label}: ${err.message}${hit ? ' (using cached copy)' : ''}`);
+    return hit?.data ?? [];
+  }
+}
+/** Every term's important dates (ImportantDates): [{name, importantDateType, description, audiences, details}]. */
+export const loadImportantDates = () => daily('ImportantDates', `${CACHE}/important-dates.json`, 'important dates');
+/** A term's final exams (ExamSchedules/{term}): [{examDisplayName, sections, day, examWindowStartDate,
+ *  examWindowStartTime, examDuration, location, isOnlineDescription, notes, termCode}], or [] before they're out.
+ *  Asked once, not five times: it answers 500 until there's a schedule. */
+export const loadExams = (term) => daily(`ExamSchedules/${term}`, `${CACHE}/exams-${term}.json`, `exams ${term}`, { retries: 1 });
 
 const DAY_NAMES = ['M', 'T', 'W', 'Th', 'F', 'Sa', 'Su'];
 

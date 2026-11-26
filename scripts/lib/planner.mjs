@@ -19,7 +19,7 @@ const minutes = (hhmm) => {
 };
 
 /** One term's sections (opendata.loadSections' shape) → the planner's file for that term. */
-export function plannerData(term, sections, { asOf = null, titleOf = () => '' } = {}) {
+export function plannerData(term, sections, { asOf = null, titleOf = () => '', dates = [], exams = {} } = {}) {
   // The term's usual weeks: the commonest date range of weekly meetings. Others are written out.
   const weeks = new Map();
   for (const list of Object.values(sections))
@@ -48,7 +48,105 @@ export function plannerData(term, sections, { asOf = null, titleOf = () => '' } 
     ]);
     if (rows.length) c[code] = [titleOf(code) ?? '', rows];
   }
-  return { term, name: termName(term), asOf, from, to, c };
+  // The term's dates and its courses' final exams (Open Data), for the calendar file.
+  const x = Object.fromEntries(Object.entries(exams).filter(([code]) => c[code]));
+  return { term, name: termName(term), asOf, from, to, c, ...(dates.length ? { d: dates } : {}), ...(Object.keys(x).length ? { x } : {}) };
+}
+
+// ---------------- term dates and final exams (Open Data) ----------------
+
+const clean = (v) => String(v ?? '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;|&#160;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+// Dates that aren't about a student's own term of classes.
+const SKIP_DATE = /Convocation|Reserves removed|Fees Arranged Extension|Not Fees Arranged|holds applied|new students|Apply for Graduation|Co-operative work term|Examinations on Sunday|examination centre|In-person exam days for online|Final examination emergency/i;
+const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+/**
+ * A term's important dates for undergraduates (Open Data's ImportantDates) → [[name, kind, from, to, follow]],
+ * by date. kind:
+ *   'off'    no classes: holidays and closures, reading week, pre-examination study days
+ *   'makeup' a make-up day: classes follow another weekday's schedule (follow: 0 Monday … 6 Sunday), or their
+ *            own ('' : "no change in schedule")
+ *   'exam'   the final examination period
+ *   ''       deadlines and the rest (classes begin and end, drop dates, fees)
+ */
+export function termDates(all, term) {
+  const name = termName(term);
+  const rows = [];
+  for (const x of all ?? []) {
+    const n = clean(x.name);
+    if (!n || SKIP_DATE.test(n)) continue;
+    if (x.audiences?.length && !x.audiences.includes('Undergraduate students')) continue;
+    const text = clean(x.description);
+    for (const d of x.details ?? []) {
+      if (clean(d.termName) !== name) continue;
+      const from = /^\d{4}-\d{2}-\d{2}/.exec(d.startDate ?? '')?.[0];
+      if (!from) continue;
+      const end = /^\d{4}-\d{2}-\d{2}/.exec(d.endDate ?? '')?.[0];
+      const to = end && end > from ? end : from;
+      if (x.importantDateType === 'University closure' || /^Reading Week$|^Pre-examination study days$/i.test(n)) rows.push([n, 'off', from, to, '']);
+      else if (/^Make-up day/i.test(n)) {
+        const follow = /following an? (Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday) schedule/i.exec(text)?.[1];
+        rows.push([n, 'makeup', from, to, follow ? String(WEEKDAYS.indexOf(follow.toLowerCase())) : '']);
+      } else rows.push([n, '', from, to, '']);
+    }
+  }
+  // "Final examinations begin" … "end": one row, the exam period. (Other pairs stay apart: the day something ends
+  // is the deadline, and a banner across seven weeks of a calendar says less.)
+  const begin = rows.find((r) => /^Final examinations begins?$/i.test(r[0]));
+  const end = rows.find((r) => /^Final examinations ends?$/i.test(r[0]));
+  const out = begin && end && end[2] >= begin[2] ? [...rows.filter((r) => r !== begin && r !== end), ['Final examinations', 'exam', begin[2], end[3], '']] : rows.map((r) => (/^Final examinations/i.test(r[0]) ? [r[0], 'exam', r[2], r[3], r[4]] : r));
+  const seen = new Set();
+  return out.filter((r) => !seen.has(r.join('|')) && seen.add(r.join('|'))).sort((a, b) => a[2].localeCompare(b[2]) || a[0].localeCompare(b[0]));
+}
+
+const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+/** "2026-12-10T00:00:00", "12/10/2026", "December 10, 2026", "Thursday, Dec 10, 2026" → "2026-12-10". */
+export function examDate(v) {
+  const s = clean(v);
+  let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s);
+  if (m) return `${m[3]}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`;
+  m = /([A-Za-z]{3,9})\.? (\d{1,2}),? (\d{4})/.exec(s);
+  const month = m ? MONTHS.findIndex((x) => x.startsWith(m[1].toLowerCase().slice(0, 3))) : -1;
+  return month >= 0 ? `${m[3]}-${String(month + 1).padStart(2, '0')}-${m[2].padStart(2, '0')}` : null;
+}
+/** "09:00:00", "9:00 AM", "7:30 PM", "19:30" → minutes after midnight, or null. */
+export function examTime(v) {
+  const m = /^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AaPp]\.?[Mm]\.?)?/.exec(clean(v));
+  if (!m) return null;
+  let h = Number(m[1]) % 24;
+  const pm = m[3] && /p/i.test(m[3]);
+  if (m[3]) h = (h % 12) + (pm ? 12 : 0);
+  return h * 60 + Number(m[2]);
+}
+/** "02:30:00", "2:30", "150", "150 minutes", "2.5 hours", "2 hours 30 minutes" → minutes, or null. */
+export function examMinutes(v) {
+  const s = clean(v).toLowerCase();
+  let m = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(s);
+  if (m) return Number(m[1]) * 60 + Number(m[2]);
+  m = /^(\d+(?:\.\d+)?)\s*(h|hours?|hrs?)\b(?:\s*(\d+)\s*(?:m|min|minutes?))?/.exec(s);
+  if (m) return Math.round(Number(m[1]) * 60) + Number(m[3] ?? 0);
+  m = /^(\d+)\s*(?:m|min|minutes?)?$/.exec(s);
+  return m && Number(m[1]) > 0 ? Number(m[1]) : null;
+}
+/**
+ * Final exams (Open Data's ExamSchedules) → {code: [[sections, date, start, minutes, where, note]]}: sections the
+ * section numbers it's for, or null for all; start minutes after midnight, or null when only the day is known;
+ * where and note as text. One without a date ("see your instructor") is left out.
+ */
+export function termExams(rows) {
+  const out = {};
+  for (const r of rows ?? []) {
+    const m = /^\s*([A-Z]{2,8})\s*(\d{3}[A-Z]?)\b/.exec(clean(r.examDisplayName).toUpperCase());
+    const date = examDate(r.examWindowStartDate);
+    if (!m || !date) continue;
+    const secs = clean(r.sections).match(/\b\d{3}\b/g);
+    const where = clean(r.location);
+    const note = [clean(r.isOnlineDescription), clean(r.notes)].filter((x) => x && !/^(no|false|in[- ]person)$/i.test(x)).join(' · ');
+    (out[`${m[1]}${m[2]}`] ??= []).push([secs?.length ? secs : null, date, examTime(r.examWindowStartTime), examMinutes(r.examDuration), where, note]);
+  }
+  return out;
 }
 
 const TIMES = (from, to, step = 60) => {

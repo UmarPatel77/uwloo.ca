@@ -461,7 +461,7 @@ function plansHtml() {
     }
   }
   return `<div class="pw-plans"><ul>${chips}</ul>
-<form class="pw-addplan" id="pw-addplan" autocomplete="off"><label class="vh" for="pw-pq">Add a plan</label><input id="pw-pq" placeholder="${A.plans.length ? 'Add a minor, option, specialization…' : 'Add your major, minors, options…'}" role="combobox" aria-expanded="false" aria-controls="pw-psugg" spellcheck="false"><ul id="pw-psugg" class="pw-sugg" role="listbox" hidden></ul></form>
+<form class="pw-addplan" id="pw-addplan" autocomplete="off">${kindChips()}<label class="vh" for="pw-pq">Add a plan</label><div class="pw-pqbox"><input id="pw-pq" placeholder="${esc(planType ? `Search ${PLAN_KINDS[planType].toLowerCase()}, or pick from the list` : A.plans.length ? 'Add a minor, option, specialization… (math/cpa, cs, afm)' : 'Add your major, minors, options… (math/cpa, cs, afm)')}" role="combobox" aria-expanded="false" aria-controls="pw-psugg" aria-autocomplete="list" spellcheck="false"><ul id="pw-psugg" class="pw-sugg" role="listbox" hidden></ul></div></form>
 ${A.plans.length ? '<p class="pw-acts"><button type="button" class="pw-fillbtn" data-act="fill">Fill in courses…</button> <button type="button" class="pw-findbtn" data-act="find">Find courses…</button></p>' : ''}
 ${undo ? `<p class="pw-offer" role="status"><span>Added ${plural(undo.n, 'course')} from ${undo.names.length > 2 ? `${undo.names.length} plans` : esc(undo.names.join(' and '))}.</span> <button type="button" class="pw-linkbtn" data-act="undo">Undo</button></p>` : offered ? `<p class="pw-offer" role="status"><span>Added <b>${esc(offered.n)}</b>.</span>${coop} <button type="button" class="pw-fillbtn" data-act="fill" data-only="${esc(offered.s)}">Fill in its courses</button> <button type="button" class="pw-linkbtn" data-act="nooffer">Not now</button></p>` : ''}
 ${deg ? `<p class="pw-hint">Add the <button type="button" class="pw-linkbtn" data-plan="${esc(deg.s)}">${esc(deg.n)}</button> too, for the degree’s own rules.</p>` : ''}
@@ -1047,16 +1047,24 @@ app.addEventListener('click', async (e) => {
     render();
     return;
   }
+  const kindChip = t.closest('[data-ptype]');
+  if (kindChip) {
+    planType = kindChip.dataset.ptype === planType ? '' : kindChip.dataset.ptype;
+    const typed = document.getElementById('pw-pq')?.value ?? '';
+    render();
+    const pq = document.getElementById('pw-pq');
+    if (pq) {
+      pq.value = typed;
+      pq.focus({ preventScroll: true });
+      if (planType || typed.trim()) planSuggest(pq);
+    }
+    return;
+  }
   const pl = t.closest('[data-plan]');
   if (pl) {
-    if (!state.plans.includes(pl.dataset.plan)) {
-      state.plans.push(pl.dataset.plan);
-      analyze();
-      adopt(pl.dataset.plan);
-    }
-    const pq = document.getElementById('pw-pq');
-    if (pq) pq.value = '';
-    render();
+    const fromList = Boolean(pl.closest('#pw-psugg'));
+    addPlan(pl.dataset.plan);
+    if (fromList) document.getElementById('pw-pq')?.focus({ preventScroll: true });
     return;
   }
   const fb = t.closest('[data-find]');
@@ -1801,32 +1809,126 @@ dlgFind.addEventListener('close', () => {
   app.querySelector('.pw-findbtn')?.focus({ preventScroll: true });
 });
 
-// Plans: search and add.
+// Plans: search and add. The box finds plans the way people say them (engine.js's planScore: "math/cpa", "cs",
+// "afm", "syde"); the chips above it narrow the list to one kind of plan, and list them all with nothing typed.
+// Up and down move through the list, Enter adds the one picked.
+const PLAN_KINDS = { Major: 'Majors', Minor: 'Minors', Specialization: 'Specializations', Option: 'Options', Diploma: 'Diplomas', Certificate: 'Certificates', 'Degree Requirements': 'Degree requirements' };
+let planType = ''; // a kind of plan the chips narrow the list to, or ''
+let planActive = 0; // the suggestion Enter adds
+/** Plans for what's typed, best first; with a kind picked and nothing typed, every plan of that kind. */
+function planHits(q) {
+  const tokens = E.planTokens(q);
+  const pool = P.filter((p) => !state.plans.includes(p.s) && (!planType || p.t === planType));
+  // Specializations and options open to your majors first ("Finance Specialization" for Math/CPA).
+  const other = (p) => (p.open?.length && !p.open.some((s) => state.plans.includes(s)) ? 1 : 0);
+  // Then majors before minors…, Honours before Joint Honours and general degrees, and shorter names first
+  // (Economics Minor before Economic Policy Minor).
+  const degree = (p) => (/Joint Honours/.test(p.n) ? 1 : /Four-Year General/.test(p.n) ? 2 : /Three-Year General/.test(p.n) ? 3 : 0);
+  const order = (a, b) => other(a) - other(b) || TYPE_ORDER.indexOf(a.t) - TYPE_ORDER.indexOf(b.t) || degree(a) - degree(b) || E.planWords(a).name.length - E.planWords(b).name.length || a.n.localeCompare(b.n);
+  if (!tokens.length) return planType ? pool.sort(order) : [];
+  return pool
+    .map((p) => [p, E.planScore(p, tokens)])
+    .filter(([, sc]) => sc > 0)
+    .sort((a, b) => b[1] - a[1] || order(a[0], b[0]))
+    .map(([p]) => p);
+}
+function kindChips() {
+  const left = (t) => P.filter((p) => p.t === t && !state.plans.includes(p.s)).length;
+  const kinds = Object.keys(PLAN_KINDS).filter((t) => P.some((p) => p.t === t));
+  return `<div class="pw-ptypes" role="group" aria-label="Show one kind of plan"><button type="button" data-ptype="" aria-pressed="${!planType}">All</button>${kinds.map((t) => `<button type="button" data-ptype="${esc(t)}" aria-pressed="${planType === t}">${esc(PLAN_KINDS[t])} <span>${left(t)}</span></button>`).join('')}</div>`;
+}
+const MAX_SUGG = 12;
 function planSuggest(input) {
   const list = document.getElementById('pw-psugg');
-  const words = input.value.toLowerCase().split(/\s+/).filter(Boolean);
-  // Names that start with what's typed first: "economics minor" is Economics Minor before Business Economics Minor.
-  const q = words.join(' ');
-  const rank = (p) => (p.n.toLowerCase().startsWith(q) ? 0 : p.n.toLowerCase().startsWith(words[0]) ? 1 : 2);
-  // Then specializations and options open to your majors ("Finance Specialization" for Math/CPA).
-  const other = (p) => (p.open?.length && !p.open.some((s) => state.plans.includes(s)) ? 1 : 0);
-  const hits = words.length ? P.filter((p) => !state.plans.includes(p.s) && words.every((w) => `${p.n} ${p.t} ${p.fi}`.toLowerCase().includes(w))).sort((a, b) => rank(a) - rank(b) || other(a) - other(b) || TYPE_ORDER.indexOf(a.t) - TYPE_ORDER.indexOf(b.t) || a.n.localeCompare(b.n)).slice(0, 10) : [];
-  list.innerHTML = hits.map((p, i) => `<li role="option" data-plan="${esc(p.s)}" aria-selected="${i === 0}"><b>${esc(p.n)}</b> <span>${esc(p.t)}</span></li>`).join('');
-  list.hidden = !hits.length;
-  input.setAttribute('aria-expanded', String(!!hits.length));
+  const typed = input.value.trim();
+  const hits = planHits(input.value);
+  const shown = typed ? hits.slice(0, MAX_SUGG) : hits;
+  planActive = 0;
+  const faculty = (p) => (p.f ? ` · ${p.f.replace(/^Facult(y|ies) of /, '')}` : '');
+  list.innerHTML =
+    shown.map((p, i) => `<li role="option" id="pw-po${i}" data-plan="${esc(p.s)}" aria-selected="${i === 0}"><b>${esc(p.n)}</b> <span>${esc(p.t)}${esc(faculty(p))}</span></li>`).join('') +
+    (typed && hits.length > MAX_SUGG ? `<li class="pw-smore" aria-hidden="true">${hits.length - MAX_SUGG} more: keep typing${planType ? '' : ', or pick a kind below'}</li>` : '') +
+    (typed && !hits.length ? `<li class="pw-smore" aria-hidden="true">No ${planType ? PLAN_KINDS[planType].toLowerCase() : 'plans'} match “${esc(typed)}”</li>` : '');
+  list.hidden = !list.children.length;
+  input.setAttribute('aria-expanded', String(shown.length > 0));
+  if (shown.length) input.setAttribute('aria-activedescendant', 'pw-po0');
+  else input.removeAttribute('aria-activedescendant');
+}
+function closePlanSugg() {
+  const list = document.getElementById('pw-psugg');
+  const input = document.getElementById('pw-pq');
+  if (!list || list.hidden) return;
+  list.hidden = true;
+  input?.setAttribute('aria-expanded', 'false');
+  input?.removeAttribute('aria-activedescendant');
+}
+function addPlan(slug) {
+  if (!state.plans.includes(slug)) {
+    state.plans.push(slug);
+    analyze();
+    adopt(slug);
+  }
+  const pq = document.getElementById('pw-pq');
+  if (pq) pq.value = '';
+  render();
 }
 app.addEventListener('submit', (e) => {
   if (e.target.id !== 'pw-addplan') return;
   e.preventDefault();
-  const first = document.querySelector('#pw-psugg li[data-plan]');
-  if (first) {
-    state.plans.push(first.dataset.plan);
-    analyze();
-    adopt(first.dataset.plan);
-    document.getElementById('pw-pq').value = '';
-    render();
+  const list = document.getElementById('pw-psugg');
+  if (list?.hidden) planSuggest(document.getElementById('pw-pq'));
+  const pick = list?.querySelector('li[aria-selected="true"]') ?? list?.querySelector('li[data-plan]');
+  if (pick) {
+    addPlan(pick.dataset.plan);
     document.getElementById('pw-pq')?.focus();
   }
+});
+// Up and down move through the suggestions, Enter adds the one picked, Escape closes them.
+app.addEventListener('keydown', (e) => {
+  if (e.target.id !== 'pw-pq') return;
+  const list = document.getElementById('pw-psugg');
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    if (list.hidden) {
+      if (e.key === 'ArrowDown' && (e.target.value.trim() || planType)) {
+        e.preventDefault();
+        planSuggest(e.target);
+      }
+      return;
+    }
+    const items = [...list.querySelectorAll('li[data-plan]')];
+    if (!items.length) return;
+    e.preventDefault();
+    planActive = (planActive + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+    items.forEach((li, i) => li.setAttribute('aria-selected', String(i === planActive)));
+    items[planActive].scrollIntoView({ block: 'nearest' });
+    e.target.setAttribute('aria-activedescendant', items[planActive].id);
+  } else if (e.key === 'Escape') {
+    if (!list.hidden) {
+      e.preventDefault();
+      closePlanSugg();
+    }
+  }
+});
+// The pointer picks too; pressing on the list keeps the box focused, so the click lands.
+app.addEventListener('mousemove', (e) => {
+  const li = e.target.closest('#pw-psugg li[data-plan]');
+  if (!li || li.getAttribute('aria-selected') === 'true') return;
+  const items = [...document.querySelectorAll('#pw-psugg li[data-plan]')];
+  planActive = items.indexOf(li);
+  items.forEach((x) => x.setAttribute('aria-selected', String(x === li)));
+  document.getElementById('pw-pq')?.setAttribute('aria-activedescendant', li.id);
+});
+app.addEventListener('mousedown', (e) => {
+  if (e.target.closest('#pw-psugg')) e.preventDefault();
+});
+app.addEventListener('focusin', (e) => {
+  if (e.target.id === 'pw-pq' && (planType || e.target.value.trim())) planSuggest(e.target);
+});
+app.addEventListener('focusout', (e) => {
+  if (e.target.id !== 'pw-pq') return;
+  setTimeout(() => {
+    if (document.activeElement?.id !== 'pw-pq' && !document.activeElement?.closest?.('.pw-ptypes')) closePlanSugg();
+  }, 120);
 });
 
 // Printing (or saving as PDF): every checklist open, the way it looks on screen otherwise.

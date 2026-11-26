@@ -25,6 +25,34 @@ const fmtDate = (d, o = { month: 'short', day: 'numeric' }) => new Date(`${d}T12
 const addDays = (d, n) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 const hm = (m) => `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ''}`;
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+const dateRange = (a, b) => (a === b ? fmtDate(a, { weekday: 'short', month: 'short', day: 'numeric' }) : `${fmtDate(a, { weekday: 'short', month: 'short', day: 'numeric' })} – ${fmtDate(b, { weekday: 'short', month: 'short', day: 'numeric' })}`);
+
+/** Final exams for the courses in a timetable (Open Data's, once the Registrar publishes them). */
+function examsHtml(picks) {
+  const x = state.data?.x;
+  if (!x) return '';
+  const rows = [];
+  for (const code of [...new Set(picks.map((p) => p.code))]) {
+    const lec = picks.find((p) => p.code === code && p.opt.section.comp === 'LEC')?.opt.section.sec;
+    for (const [secs, date, start, mins, where, note] of x[code] ?? []) {
+      if (secs && lec && !secs.includes(lec)) continue;
+      rows.push([date, start ?? -1, `<li><span class="pl-dot c${colour(code)}" aria-hidden="true"></span>${esc(fmtCode(code))}: ${esc(dateRange(date, date))}${start != null ? `, ${esc(range(start, Math.min(start + (mins ?? 150), 1439)))}` : ''}${where ? ` · ${esc(where)}` : ''}${note ? ` <span class="t">${esc(note)}</span>` : ''}</li>`]);
+    }
+  }
+  if (!rows.length) return '';
+  rows.sort((a, b) => a[0].localeCompare(b[0]) || a[1] - b[1]);
+  return `<div class="pl-tests"><h3>Final exams</h3><ul>${rows.map((r) => r[2]).join('')}</ul></div>`;
+}
+
+/** The term's dates (Open Data's important dates): the deadlines, days off and exam period. */
+function datesHtml() {
+  const d = state.data?.d;
+  if (!d?.length) return '';
+  const kind = { off: 'No classes', makeup: 'Make-up day', exam: 'Exams' };
+  const DAY = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const note = (k, follow, name) => (k === 'makeup' && follow !== '' ? `follows a ${DAY[Number(follow)]} schedule` : kind[k] && !new RegExp(kind[k], 'i').test(name) ? kind[k] : '');
+  return `<details class="pl-dates"><summary>${esc(termName(state.term))} dates: deadlines, days off, exams</summary><ul>${d.map(([name, k, from, to, follow]) => `<li class="${k}"><span>${esc(dateRange(from, to))}</span> ${esc(name)}${note(k, follow, name) ? ` <span class="t">${esc(note(k, follow, name))}</span>` : ''}</li>`).join('')}</ul><p class="t">From the University’s important dates (Open Data). The calendar file has them as all-day events, and leaves days off out of your classes.</p></details>`;
+}
 
 // ---------------- state, kept in the address ----------------
 
@@ -508,14 +536,16 @@ function renderOut() {
 </div>
 ${gridHtml(picks, { blocks })}
 ${online.length ? `<p class="t pl-online">Online or no set time: ${online.map((p) => `${esc(fmtCode(p.code))} ${esc(p.comp)} ${esc(p.opt.section.sec)}`).join(', ')}</p>` : ''}
+${examsHtml(picks)}
 ${m.tests.length ? `<div class="pl-tests"><h3>Tests</h3><ul>${m.tests.map((t) => `<li><span class="pl-dot c${colour(t.pick.code)}" aria-hidden="true"></span>${esc(fmtCode(t.pick.code))} ${esc(t.pick.comp)}: ${esc(meetText(t))}${t.over ? ` <span class="pl-warn">overlaps ${esc(fmtCode(t.over.code))} ${esc(t.over.comp)}</span>` : ''}</li>`).join('')}</ul>${m.overlaps ? '<p class="t">A test that overlaps a class or another test doesn’t stop you enrolling: ask the instructors about writing it at another time.</p>' : ''}</div>` : ''}
 <div class="scroll"><table class="pl-table"><caption>Sections in this timetable. Swap one to try another, or lock it to keep it while you look at others.</caption><thead><tr><th scope="col">Course</th><th scope="col">Section</th><th scope="col">Class</th><th scope="col">When</th><th scope="col">Seats</th><th scope="col">Swap</th><th scope="col"><span class="vh">Lock</span></th></tr></thead><tbody>${tableHtml(picks)}</tbody></table></div>
 <div class="pl-actions">
   <button type="button" data-act="copy">Copy class numbers</button>
-  <button type="button" data-act="ics">Add to calendar (.ics)</button>
+  <button type="button" data-act="ics">Add to calendar (.ics)</button>${state.data?.d?.length ? '<label class="pl-icsd"><input type="checkbox" id="pl-icsd" checked> with the term’s dates</label>' : ''}
   <button type="button" data-act="link">Copy link</button>
   <span class="t" id="pl-done" role="status"></span>
 </div>
+${datesHtml()}
 <p class="t pl-thanks" id="pl-thanks" hidden>Saved you some time? <a href="https://buymeacoffee.com/umarhq">Buy me a coffee</a></p>
 <p class="t">${esc(scope)} In Quest, add the class numbers to your shopping cart; a lecture can bring its tutorial with it, so check what Quest picks. ${esc(stamp)}</p>
 ${others.length > 1 ? `<h3 class="pl-oh">Other good timetables</h3><ol class="pl-others">${others.map((s, i) => `<li><button type="button" data-view="${i}" aria-current="${!state.edit && i === state.view}" aria-label="Timetable ${i + 1}">${gridHtml(picksOf(s), { mini: true })}<span>#${i + 1} · ${esc(summaryShort(S.metrics(picksOf(s))))}</span></button></li>`).join('')}</ol>` : ''}`;
@@ -608,12 +638,15 @@ async function action(act) {
   } else if (act === 'link') {
     done.textContent = (await copy(location.href)) ? 'Link copied.' : 'Couldn’t copy the link.';
   } else if (act === 'ics') {
-    const { text, skipped } = icsFile(picks, termName(state.term), { dayBit: S.dayBit });
+    const withDates = $('pl-icsd')?.checked ?? false;
+    const { text, skipped, exams, dates, off } = icsFile(picks, termName(state.term), { dayBit: S.dayBit, dates: state.data?.d ?? [], exams: state.data?.x ?? {}, withDates });
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([text], { type: 'text/calendar' })), download: `uwloo-${state.term}.ics` });
     document.body.append(a);
     a.click();
     a.remove();
-    done.textContent = `Saved uwloo-${state.term}.ics: open it to add the classes to your calendar. It doesn’t skip holidays or reading week.${skipped ? ` ${skipped} meetings had no dates and were left out.` : ''}`;
+    const extras = [off ? 'skips holidays and reading week' : '', exams ? `has ${plural(exams, 'final exam')}` : '', dates ? `adds ${plural(dates, 'term date')} as all-day events: drop deadlines, the exam period and the rest` : ''].filter(Boolean);
+    const list = extras.length > 1 ? `${extras.slice(0, -1).join(', ')} and ${extras.at(-1)}` : extras[0];
+    done.textContent = `Saved uwloo-${state.term}.ics: open it to add the classes to your calendar.${list ? ` It ${list}.` : ' It doesn’t skip holidays or reading week: the term’s dates aren’t out yet.'}${skipped ? ` ${skipped} meetings had no dates and were left out.` : ''}`;
     $('pl-thanks').hidden = false;
   }
   setTimeout(() => (done.textContent = ''), 8000);

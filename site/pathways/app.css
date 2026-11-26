@@ -33,8 +33,18 @@ main:has(.pw) { max-width: 84rem; }
 .pw-plan a { text-decoration: none; font-weight: 650; }
 .pw-plan .t { font-size: 0.82rem; }
 .pw-plan button { border: 0; background: none; cursor: pointer; font-size: 1.1rem; line-height: 1; color: var(--muted); padding: 0 0.35rem; }
-.pw-addplan { position: relative; max-width: 34rem; }
-.pw-addplan input { width: 100%; padding: 0.45rem 0.7rem; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
+.pw-addplan { max-width: 40rem; }
+.pw-pqbox { position: relative; }
+.pw-addplan input { width: 100%; box-sizing: border-box; padding: 0.45rem 0.7rem; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
+#pw-psugg { max-height: min(26rem, 62vh); overflow: auto; }
+.pw-sugg li.pw-smore { color: var(--muted); font-size: 0.85rem; cursor: default; }
+.pw-sugg li.pw-smore:hover { background: none; }
+.pw-ptypes { display: flex; flex-wrap: wrap; gap: 0.25rem; margin: 0 0 0.4rem; }
+.pw-ptypes button { border: 1px solid var(--rule); background: none; border-radius: 999px; padding: 0.1rem 0.6rem; font-size: 0.84rem; cursor: pointer; }
+.pw-ptypes button span { color: var(--muted); font-size: 0.76rem; }
+.pw-ptypes button:hover { border-color: var(--ink); }
+.pw-ptypes button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.pw-ptypes button[aria-pressed="true"] span { color: color-mix(in srgb, var(--paper) 75%, transparent); }
 .pw-sugg { position: absolute; z-index: 30; left: 0; right: 0; top: 100%; margin: 3px 0 0; padding: 0.25rem; list-style: none; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.16); }
 .pw-sugg li { padding: 0.4rem 0.55rem; border-radius: 6px; cursor: pointer; display: flex; gap: 0.6rem; align-items: baseline; }
 .pw-sugg li span { color: var(--muted); font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

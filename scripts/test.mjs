@@ -2325,3 +2325,110 @@ test('search: an index from a few courses ranks by words, pairs and what courses
   assert.ok(ask('eigenvalues').results.slice(0, 6).every((x) => d.codes[x.i].startsWith('S1')));
   assert.equal(respell('eigenvaleus', get('search/vocab.json'))?.[0], 'eigenvalues');
 });
+
+test('pathways: finding a plan the way people say it', () => {
+  const plan = (s, n, t, subjects = [], c = n) => ({ s, n, t, c, req: [{ h: 'Required', r: [{ r: 'all', c: subjects.flatMap((x) => [`${x}101`, `${x}102`, `${x}201`]) }], l: [] }] });
+  const plans = [
+    plan('cpa', 'Mathematics/Chartered Professional Accountancy (Bachelor of Mathematics - Honours)', 'Major', ['AFM', 'MATH']),
+    plan('cpa-fin', 'Finance Specialization (Mathematics/Chartered Professional Accountancy)', 'Specialization', ['AFM'], 'CPA-Finance Specialization'),
+    plan('cs', 'Computer Science (Bachelor of Computer Science - Honours)', 'Major', ['CS']),
+    plan('clas', 'Classical Studies (Bachelor of Arts - Honours)', 'Major', ['CLAS']),
+    plan('syde', 'Systems Design Engineering (Bachelor of Applied Science - Honours)', 'Major', ['SYDE']),
+    plan('co', 'Combinatorics and Optimization (Bachelor of Mathematics - Honours)', 'Major', ['CO']),
+    plan('mech', 'Mechanical Engineering (Bachelor of Applied Science - Honours)', 'Major', ['ME']),
+    plan('medchem', 'Medicinal Chemistry (Bachelor of Science - Honours)', 'Major', ['CHEM']),
+  ];
+  const find = (q) =>
+    plans
+      .map((p) => [p.s, PE.planScore(p, PE.planTokens(q))])
+      .filter(([, x]) => x > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([s]) => s);
+  assert.equal(find('math/cpa')[0], 'cpa', 'a slash between words, initials for the rest');
+  assert.deepEqual(find('math cpa').slice(0, 2), ['cpa', 'cpa-fin']);
+  assert.deepEqual(find('chartered').sort(), ['cpa', 'cpa-fin']);
+  assert.equal(find('cs')[0], 'cs', 'CS courses make it Computer Science before Classical Studies');
+  assert.ok(find('cs').includes('clas'));
+  assert.equal(find('syde')[0], 'syde');
+  assert.equal(find('c&o')[0], 'co');
+  assert.equal(find('mech')[0], 'mech', 'a word’s start before pieces of two words (Medicinal CHemistry)');
+  assert.deepEqual(find('zzz'), []);
+});
+
+test('planner: the term’s dates and final exams from Open Data, in the calendar file', async () => {
+  const { termDates, termExams, examDate, examTime, examMinutes } = await import('./lib/planner.mjs');
+  const row = (name, type, details, extra = {}) => ({ name, importantDateType: type, description: extra.d ?? '', audiences: extra.a ?? ['Undergraduate students'], details: details.map(([termName, startDate, endDate = null]) => ({ termName, startDate: `${startDate}T00:00:00`, endDate: endDate && `${endDate}T00:00:00` })) });
+  const all = [
+    row('Classes begin', 'Academic', [['Winter 2027', '2027-01-06']]),
+    row('Family Day', 'University closure', [['Winter 2027', '2027-02-15']]),
+    row('Reading Week', 'Academic', [['Winter 2027', '2027-02-13', '2027-02-21']]),
+    row('Good Friday', 'University closure', [['Winter 2027', '2027-03-26']]),
+    row('Make-up day for Good Friday', 'Academic', [['Winter 2027', '2027-04-06']], { d: '<p>The loss of a Friday class on March 26 will be made up by following a  <strong>Friday schedule</strong>  on Tuesday, April 6.</p>' }),
+    row('Final examinations begin', 'Academic', [['Winter 2027', '2027-04-09']]),
+    row('Final examinations end', 'Academic', [['Winter 2027', '2027-04-23']]),
+    row('Drop with WD ends', 'Academic', [['Winter 2027', '2027-03-19']]),
+    row('Convocation - spring 2027', 'Event', [['Winter 2027', '2027-06-10']]),
+    row('Thesis deadline', 'Academic', [['Winter 2027', '2027-04-01']], { a: ['Graduate students'] }),
+    row('Thanksgiving Day', 'University closure', [['Fall 2026', '2026-10-12']]),
+  ];
+  const dates = termDates(all, '1271');
+  assert.deepEqual(dates, [
+    ['Classes begin', '', '2027-01-06', '2027-01-06', ''],
+    ['Reading Week', 'off', '2027-02-13', '2027-02-21', ''],
+    ['Family Day', 'off', '2027-02-15', '2027-02-15', ''],
+    ['Drop with WD ends', '', '2027-03-19', '2027-03-19', ''],
+    ['Good Friday', 'off', '2027-03-26', '2027-03-26', ''],
+    ['Make-up day for Good Friday', 'makeup', '2027-04-06', '2027-04-06', '4'],
+    ['Final examinations', 'exam', '2027-04-09', '2027-04-23', ''],
+  ], 'this term’s, for undergraduates, not convocation; the exam period is one row');
+  assert.deepEqual([examDate('2027-04-12T00:00:00'), examDate('4/12/2027'), examDate('Monday, April 12, 2027'), examDate('TBA')], ['2027-04-12', '2027-04-12', '2027-04-12', null]);
+  assert.deepEqual([examTime('09:00:00'), examTime('7:30 PM'), examTime('12:30 PM'), examTime('')], [540, 1170, 750, null]);
+  assert.deepEqual([examMinutes('02:30:00'), examMinutes('150'), examMinutes('2.5 hours'), examMinutes('')], [150, 150, 150, null]);
+  const exams = termExams([
+    { examDisplayName: 'CS 136', sections: '001,002', examWindowStartDate: '2027-04-12T00:00:00', examWindowStartTime: '09:00:00', examDuration: '02:30:00', location: 'PAC', isOnlineDescription: 'In person' },
+    { examDisplayName: 'CS 136', sections: '003', examWindowStartDate: '2027-04-13T00:00:00', examWindowStartTime: '19:30:00', examDuration: '150', location: 'TBA' },
+    { examDisplayName: 'MATH 138', sections: null, examWindowStartDate: 'April 20, 2027', examWindowStartTime: null, examDuration: null, location: '', notes: 'Online' },
+    { examDisplayName: 'ECON 101', sections: '001', examWindowStartDate: null, notes: 'See instructor' },
+  ]);
+  assert.deepEqual(exams, {
+    CS136: [
+      [['001', '002'], '2027-04-12', 540, 150, 'PAC', ''],
+      [['003'], '2027-04-13', 1170, 150, 'TBA', ''],
+    ],
+    MATH138: [[null, '2027-04-20', null, null, '', 'Online']],
+  });
+  // The calendar file: Monday-Wednesday-Friday CS 136 lecture 001, and a Tuesday-Thursday course.
+  const entries = {
+    CS136: ['', [lec('001', 1, 5001, MWF, 510, 560), lec('003', 3, 5003, MWF, 630, 680)]],
+    MATH138: ['', [lec('001', 1, 6001, TTh, 690, 760)]],
+  };
+  const built = Object.entries(entries).map(([k, v]) => P.buildCourse(k, v, TERM, P.DEFAULTS));
+  const picks = [
+    { code: 'CS136', comp: 'LEC', opt: built[0].opts.LEC.find((o) => o.section.sec === '001') },
+    { code: 'MATH138', comp: 'LEC', opt: built[1].opts.LEC[0] },
+  ];
+  const plain = icsFile(picks, 'Winter 2027', { dayBit: P.dayBit });
+  assert.doesNotMatch(plain.text, /EXDATE/, 'without dates, as before');
+  const res = icsFile(picks, 'Winter 2027', { dayBit: P.dayBit, dates, exams, withDates: true });
+  const ev = res.text.split('BEGIN:VEVENT').slice(1);
+  const cs = ev.find((e) => /SUMMARY:CS 136 LEC 001/.test(e) && /RRULE/.test(e));
+  // Days off on Monday, Wednesday or Friday in its weeks: Reading Week's three, Family Day (also in it), Good Friday.
+  assert.match(cs, /EXDATE;TZID=America\/Toronto:20270215T083000,20270217T083000,20270219T083000,20270326T083000\r\n/);
+  const math = ev.find((e) => /SUMMARY:MATH 138 LEC 001/.test(e) && /RRULE/.test(e));
+  assert.match(math, /EXDATE;TZID=America\/Toronto:20270216T113000,20270218T113000,20270406T113000\r\n/, 'Tuesday April 6 follows a Friday schedule: no Tuesday class');
+  assert.ok(ev.some((e) => /SUMMARY:CS 136 LEC 001/.test(e) && /DTSTART;TZID=America\/Toronto:20270406T083000/.test(e) && !/RRULE/.test(e)), 'the Friday class meets on the make-up day');
+  assert.match(res.text, /SUMMARY:CS 136 final exam\r\nDTSTART;TZID=America\/Toronto:20270412T090000\r\nDTEND;TZID=America\/Toronto:20270412T113000\r\nLOCATION:PAC/, 'lecture 001’s exam, not 003’s');
+  assert.doesNotMatch(res.text, /20270413T193000/);
+  assert.match(res.text, /SUMMARY:MATH 138 final exam\r\nDTSTART;VALUE=DATE:20270420\r\nDTEND;VALUE=DATE:20270421/, 'a day with no time: an all-day event');
+  assert.match(res.text, /SUMMARY:Final examinations\r\nDTSTART;VALUE=DATE:20270409\r\nDTEND;VALUE=DATE:20270424\r\nTRANSP:TRANSPARENT/);
+  assert.deepEqual([res.exams, res.dates, res.off], [2, 7, true]);
+  assert.equal(icsFile(picks, 'Winter 2027', { dayBit: P.dayBit, dates, exams, withDates: false }).dates, 0, 'term dates only when asked for');
+  const file = plannerData('1271', { CS136: [{ comp: 'LEC', sec: '001', meets: [{ days: 'MWF', start: '08:30', end: '09:20', from: '2027-01-06', to: '2027-04-06' }] }] }, { dates, exams });
+  assert.deepEqual([file.d.length, Object.keys(file.x)], [7, ['CS136']], 'exams only for courses in the file');
+});
+
+test('archive programs: a page’s own part, without the site around it', async () => {
+  const { mainPart } = await import('./lib/archiveprograms.mjs');
+  const html = '<html><head><script>x()</script></head><body><div>Menu</div><h1>Mathematical Optimization</h1><!-- note --><h2>Degree Requirements</h2><ul><li>One of <ul><li>MATH 237</li></ul></li></ul><p>Office of the Registrar<br />University of Waterloo<br />200 University Avenue West</p></body></html>';
+  assert.equal(mainPart(html), '<h1>Mathematical Optimization</h1><h2>Degree Requirements</h2><ul><li>One of <ul><li>MATH 237</li></ul></li></ul><p>');
+});

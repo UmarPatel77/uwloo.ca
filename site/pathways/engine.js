@@ -820,3 +820,91 @@ export function directions(programs, planned, { chosen = [], cant = new Map(), c
 
 /** Units total a program states ("Complete a total of 20.0 units"), if any. */
 export const totalUnits = (p) => p.tu ?? null;
+
+// ---------------- finding a plan by name ----------------
+// Names stay the calendar's, but a search (app.js's plan box) finds a plan the way people say it: each word typed
+// is the start of a word in the name ("math/cpa", "bio cpa"), the starts of a run of words in it ("cpa" =
+// Chartered Professional Accountancy, "syde" = SYstems DEsign, "pmath"), a subject most of its courses are in
+// ("cs" is Computer Science's, not Classical Studies'), or a word of its code ("bba", "farm").
+const PSTOP = new Set(['and', 'of', 'the', 'in', 'for', 'with', 'a', 'an', 'to']);
+// Short forms that aren't the start of anything in the name.
+const PALIAS = { stats: ['statistics'], stat: ['statistics'], tron: ['mechatronics'], ece: ['electrical engineering', 'computer engineering'], bme: ['biomedical engineering'], mgmt: ['management'], biz: ['business'], intl: ['international'], hlth: ['health'], psci: ['political science'], polisci: ['political science'], compsci: ['computer science'] };
+/** A plan search's words: lowercase, "&" as and, common words out; "c&o" as "co". */
+export const planTokens = (text) =>
+  String(text ?? '')
+    .toLowerCase()
+    .replace(/\bc\s*&\s*o\b/g, 'co')
+    .replace(/&/g, ' and ')
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w && !PSTOP.has(w));
+const planIndex = new WeakMap();
+export function planWords(p) {
+  let x = planIndex.get(p);
+  if (!x) {
+    // The subjects most of its named courses are in (CS for Computer Science, CLAS for Classical Studies), so a
+    // subject code typed ("cs", "econ", "syde", "ece") finds the plans built on it.
+    const count = new Map();
+    let n = 0;
+    const nodes = (list) => {
+      for (const node of list ?? []) {
+        for (const code of node.c ?? []) {
+          const subj = /^[A-Z]+/.exec(code)?.[0];
+          if (!subj) continue;
+          count.set(subj, (count.get(subj) ?? 0) + 1);
+          n++;
+        }
+        nodes(node.i);
+      }
+    };
+    const walk = (sec) => {
+      nodes(sec.r);
+      for (const l of sec.l ?? []) walk(l);
+    };
+    for (const sec of p.req ?? []) walk(sec);
+    const subjects = [...count].filter(([, k]) => k >= 3 && k / n >= 0.25).map(([sj]) => sj.toLowerCase());
+    x = { name: planTokens(p.n), other: planTokens(`${p.t} ${p.fi ?? ''} ${p.c ?? ''}`), subjects };
+    planIndex.set(p, x);
+  }
+  return x;
+}
+/** How a typed word matches a name's words: {s, at}. s: 4 a whole word, 3.5 the initials of a run of words
+ *  ("cpa"), 3.2 a word's start ("mech"), 2.8 the starts of a run of words ("pmath", "syde"), 2.5 a word's
+ *  first two letters, 0 none; at: the word it starts at. */
+export function wordMatch(t, words) {
+  let best = { s: 0, at: 99 };
+  const keep = (s, at) => {
+    if (s > best.s || (s === best.s && at < best.at)) best = { s, at };
+  };
+  const run = (pos, j, pieces, initials) => {
+    if (pos === t.length) return pieces >= 2 ? (initials ? 3.5 : 2.8) : 0;
+    if (j >= words.length) return 0;
+    let b = 0;
+    for (let len = Math.min(t.length - pos, words[j].length); len >= 1; len--) if (t.startsWith(words[j].slice(0, len), pos)) b = Math.max(b, run(pos + len, j + 1, pieces + 1, initials && len === 1));
+    return b;
+  };
+  words.forEach((w, i) => {
+    if (w === t) keep(4, i);
+    else if (w.startsWith(t)) keep(t.length >= 3 ? 3.2 : 2.5, i);
+    if (t.length >= 2) keep(run(0, i, 0, true), i);
+  });
+  return best;
+}
+/** A plan's score for the words typed: 0 unless every word matches. Better matches, and ones at the start of
+ *  the name, score higher. */
+export function planScore(p, tokens) {
+  const w = planWords(p);
+  let total = 0;
+  let first = 99;
+  for (const t of tokens) {
+    const m = wordMatch(t, w.name);
+    // Every way it matches the name or the plan's subjects: the best counts, the others a little ("co" is C&O's
+    // initials and its subject). Its code and kind ("CPA-Finance Specialization", "Minor") only when nothing else does.
+    const ways = [m.s, w.subjects.includes(t) ? 4 : 0, (PALIAS[t] ?? []).some((alt) => planTokens(alt).every((x) => w.name.some((y) => y.startsWith(x)))) ? 3 : 0].filter(Boolean);
+    const code = w.other.includes(t) ? 3 : w.other.some((x) => x.startsWith(t)) ? 1.5 : 0;
+    if (!ways.length && !code) return 0;
+    const top = Math.max(code, ...ways);
+    total += top + 0.1 * (ways.reduce((a, b) => a + b, 0) - Math.max(0, ...ways));
+    first = Math.min(first, m.s ? m.at : 99);
+  }
+  return total + (first === 0 ? 1 : 0);
+}

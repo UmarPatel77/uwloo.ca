@@ -21,7 +21,7 @@ import { gradAppearances, loadGradArchive, oldTermIndexPage, oldTermSubjectPage,
 import { loadUgArchive, ugOldSubjectPage, ugOldYearPage } from './lib/ugarchive.mjs';
 import { groupThreads } from '../site/reddit.js';
 import * as opendata from './lib/opendata.mjs';
-import { plannerData, plannerPage } from './lib/planner.mjs';
+import { plannerData, plannerPage, termDates, termExams } from './lib/planner.mjs';
 import {
   coursePage,
   homePage,
@@ -294,10 +294,15 @@ async function main() {
 
   // The timetable planner (/calendar/): one file of sections per term that has them. Course pages get an
   // "Add to timetable" button for these terms.
+  // With each term's important dates and final exams (Open Data), for its calendar file.
   const planTerms = [];
+  const important = Object.keys(sections).length ? await opendata.loadImportantDates() : [];
   for (const term of Object.keys(sections).sort((a, b) => Number(a) - Number(b))) {
     if (!Object.keys(sections[term]).length) continue;
-    const file = plannerData(term, sections[term], { asOf: opendata.sectionsAsOf[term] ?? null, titleOf: (c) => primary.get(c)?.course.title ?? '' });
+    const dates = termDates(important, term);
+    const exams = termExams(await opendata.loadExams(term));
+    const file = plannerData(term, sections[term], { asOf: opendata.sectionsAsOf[term] ?? null, titleOf: (c) => primary.get(c)?.course.title ?? '', dates, exams });
+    console.log(`Planner ${term}: ${dates.length} dates, final exams for ${Object.keys(file.x ?? {}).length} courses`);
     pages.push([`calendar/${term}.json`, JSON.stringify(file)]);
     planTerms.push({ term, name: file.name, asOf: file.asOf, from: file.from, courses: Object.keys(file.c).length, has: new Set(Object.keys(file.c)) });
   }

@@ -144,6 +144,14 @@ tr.pl-flash td, tr.pl-flash th { background: color-mix(in srgb, var(--gold) 30%,
   .pl-table select { width: 100%; }
 }
 .pl-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 1.1rem 0 0.4rem; }
+.pl-icsd { display: inline-flex; gap: 0.3rem; align-items: center; font-size: 0.88rem; margin-left: -0.15rem; }
+.pl-dates { margin: 0.6rem 0 0.8rem; }
+.pl-dates summary { cursor: pointer; font-weight: 600; font-size: 0.95rem; }
+.pl-dates ul { list-style: none; padding: 0; margin: 0.4rem 0; columns: 2 22rem; column-gap: 1.5rem; font-size: 0.9rem; }
+.pl-dates li { padding: 0.12rem 0; break-inside: avoid; }
+.pl-dates li > span:first-child { display: inline-block; min-width: 6.6rem; font-variant-numeric: tabular-nums; color: var(--muted); }
+.pl-dates li.off > span:first-child, .pl-dates li.exam > span:first-child { color: var(--ink); font-weight: 600; }
+.pl-dates li .t { font-size: 0.8rem; }
 .pl-actions button { border: 1px solid var(--ink); background: none; border-radius: 8px; padding: 0.45rem 0.85rem; font-weight: 600; cursor: pointer; }
 .pl-thanks { margin: 0.2rem 0 0; }
 .pl-actions button:first-child { background: var(--ink); color: var(--paper); }
