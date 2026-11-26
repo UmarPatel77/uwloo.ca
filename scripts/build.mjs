@@ -8,6 +8,7 @@ import { archiveSubjectPage, archiveYearPage, loadArchiveText, textMap } from '.
 import * as kuali from './lib/kuali.mjs';
 import * as programsLib from './lib/programs.mjs';
 import { pathwaysData, pathwaysPage, pathwaysPrograms } from './lib/pathways.mjs';
+import { archivePrograms, loadArchivePrograms } from './lib/archiveprograms.mjs';
 import { searchDocs, searchIndex, searchPage } from './lib/search.mjs';
 import { loadReddit, redditSection, SHOWN } from './lib/reddit.mjs';
 import { flowSection, loadFlow } from './lib/uwflow.mjs';
@@ -337,6 +338,7 @@ async function main() {
       // Each other calendar year's programs too (past ones are cached for good), so a plan follows the
       // requirements of the year someone started.
       const years = [];
+      const later = [];
       for (const cat of ug) {
         if (cat === progCat) {
           years.push({ year: cat.start, label: cat.label, file: null });
@@ -348,13 +350,53 @@ async function main() {
           const yicc = programsLib.parseCombinations(pol?.body ?? '');
           const combos = programsLib.combosFor(yicc.rows, progs, yicc.rulesHtml).byProgram;
           const file = `pathways/programs-${cat.start}.json`;
-          pages.push([file, JSON.stringify({ year: cat.start, label: cat.label, programs: pathwaysPrograms({ programs: progs, combos }) })]);
+          const list = pathwaysPrograms({ programs: progs, combos });
+          later.push({ year: cat.start, list });
+          pages.push([file, JSON.stringify({ year: cat.start, label: cat.label, programs: list })]);
           years.push({ year: cat.start, label: cat.label, file: `/${file}` });
         } catch (err) {
           console.warn(`! Pathways: ${cat.label} programs skipped (${err.message})`);
         }
       }
       const pw = pathwaysData({ programs, combos: byProgram, catalog: progCat, schedules, published, curTerm, retired, years, faculty: offerings?.faculty ?? new Map() });
+      // Start years before the Kuali calendars (2021–22 to 2023–24): plans read from the archive's program pages
+      // (data/archive-programs), named and slugged as the same plans in the later calendars (the earliest that has
+      // each, the closest to them). Courses they name that the current calendar doesn't have come along from that
+      // year's calendar, for their titles.
+      try {
+        const known = [];
+        const seen = new Set();
+        for (const list of [...later.sort((a, b) => a.year - b.year).map((x) => x.list), pw.programs]) {
+          for (const p of list) {
+            if (seen.has(p.s)) continue;
+            seen.add(p.s);
+            known.push(p);
+          }
+        }
+        const subjects = new Map([...subjectNames].map(([code, name]) => [name.toLowerCase(), code]));
+        for (const { year, label, pages: archived } of await loadArchivePrograms()) {
+          if (years.some((y) => y.year === year)) continue;
+          const list = archivePrograms(archived, { known, subjects });
+          if (!list.length) continue;
+          const old = ugOld.find((k) => k.start === year);
+          const courses = {};
+          const named = (nodes) => {
+            for (const n of nodes ?? []) {
+              for (const c of n.c ?? []) if (!pw.courses[c] && !courses[c] && old?.courses.has(c)) courses[c] = [old.courses.get(c).title, old.courses.get(c).units ?? 0.5, 0, 0, 0, [0, 0, 0], [], 1];
+              named(n.i);
+            }
+          };
+          const walk = (secs) => secs.forEach((x) => (named(x.r), walk(x.l ?? [])));
+          for (const p of list) walk(p.req);
+          const file = `pathways/programs-${year}.json`;
+          pages.push([file, JSON.stringify({ year, label, programs: list, courses })]);
+          years.push({ year, label, file: `/${file}` });
+          console.log(`Pathways ${label} (archive): ${list.length} plans, ${list.filter((p) => known.some((q) => q.s === p.s)).length} by their later names; ${Object.keys(courses).length} older courses`);
+        }
+        years.sort((a, b) => a.year - b.year);
+      } catch (err) {
+        console.warn(`! Pathways: archived calendars skipped (${err.message})`);
+      }
       const json = JSON.stringify(pw);
       pages.push(['pathways/data.json', json]);
       pages.push(['pathways/index.html', pathwaysPage({ ...ctxBase, cat: progCat, curTerm })]);

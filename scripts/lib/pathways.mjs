@@ -5,8 +5,9 @@
 //                       programs: [{s, n, t, f, fi, c, req, open, tu, tsub, tt, seq, co, re, cant}]}  (the current
 //                       calendar's; seq: a co-op major's study/work sequences; co/re: co-op, regular offered;
 //                       ld: the usual courses a term, when a term-by-term program lists more than 5)
-// /pathways/programs-{year}.json: {year, label, programs} for each other calendar year (2024–25 on): someone
-//                       follows the requirements of the year they started.
+// /pathways/programs-{year}.json: {year, label, programs} for each other calendar year: someone follows the
+//                       requirements of the year they started. 2021–22 to 2023–24 (scripts/lib/archiveprograms.mjs)
+//                       add courses (the older courses their plans name) and each plan's src (its archived page).
 //   prereq, coreq: compact requisite trees (engine.js describes the shape); antireq: the codes it rules out
 //   seasons: [Fall, Winter, Spring] terms with sections in the last 4 academic years, plus any published term
 import { FACULTY } from './opendata.mjs';
@@ -197,10 +198,10 @@ export function sequences(html) {
 }
 
 /** How many courses a term's rules list: all of a list, n of a choice, the number in words. */
-const termLoad = (nodes) => (nodes ?? []).reduce((t, n) => t + (n.g === 'all' ? termLoad(n.i) : n.g === 'n' ? n.n ?? 1 : n.r === 'all' ? n.c.length : n.r === 'n' ? n.n ?? 1 : n.nc ?? (n.u ? Math.round(n.u / 0.5) : 0)), 0);
+export const termLoad = (nodes) => (nodes ?? []).reduce((t, n) => t + (n.g === 'all' ? termLoad(n.i) : n.g === 'n' ? n.n ?? 1 : n.r === 'all' ? n.c.length : n.r === 'n' ? n.n ?? 1 : n.nc ?? (n.u ? Math.round(n.u / 0.5) : 0)), 0);
 
 /** "Faculty of Arts" → 'art'. */
-const facultyKey = (f) => FACULTY_WORDS[String(f ?? '').replace(/^Facult(?:y|ies) of /, '').split(/ and | with /)[0].trim().toLowerCase()] ?? null;
+export const facultyKey = (f) => FACULTY_WORDS[String(f ?? '').replace(/^Facult(?:y|ies) of /, '').split(/ and | with /)[0].trim().toLowerCase()] ?? null;
 
 const nameKey = (s) => String(s).toLowerCase().replace(/[^a-z0-9/&]+/g, ' ').trim();
 /** The names a chart's Plan cell lists: "Management, Mechanical, Mechatronics", "Computer Science; Data Science",

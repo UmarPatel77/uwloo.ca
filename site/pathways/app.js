@@ -15,7 +15,8 @@ try {
 const C = data.courses;
 /** Subject → faculty ('mat', 'art'…), for "a course from another faculty" and faculty averages. */
 const SF = data.sf ?? {};
-// Programs come from the calendar of the year someone started (2024–25 on); the current one is in data.json.
+// Programs come from the calendar of the year someone started (2021–22 on); the current one is in data.json. The
+// years before 2024–25 are read from the archived calendars, with the courses they name that this one doesn't have.
 let P;
 let bySlug;
 let cant;
@@ -36,7 +37,9 @@ async function loadYear() {
   if (!sets.has(y)) {
     const info = yearList.find((x) => x.year === y);
     try {
-      sets.set(y, (await (await fetch(`${info.file}?v=${V}`)).json()).programs);
+      const got = await (await fetch(`${info.file}?v=${V}`)).json();
+      for (const [code, row] of Object.entries(got.courses ?? {})) C[code] ??= row;
+      sets.set(y, got.programs);
     } catch {
       sets.set(y, data.programs);
     }
@@ -681,7 +684,7 @@ function checklistHtml(p, ev, k) {
     })
     .join('');
   const tu = p.tu ? `<p class="t">The calendar asks for ${units(p.tu)} units in all.</p>` : '';
-  return `<details class="pw-box pw-check" open><summary><i class="pw-dot d${k % 8}"></i><b>${esc(p.n)}</b><span class="pw-prog"><span style="width:${done}%"></span></span><span class="t">${ev.have} of ${ev.need}${ev.unknown ? '+' : ''}</span></summary>${tu}${rows || '<p class="t">The calendar lists no courses by name for this one; see its page.</p>'}${averagesHtml(p, k)}<p class="t"><a href="/programs/${esc(p.s)}/">All of its rules</a></p></details>`;
+  return `<details class="pw-box pw-check" open><summary><i class="pw-dot d${k % 8}"></i><b>${esc(p.n)}</b><span class="pw-prog"><span style="width:${done}%"></span></span><span class="t">${ev.have} of ${ev.need}${ev.unknown ? '+' : ''}</span></summary>${tu}${rows || '<p class="t">The calendar lists no courses by name for this one; see its page.</p>'}${averagesHtml(p, k)}<p class="t">${p.src ? `<a href="${esc(p.src)}" rel="noopener">All of its rules</a>, in the ${esc(labelOf(calYear))} calendar` : `<a href="/programs/${esc(p.s)}/">All of its rules</a>`}</p></details>`;
 }
 
 /** A plan's minimum averages against the grades in the grid, and the degree's limit on failed courses. */

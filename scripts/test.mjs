@@ -2432,3 +2432,101 @@ test('archive programs: a page’s own part, without the site around it', async 
   const html = '<html><head><script>x()</script></head><body><div>Menu</div><h1>Mathematical Optimization</h1><!-- note --><h2>Degree Requirements</h2><ul><li>One of <ul><li>MATH 237</li></ul></li></ul><p>Office of the Registrar<br />University of Waterloo<br />200 University Avenue West</p></body></html>';
   assert.equal(mainPart(html), '<h1>Mathematical Optimization</h1><h2>Degree Requirements</h2><ul><li>One of <ul><li>MATH 237</li></ul></li></ul><p>');
 });
+
+test('archive programs: lines and lists of the older calendars as rules', async () => {
+  const { lineNodes, listNodes, wordsRule, proseRules } = await import('./lib/archiveprograms.mjs');
+  const { parseHtml, find } = await import('./lib/requisites.mjs');
+  const list = (html) => listNodes(find(parseHtml(html), (n) => n.tag === 'ul' || n.tag === 'ol'));
+  // Lines: counts before courses, cross-listed courses, ranges with a course, labels, "either … or".
+  assert.deepEqual(lineNodes('one of ECON 406, ECON 407'), [{ r: 'n', n: 1, c: ['ECON406', 'ECON407'] }]);
+  assert.deepEqual(lineNodes('GERON 201/HLTH 201'), [{ r: 'n', n: 1, c: ['GERON201', 'HLTH201'] }]);
+  assert.deepEqual(lineNodes('CO 342, 351, 353'), [{ r: 'all', c: ['CO342'] }, { r: 'all', c: ['CO351'] }, { r: 'all', c: ['CO353'] }]);
+  assert.deepEqual(lineNodes('Four additional courses from CS 200-CS 299, CS 300-CS 398, COMM 432')[0].rg, [['CS', 200, 299], ['CS', 300, 398], ['COMM', 432, 432]]);
+  assert.deepEqual(lineNodes('Criticism: ENGL 251'), [{ r: 'all', c: ['ENGL251'] }]);
+  assert.deepEqual(lineNodes('Literatures Romantic to Modern: two of ENGL 313, ENGL 325, ENGL 342'), [{ r: 'n', n: 2, c: ['ENGL313', 'ENGL325', 'ENGL342'] }]);
+  assert.deepEqual(lineNodes('either a medieval HIST 450 or two of HIST 421 and/or HIST 422'), [{ g: 'n', n: 1, i: [{ r: 'all', c: ['HIST450'] }, { r: 'n', n: 2, c: ['HIST421', 'HIST422'] }] }]);
+  assert.deepEqual(lineNodes('1.5 units at the 400-level from HIST 421, HIST 422, HIST 450'), [{ r: 'n', n: 3, c: ['HIST421', 'HIST422', 'HIST450'] }]);
+  assert.deepEqual(lineNodes('(0.5 unit) fourth-year seminar course: HLTH 421, HLTH 427, HLTH 430'), [{ r: 'n', n: 1, c: ['HLTH421', 'HLTH427', 'HLTH430'] }]);
+  assert.deepEqual(lineNodes('FR 192B, FR 251, and one other course taught in French at the 200-level or above.').at(-1), { t: 'one other course taught in French at the 200-level or above.', nc: 1, min: 2 });
+  assert.deepEqual(lineNodes('Successful completion of 20 academic course units with a minimum cumulative overall average of 60%.'), [{ tu: 20 }]);
+  // Words: units of a subject at a level, any subject, a category of subjects; what the grid can't count is ticked.
+  assert.deepEqual(wordsRule('1.0 BIOL elective unit, 400-level'), { t: '1.0 BIOL elective unit, 400-level', u: 1, subj: ['BIOL'], min: 4 });
+  assert.equal(wordsRule('8.0 units: Elective').any, 1);
+  assert.equal(wordsRule('5.5 units chosen from any subject, with a maximum of 1.5 lab units').any, 1);
+  assert.deepEqual(wordsRule('A fine or performing arts course: FINE, MUSIC, THPERF'), { t: 'A fine or performing arts course: FINE, MUSIC, THPERF', nc: 1, subj: ['FINE', 'MUSIC', 'THPERF'] });
+  assert.deepEqual(wordsRule('four 300-level HIST courses'), { t: 'four 300-level HIST courses', nc: 4, subj: ['HIST'], min: 3 });
+  assert.deepEqual(wordsRule('1.5 units with the same subject forming a prerequisite chain of length three'), { t: '1.5 units with the same subject forming a prerequisite chain of length three' });
+  // Lists: an item's courses stay together, "X, or" items are alternatives, "one course in each of three fields".
+  assert.deepEqual(list('<ul><li>One of <ul><li>CS 116</li><li>CS 136 and CS 136L</li></ul></li></ul>'), [{ g: 'n', n: 1, i: [{ r: 'all', c: ['CS116'] }, { r: 'all', c: ['CS136', 'CS136L'] }] }]);
+  assert.deepEqual(list('<ul><li>One of <ul><li>CS 115</li><li>CS 135</li></ul></li><li>All of <ul><li>CS 240</li><li>CS 241</li></ul></li></ul>'), [{ r: 'n', n: 1, c: ['CS115', 'CS135'] }, { r: 'all', c: ['CS240', 'CS241'] }]);
+  assert.deepEqual(list('<ul><li>1.5 units with the same subject, including at least 0.5 unit at 300-level or higher, <b>or</b></li><li>1.5 units with the same subject forming a prerequisite chain of length three</li></ul>')[0].g, 'n');
+  const fields = list('<ul><li>one course in each of three fields: <ul><li>Canadian: HIST 253, HIST 254</li><li>American: HIST 257, HIST 258</li><li>European: HIST 260/MEDVL 260, HIST 262</li><li>International: HIST 268</li></ul></li></ul>');
+  assert.deepEqual(fields, [{ g: 'n', n: 3, i: [{ r: 'n', n: 1, c: ['HIST253', 'HIST254'] }, { r: 'n', n: 1, c: ['HIST257', 'HIST258'] }, { r: 'n', n: 1, c: ['HIST260', 'MEDVL260', 'HIST262'] }, { r: 'n', n: 1, c: ['HIST268'] }] }]);
+  // "Recreation courses (minimum of 10.5 units):" adds up what's under it; "four of the following categories".
+  const rec = list('<ol><li>Recreation courses (minimum of 10.5 units): <ul><li>Required recreation courses (1.0 unit): REC 100, REC 101</li><li>Recreation elective courses (minimum of 6.5 units): Any additional REC courses</li></ul></li><li>Restricted elective courses (2.0 units): Students must complete a total of four courses from the following 12 subject categories. <ul><li>An English course: ENGL</li><li>A sociology course: SOC</li></ul></li></ol>');
+  assert.deepEqual(rec[0], { r: 'all', c: ['REC100', 'REC101'] });
+  assert.deepEqual(rec[1], { t: 'Recreation elective courses (minimum of 6.5 units): Any additional REC courses', u: 6.5, subj: ['REC'] });
+  assert.equal(rec[2].g, 'n');
+  assert.equal(rec[2].n, 4);
+  // Lines of courses under "n of" are choices; a list of approved courses is a list others draw on.
+  assert.deepEqual(list('<ul><li>four approved language courses (all in one language): <ul><li>ASL 101R, ASL 102R, ASL 201R</li><li>DUTCH 101, DUTCH 102, DUTCH 201</li></ul></li></ul>'), [{ r: 'n', n: 4, c: ['ASL101R', 'ASL102R', 'ASL201R', 'DUTCH101', 'DUTCH102', 'DUTCH201'] }]);
+  assert.deepEqual(list('<ul><li>list of Medieval Studies approved courses: <ol><li>English: ENGL 200A, ENGL 208H</li><li>Latin: LAT 101, LAT 102</li></ol></li></ul>'), [{ r: 'list', c: ['ENGL200A', 'ENGL208H', 'LAT101', 'LAT102'] }]);
+  // A plan in words.
+  const subjects = new Map([['philosophy', 'PHIL'], ['classical studies', 'CLAS'], ['greek', 'GRK'], ['latin', 'LAT']]);
+  assert.deepEqual(proseRules('Students may pursue a minor. The Classical Studies Minor requires successful completion of a minimum of four academic course units (eight courses) in Classical Studies, Greek, or Latin with a minimum cumulative minor average of 65%.', subjects), [{ t: 'The Classical Studies Minor requires successful completion of a minimum of four academic course units (eight courses) in Classical Studies, Greek, or Latin.', u: 4, subj: ['CLAS', 'GRK', 'LAT'] }]);
+  assert.deepEqual(proseRules('The Option consists of seven courses selected from specified lists.'), [{ t: 'The Option consists of seven courses selected from specified lists.' }]);
+});
+
+test('archive programs: pages become plans with the later calendars’ names', async () => {
+  const { archivePrograms, pageSections, readArchivePage } = await import('./lib/archiveprograms.mjs');
+  const page = (path, title, content, section = '') => ({ url: `https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/2022-2023/page/${path}.html`, html: `<span id="ctl00_contentMain_lblPageTitle">${title}</span><span id="ctl00_contentMain_lblBottomTitle">${section}</span><span id="ctl00_contentMain_lblContent">${content}</span>` });
+  const econ = page(
+    'ARTS-Honours-Economics',
+    'Honours Economics',
+    '<p>Continuation in this academic plan requires a minimum cumulative overall average of 60%.</p><ol><li>Economics plan-level requirements: <ul><li>a minimum cumulative Economics major average of 70%</li><li>at least eight academic course units (16 courses) in Economics, including: <ul><li>ECON 101, ECON 102, ECON 201</li><li>one of ECON 406, ECON 407</li><li>five additional ECON courses at the 300-level or above</li></ul></li></ul></li></ol><h3>Notes</h3><ol><li>ECON 201 is recommended: ECON 999</li></ol><h3>Intensive Specialization</h3><p>Students must achieve a minimum cumulative Economics major average of 75%.</p><ul><li>Successful completion of two additional courses from: <ul><li>ECON 421</li><li>ECON 472</li><li>ECON 491</li></ul></li></ul>',
+  );
+  const me = page(
+    'ENG-Mechanical-Engineering',
+    'Mechanical Engineering',
+    '<h4>Credit Courses</h4><ul><li>ME 201 Advanced Calculus</li><li>ME 202 Statistics</li></ul><h4>Term-by-Term Curriculum</h4><ul><li>Term 1A (Fall): <ul><li>CHE 102, MATH 115</li></ul></li><li>Term 2A (Fall/Winter): <ul><li>ME 201, ME 202</li><li>One CSE</li><li>WKRPT 100 (stream 4)</li></ul></li><li>Term 4A (Fall/Spring): <ul><li>Three Technical Electives</li></ul></li></ul><h3>Electives</h3><h4>Technical Electives</h4><p>Seven technical electives (TEs) are required in addition to the core courses listed above.</p><h5>Fluid Mechanics</h5><ul><li>ME 562 Experimental Methods in Fluids</li><li>ME 563 Turbomachines</li></ul>',
+  );
+  // 2021–22's Mathematics pages: lists in blockquotes under a paragraph.
+  const cs = page('MATH-Bachelor-of-Computer-Science-1', 'Bachelor of Computer Science', '<p>Students in this plan must fulfil all the requirements:</p><p>One of</p><blockquote> CS 115 Introduction to Computer Science 1<br /> CS 135 Designing Functional Programs <br /></blockquote><p>All of</p><blockquote> CS 240 Data Structures<br /> CS 241 Foundations <br /></blockquote>', 'Plan Requirements');
+  const generic = page('ARTS-BAFM-Degree-Requirements', 'Degree Requirements', '<ol><li>AFM 101, AFM 102</li></ol>', 'Bachelor of Accounting and Financial Management');
+  const regs = page('ARTS-Co-op-Regulations', 'Co-op Regulations and Requirements', '<ul><li>COOP 1, PD 1</li></ul>');
+  const known = [
+    { s: 'h-economics', n: 'Economics (Bachelor of Arts - Honours)', t: 'Major', f: 'Faculty of Arts', fi: 'Economics', c: 'H-Economics', req: [], co: 1, re: 1, seq: [{ label: 'Co-op', start: 'F', terms: ['1A'] }], cant: ['h-mathematical-economics-ba', 'econ-intensive-economics-specialization'] },
+    { s: 'econ-intensive-economics-specialization', n: 'Intensive Economics Specialization', t: 'Specialization', f: 'Faculty of Arts', fi: 'Economics', c: 'ECON-Intensive', req: [] },
+    { s: 'h-computer-science-bcs', n: 'Computer Science (Bachelor of Computer Science - Honours)', t: 'Major', f: 'Faculty of Mathematics', fi: 'Computer Science', c: 'H-CS', req: [] },
+    { s: 'h-computer-science-bmath', n: 'Computer Science (Bachelor of Mathematics - Honours)', t: 'Major', f: 'Faculty of Mathematics', fi: 'Computer Science', c: 'H-CS (BMath)', req: [] },
+  ];
+  const plans = archivePrograms([econ, me, cs, generic, regs], { known });
+  const by = Object.fromEntries(plans.map((p) => [p.s, p]));
+  assert.deepEqual(Object.keys(by).sort(), ['econ-intensive-economics-specialization', 'h-accounting-and-financial-management', 'h-computer-science-bcs', 'h-economics', 'h-mechanical-engineering']);
+  // Honours Economics: the later calendar's name and slug, its total in ECON, averages, what's carried over.
+  const e = by['h-economics'];
+  assert.equal(e.n, 'Economics (Bachelor of Arts - Honours)');
+  assert.deepEqual(e.tsub, { u: 8, subj: ['ECON'] });
+  assert.deepEqual(e.req[0].r, [{ r: 'all', c: ['ECON101', 'ECON102', 'ECON201'] }, { r: 'n', n: 1, c: ['ECON406', 'ECON407'] }, { t: 'five additional ECON courses at the 300-level or above', nc: 5, subj: ['ECON'], min: 3 }]);
+  assert.deepEqual(e.avg.map((a) => [a.k, a.min]), [['overall', 60], ['plan', 70]]);
+  assert.equal(e.seq.length, 1);
+  assert.deepEqual(e.cant, ['econ-intensive-economics-specialization']);
+  assert.equal(JSON.stringify(e).includes('ECON999'), false, 'notes are left out');
+  // Its specialization, a plan of its own, open to the major.
+  const spec = by['econ-intensive-economics-specialization'];
+  assert.deepEqual(spec.req[0].r, [{ r: 'n', n: 2, c: ['ECON421', 'ECON472', 'ECON491'] }]);
+  assert.deepEqual(spec.open, ['h-economics']);
+  assert.equal(spec.avg[0].min, 75);
+  // Mechanical Engineering: terms as the later calendars' sections, no work-term reports, the summary gone, lists to
+  // choose from under the count their heading gives.
+  const m = by['h-mechanical-engineering'];
+  assert.deepEqual(m.req.map((x) => x.h), ['1A Term', '2A Term', '4A Term', 'Technical Electives']);
+  assert.deepEqual(m.req[1].r, [{ r: 'all', c: ['ME201', 'ME202'] }, { t: 'One CSE', nc: 1 }]);
+  assert.deepEqual(m.req[3].r, [{ t: 'Seven technical electives (TEs) are required in addition to the core courses listed above', nc: 7, pl: 1 }]);
+  assert.deepEqual(m.req[3].l, [{ h: 'Fluid Mechanics', r: [{ r: 'list', c: ['ME562', 'ME563'] }], l: [] }]);
+  // A blockquote page, and "Degree Requirements" named by its section.
+  assert.deepEqual(by['h-computer-science-bcs'].req[0].r, [{ r: 'n', n: 1, c: ['CS115', 'CS135'] }, { r: 'all', c: ['CS240', 'CS241'] }]);
+  assert.equal(by['h-accounting-and-financial-management'].n, 'Accounting and Financial Management (Bachelor of Accounting and Financial Management - Honours)');
+  assert.equal(readArchivePage(regs.html).title, 'Co-op Regulations and Requirements');
+  assert.equal(pageSections(null, 'x').sections.length, 0);
+});
