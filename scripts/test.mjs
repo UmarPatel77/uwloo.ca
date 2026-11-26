@@ -1230,6 +1230,11 @@ test('grad archive: term pages, the older-terms grid, versions and retired cours
     const hist = (k) => ({ cat: k, href: `/${k.term}/cs/#CS642` });
     const course = { code: 'CS642', subject: 'CS', number: '642', subjectName: 'Computer Science', title: 'Principles of Programming Languages', units: 0.5, crossListed: [], prereq: null, antireq: null, coreq: null, description: '', notesHtml: '' };
     const cp = coursePage({ course, cat: { level: 'grad', label: 'Fall 2024', status: 'current', pageUrl: 'https://x/' }, known: linkable, leadsTo: [], history: { ug: [], grad: [], old: [hist(cats[0]), { ...hist(cats[1]), changed: cats[0].courses.get('CS642').signature !== cats[1].courses.get('CS642').signature }] }, strip: null, hint: null, sectionsByTerm: [], curTerm: '1269', subjectHref: '/1249/cs/', builtAt: new Date(), version: 'v' });
+    assert.doesNotMatch(cp, /deg-tie/, 'graduate courses aren’t planned in Pathways');
+    const ug = coursePage({ course: { ...course, code: 'CS135', number: '135', title: 'Designing Functional Programs' }, cat: { level: 'ug', label: '2026–27', status: 'current', pageUrl: 'https://x/' }, known: linkable, leadsTo: [], history: { ug: [], grad: [], old: [] }, strip: null, hint: null, sectionsByTerm: [], curTerm: '1269', subjectHref: '/2627/cs/', builtAt: new Date(), version: 'v' });
+    assert.match(ug, /<p class="deg-tie" data-code="CS135"><a href="\/pathways\/#course=CS135">Plan your degree with CS 135<\/a>/, 'a current course opens on Pathways’ card');
+    const past = coursePage({ course: { ...course, code: 'CS135', number: '135' }, cat: { level: 'ug', label: '2023–24', status: 'past', pageUrl: 'https://x/' }, known: linkable, leadsTo: [], history: { ug: [], grad: [], old: [] }, strip: null, hint: null, sectionsByTerm: [], curTerm: '1269', subjectHref: '/2324/cs/', builtAt: new Date(), version: 'v' });
+    assert.doesNotMatch(past, /deg-tie/, 'not for a course no longer in the calendar');
     assert.match(cp, /<h3 class="ver-h">Older Graduate Calendars<\/h3><details class="ver-old" open><summary>In 2 terms, Fall 2015 to Fall 2016<\/summary><ul class="versions"><li><a href="\/1159\/cs\/#CS642">Fall 2015<\/a><\/li><li><a href="\/1169\/cs\/#CS642">Fall 2016<\/a> <span class="changed">requisites changed<\/span><\/li>/);
   } finally {
     await rmr(dir, { recursive: true, force: true });
@@ -2135,6 +2140,52 @@ test('every plan’s rules in words, as courses: program, course and subject pag
   assert.match(sp, /Plans built on ECON courses<\/h2> <span class="t">1: 1 minor</);
   assert.match(sp, /names 3 ECON courses; 2.0 additional units/);
   assert.match(sp, /href="\/pathways\/#show=economics-minor"/);
+});
+
+test('graduate programs: names, pages, counts toward, Pathways’ list', async () => {
+  const { readFileSync, readdirSync } = await import('node:fs');
+  const { readPrograms, countsSection } = await import('./lib/programs.mjs');
+  const G = await import('./lib/gradprograms.mjs');
+  assert.deepEqual(G.gradParts('Master of Mathematics (MMath) in Computer Science - Co-operative Program (transfer entry)'), { degree: 'MMath', subject: 'Computer Science', variant: 'Co-operative Program (transfer entry)' });
+  assert.deepEqual(G.gradParts('Graduate Diploma (GDip) in Business and Entrepreneurship (Type 3/Direct-entry)'), { degree: 'GDip', subject: 'Business and Entrepreneurship', variant: 'Type 3/Direct-entry' });
+  assert.deepEqual(G.gradParts("Accelerated Master's Program in Biostatistics"), { degree: 'Accelerated master’s', subject: 'Biostatistics', variant: '' });
+  assert.deepEqual(G.gradParts('Master of Business, Entrepreneurship and Technology (MBET)'), { degree: 'MBET', subject: '', variant: '' });
+  assert.deepEqual(G.gradParts('Doctor of Philosophy (PhD) in Earth Sciences - Water'), { degree: 'PhD', subject: 'Earth Sciences', variant: 'Water' });
+
+  // The probe's real Fall 2026 Graduate Calendar records (data/probe/samples).
+  const dir = new URL('../data/probe/samples/', import.meta.url);
+  const samples = readdirSync(dir).filter((f) => f.startsWith('programs-fall-2026-gr-')).map((f) => JSON.parse(readFileSync(new URL(f, dir))));
+  assert.ok(samples.length >= 5);
+  const grad = readPrograms(samples.map((x) => x.indexEntry), new Map(samples.map((x) => [x.indexEntry.pid, x.record])));
+  assert.equal(grad.list.length, samples.length);
+  assert.ok(grad.list.every((p) => p.level === 'grad' && p.slug && p.name));
+  const phd = grad.list.find((p) => /PhD\) in Applied Economics$/.test(p.title));
+  assert.equal(phd.type, 'PhD');
+  assert.equal(phd.field, 'Economics');
+  assert.ok(phd.unit.length > 0 && phd.admit.length > 0);
+  const acc = grad.list.find((p) => /Accelerated Master/.test(p.title));
+  assert.match(acc.slug, /^accelerated-master-s-program-in-actuarial-science$/, 'no code: slugged by its title');
+  const ma = grad.list.find((p) => /Political Science/.test(p.title));
+  assert.ok(ma.options.length >= 1);
+
+  const counts = G.gradCounts(grad);
+  assert.ok([...counts.values()].flat().some((x) => x.p === phd), 'the PhD names courses');
+  const known = { has: () => true, href: (c) => `/${c.toLowerCase()}/`, retired: new Set() };
+  const html = G.gradProgramPage({ p: phd, programs: grad, ugPrograms: { list: [{ slug: 'h-economics', name: 'Economics (BA Honours)', type: 'Major', field: 'Economics', level: 'ug' }] }, cat: { label: 'Fall 2026', pageUrl: 'https://example.org/catalog' }, known, builtAt: new Date(), version: 't' });
+  assert.match(html, /<h1><span class="title">Doctor of Philosophy \(PhD\) in Applied Economics<\/span><\/h1>/);
+  assert.match(html, /<dt>Unit<\/dt>/);
+  assert.match(html, /Economics as an undergraduate/);
+  assert.match(html, /href="\/programs\/h-economics\/"/);
+  assert.match(html, /https:\/\/example\.org\/catalog#\/programs\//);
+  const index = G.gradProgramsIndexPage({ programs: grad, cat: { label: 'Fall 2026' }, builtAt: new Date(), version: 't' });
+  assert.match(index, /href="\/programs\/grad\/[a-z0-9-]+\/"/);
+  const { list, ct } = G.gradPathways(grad, (c) => `Title ${c}`);
+  assert.equal(list.length, grad.list.length);
+  assert.ok(list.every((g) => g.s && g.n && g.t && g.d));
+  assert.ok(Object.values(ct).every((t) => t.startsWith('Title ')));
+  const one = [...counts.entries()][0];
+  assert.match(countsSection(one[0], one[1], { label: 'Fall 2026' }, [], { grad: true }), /Graduate programs in the Fall 2026 Graduate Calendar/);
+  assert.match(countsSection('ECON101', [{ p: { slug: 'h-economics', name: 'Economics (BA Honours)', type: 'Major' }, roles: ['Required'] }], { label: '2026–27' }), /<a href="\/pathways\/#course=ECON101">Pathways<\/a> puts it in your grid/);
 });
 
 test('pathways: who a plan is for, options by degree, entry programs, other names', () => {

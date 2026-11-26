@@ -178,6 +178,12 @@ export function planButton(code, plan) {
   return `<div class="plan-add" data-code="${esc(code)}" data-name="${esc(fmtCode(code))}" data-plan="${esc(JSON.stringify(terms))}"><span class="plan-ctl"><a class="plan-btn" href="/calendar/?t=${esc(t.t)}&amp;c=${esc(code)}">Plan a ${esc(t.n)} timetable with ${esc(fmtCode(code))}</a></span><span class="t plan-note" role="status"></span></div>`;
 }
 
+/**
+ * "Plan your degree with ECON 322": Pathways' card for the course (where it'd go, what it counts toward and leads to).
+ * /app.js says where it is when your grid has it.
+ */
+export const degreeTie = (code) => `<p class="deg-tie" data-code="${esc(code)}"><a href="/pathways/#course=${esc(code)}">Plan your degree with ${esc(fmtCode(code))}</a> <span class="t">what it counts toward and leads to, term by term</span></p>`;
+
 export function coursePage(ctx) {
   const { course: c, cat, known, leadsTo, history, faculty, strip, hint, sectionsByTerm, curTerm, subjectHref } = ctx;
   // Version pages (/1249/math631) show one calendar's entry; links and "Check it elsewhere" follow its term.
@@ -242,6 +248,7 @@ export function coursePage(ctx) {
   <dl class="facts">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
   ${note ? `<p class="gone-note">${note}</p>` : ''}
   ${version ? '' : planButton(c.code, ctx.plan)}
+  ${version || isGrad || cat.status === 'past' ? '' : degreeTie(c.code)}
 </header>
 ${version ? '' : stripHtml(strip, hint, sectionsByTerm, ctx.offeredTerms)}
 ${desc ? `<p class="desc">${linkCodes(desc, known)}</p>` : ''}

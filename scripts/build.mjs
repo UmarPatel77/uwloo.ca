@@ -8,6 +8,7 @@ import { archiveSubjectPage, archiveYearPage, loadArchiveText, textMap } from '.
 import * as kuali from './lib/kuali.mjs';
 import * as programsLib from './lib/programs.mjs';
 import { pathwaysData, pathwaysPage, pathwaysPrograms, subjectPlans, wordsFits } from './lib/pathways.mjs';
+import { gradCounts, gradPathways, gradProgramPage, gradProgramsIndexPage } from './lib/gradprograms.mjs';
 import { archivePrograms, loadArchivePrograms } from './lib/archiveprograms.mjs';
 import { searchDocs, searchIndex, searchPage } from './lib/search.mjs';
 import { loadReddit, redditSection, SHOWN } from './lib/reddit.mjs';
@@ -329,7 +330,7 @@ async function main() {
       pages.push([`programs/${p.slug}/index.html`, programsLib.programPage({ ...ctxBase, p, programs, combos: byProgram, cat: progCat, known: linkable, courses: progCat.courses, subjects: new Set(progCat.subjects) })]);
       sitemap.push(`/programs/${p.slug}/`);
     }
-    pages.push(['programs/index.html', programsLib.programsIndexPage({ ...ctxBase, programs, cat: progCat })]);
+    pages.push(['programs/index.html', programsLib.programsIndexPage({ ...ctxBase, programs, cat: progCat, grad: Boolean(gradCurrent) })]);
     sitemap.push('/programs/');
     if (icc.rows.length) {
       pages.push(['programs/combinations/index.html', programsLib.combinationsPage({ ...ctxBase, icc, cat: progCat, known: linkable, programs })]);
@@ -417,6 +418,32 @@ async function main() {
     counts = new Map();
   }
 
+  // Graduate programs (master's, PhDs, graduate diplomas, accelerated programs) in the current Graduate
+  // Calendar, from the same Kuali API (scripts/lib/gradprograms.mjs): a page each, /programs/grad/, "Counts
+  // toward" on graduate course pages, and Pathways' list (/pathways/grad.json). A failure here skips them.
+  let gradPrograms = null;
+  let gradCountsBy = new Map();
+  if (gradCurrent) {
+    try {
+      gradPrograms = await programsLib.loadPrograms(gradCurrent);
+      gradCountsBy = gradCounts(gradPrograms);
+      for (const p of gradPrograms.list) {
+        pages.push([`programs/grad/${p.slug}/index.html`, gradProgramPage({ ...ctxBase, p, programs: gradPrograms, ugPrograms: programs, cat: gradCurrent, known: linkable })]);
+        sitemap.push(`/programs/grad/${p.slug}/`);
+      }
+      pages.push(['programs/grad/index.html', gradProgramsIndexPage({ ...ctxBase, programs: gradPrograms, cat: gradCurrent })]);
+      sitemap.push('/programs/grad/');
+      const gp = gradPathways(gradPrograms, (c) => primary.get(c)?.course.title ?? '');
+      const json = JSON.stringify({ cat: gradCurrent.label, ...gp });
+      pages.push(['pathways/grad.json', json]);
+      console.log(`Graduate programs: ${gradPrograms.list.length} (${gradPrograms.list.filter((p) => p.sections.length).length} with course lists), ${gradCountsBy.size} courses named; Pathways' list ${(json.length / 1e3).toFixed(0)} kB`);
+    } catch (err) {
+      console.warn(`! Graduate programs skipped: ${err.message}`);
+      gradPrograms = null;
+      gradCountsBy = new Map();
+    }
+  }
+
   for (const [code, { cat, course }] of primary) {
     const history = historyFor(code);
     const strip = offerings
@@ -452,7 +479,7 @@ async function main() {
         uwflow: flowSection(code, flow?.courses[code], { repo }),
         reddit: redditSection(code, reddit.map.get(code), reddit.meta, { repo, slug: slug(code), version }),
         resources: resourcesSection(code, resourcesFor.get(code), { known: linkable, repo, found: foundFor.get(code) }),
-        counts: cat.level === 'grad' ? '' : programsLib.countsSection(code, counts.get(code), progCat, fitsByCode.get(code) ?? []),
+        counts: cat.level === 'grad' ? (gradCurrent ? programsLib.countsSection(code, gradCountsBy.get(code), gradCurrent, [], { grad: true }) : '') : programsLib.countsSection(code, counts.get(code), progCat, fitsByCode.get(code) ?? []),
       }),
     ]);
     sitemap.push(`/${slug(code)}/`);

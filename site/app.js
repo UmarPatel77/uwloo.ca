@@ -217,3 +217,69 @@ function planButton(box, Plans) {
   });
   box.repaint();
 }
+
+// Pathways (the degree planner) keeps its grid in this browser. Pages use it to say what's yours: a course's page
+// where the course is in your grid, a plan's page whether it's one of your plans and which of its courses you have
+// (✓), and lists of plans ("Counts toward", a subject's plans, /programs) which ones you picked.
+function pathwaysGrid() {
+  let s = null;
+  try {
+    s = JSON.parse(localStorage.getItem('uwloo.pathways') ?? 'null');
+  } catch {}
+  if (s?.v !== 1 || !Array.isArray(s.rows) || !/^\d{4}$/.test(String(s.start))) return null;
+  const SEASON = { 1: 'Winter', 5: 'Spring', 9: 'Fall' };
+  const where = new Map(); // code → "3A, Fall 2028"
+  let t = String(s.start);
+  let n = 0;
+  for (const r of s.rows) {
+    const level = r.k === 's' ? `${Math.floor(n / 2) + 1}${n % 2 ? 'B' : 'A'}` : r.k === 'c' ? 'work term' : '';
+    for (const c of r.c ?? []) if (c && !where.has(c)) where.set(c, `${level ? `${level}, ` : ''}${SEASON[t.slice(-1)]} ${1900 + Number(t.slice(0, 3))}`);
+    if (r.k === 's') n++;
+    const y = Number(t.slice(0, 3));
+    const se = Number(t.slice(-1));
+    t = se === 9 ? `${y + 1}1` : `${y}${se + 4}`;
+  }
+  return { where, plans: new Set(s.plans ?? []) };
+}
+function markPathways() {
+  const pw = pathwaysGrid();
+  for (const el of document.querySelectorAll('.pw-yours, .pw-mark')) el.remove();
+  for (const a of document.querySelectorAll('a.in-grid')) {
+    a.classList.remove('in-grid');
+    a.removeAttribute('title');
+  }
+  if (!pw || (!pw.where.size && !pw.plans.size)) return;
+  const tie = document.querySelector('.deg-tie[data-code]');
+  if (tie) {
+    const at = pw.where.get(tie.dataset.code);
+    tie.classList.toggle('in', Boolean(at));
+    tie.querySelector('a').textContent = at ? `✓ In your degree plan: ${at}` : `Plan your degree with ${fmt(tie.dataset.code)}`;
+  }
+  for (const a of document.querySelectorAll('main li > a[href^="/programs/"]')) {
+    if (pw.plans.has(a.getAttribute('href').split('/')[2])) a.insertAdjacentHTML('afterend', ' <span class="pw-yours">yours</span>');
+  }
+  const link = document.querySelector('.plan-link a[href^="/pathways/#add="]');
+  if (link) {
+    const yours = pw.plans.has(decodeURIComponent(link.getAttribute('href').slice(15)));
+    link.textContent = yours ? 'See it in your Pathways grid' : 'Map it out term by term in Pathways';
+    if (yours) link.insertAdjacentHTML('beforebegin', '<span class="pw-mark pw-yours">One of your plans</span> ');
+  }
+  let n = 0;
+  const seen = new Set();
+  for (const a of document.querySelectorAll('main a.cc[href]')) {
+    if (a.getAttribute('href') === location.pathname) continue;
+    const code = a.getAttribute('href').replace(/\//g, '').toUpperCase();
+    const at = pw.where.get(code);
+    if (!at) continue;
+    a.classList.add('in-grid');
+    a.title = `In your degree plan: ${at}`;
+    if (!seen.has(code)) {
+      seen.add(code);
+      n++;
+    }
+  }
+  if (link && n) link.closest('.plan-link').insertAdjacentHTML('afterend', `<p class="pw-mark t">✓ marks the ${n === 1 ? 'course' : `${n} courses`} here in your Pathways grid.</p>`);
+}
+markPathways();
+addEventListener('storage', (e) => e.key === 'uwloo.pathways' && markPathways());
+addEventListener('pageshow', (e) => e.persisted && markPathways());

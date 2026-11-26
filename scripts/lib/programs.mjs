@@ -17,8 +17,9 @@ const CACHE = '.cache/kuali';
 const LIVE_MAX_AGE_DAYS = Number(process.env.KUALI_MAX_AGE_DAYS ?? 7);
 const CONCURRENCY = Number(process.env.KUALI_CONCURRENCY ?? 6);
 
-// Fields that hold requirement lists, in the order a program page shows them.
-const RULE_FIELDS = ['requiredCoursesTermByTerm', 'courseRequirementsNoUnits', 'requirements', 'specializationsYesrequired', 'courseListsNew'];
+// Fields that hold requirement lists, in the order a program page shows them. The Graduate Calendar's: a study
+// option's courses (thesis, master's research paper, coursework), a PhD's, a graduate diploma's.
+const RULE_FIELDS = ['requiredCoursesTermByTerm', 'courseRequirementsNoUnits', 'requirements', 'specializationsYesrequired', 'courseListsNew', 'thesisOption', 'masterSResearchPaperOption', 'courseworkOption', 'graduateCourseRequirements', 'graduateDiplomaCourseRequirements'];
 // Fields that hold prose, with the heading each gets on the page.
 export const TEXT_FIELDS = [
   ['specialNotice', 'Notice'],
@@ -31,10 +32,30 @@ export const TEXT_FIELDS = [
   ['coOperativeRequirementsUndergraduate', 'Co-op'],
   ['specializationDetails', 'Specializations'],
   ['detailsAndNotes', 'Notes'],
+  // The Graduate Calendar's (gradprograms.mjs lays them out).
+  ['degreeRequirementsGrad', 'Degree requirements'],
+  ['thesisOptionCourseRequirementsRichText', 'Thesis option: courses'],
+  ['thesisOptionMilestoneRequirements', 'Thesis option: milestones'],
+  ['masterSResearchPaperOptionCourseRequirementsRichText', 'Master’s research paper option: courses'],
+  ['masterSResearchPaperOptionMilestoneRequirements', 'Master’s research paper option: milestones'],
+  ['courseworkOptionCourseRequirementsRichText', 'Coursework option: courses'],
+  ['courseworkOptionMilestoneRequirements', 'Coursework option: milestones'],
+  ['graduateCourseRequirementsRichTextPhd', 'Courses'],
+  ['milestoneDetails', 'Milestones'],
+  ['graduateDiplomaCourseRequirementsRichText', 'Courses'],
+  ['admissionRequirementsApplicationMaterials', 'Application materials'],
+  ['admissionRequirementsReferences', 'References'],
+  ['lengthOfProgram', 'Length of the program'],
+  ['graduateResearchFields', 'Research areas'],
+  ['graduateSpecializations', 'Specializations'],
+  ['acceleratedMasterSProgramDetails', 'Accelerated program'],
+  ['additionalProgramInformation', 'More about the program'],
+  ['deliveryModeInformation', 'Where it’s taught'],
+  ['registrationOptionsInformation', 'Registration'],
 ];
 // How program pages and lists order the kinds of credential.
 export const TYPE_ORDER = ['Degree Requirements', 'Major', 'Specialization', 'Minor', 'Option', 'Diploma', 'Certificate'];
-const TYPE_PLURAL = { 'Degree Requirements': 'Degree requirements', Major: 'Majors', Specialization: 'Specializations', Minor: 'Minors', Option: 'Options', Diploma: 'Diplomas', Certificate: 'Certificates' };
+const TYPE_PLURAL = { 'Degree Requirements': 'Degree requirements', Major: 'Majors', Specialization: 'Specializations', Minor: 'Minors', Option: 'Options', Diploma: 'Diplomas', Certificate: 'Certificates', "Master's": 'Master’s programs', PhD: 'PhDs', 'Graduate Diploma': 'Graduate diplomas' };
 export const typePlural = (t) => TYPE_PLURAL[t] ?? `${t}s`;
 
 // ---------------- loading ----------------
@@ -182,15 +203,28 @@ export function refsIn(html) {
 export function normalizeProgram(entry, d) {
   d = d ?? {};
   const names = (list) => (Array.isArray(list) ? list.map((x) => norm(x?.name)).filter(Boolean) : []);
+  // A graduate program's switches ({fall: true, winter: false}) → the ones that are on.
+  const on = (o) => (o && typeof o === 'object' && !Array.isArray(o) ? Object.keys(o).filter((k) => o[k] === true) : []);
+  const kinds = names(d.programTypesCheckboxes);
   const p = {
     pid: entry.pid,
     id: d.id ?? entry.id ?? null,
     code: norm(d.code ?? entry.code ?? entry.pid),
     title: norm(d.title ?? entry.title ?? ''),
     type: norm(d.undergraduateCredentialType?.name ?? entry.undergraduateCredentialType?.name ?? d.graduateCredentialType?.name ?? ''),
-    field: norm(d.fieldOfStudy?.name ?? entry.fieldOfStudy?.name ?? ''),
+    field: norm(d.fieldOfStudy?.name ?? entry.fieldOfStudy?.name ?? d.graduateFieldOfStudy?.name ?? entry.graduateFieldOfStudy?.name ?? ''),
     faculty: norm(d.facultyCalendarDisplay?.name ?? entry.facultyCalendarDisplay?.name ?? ''),
-    coop: Boolean(d.systemsOfStudy?.coOperative),
+    level: d.graduateCredentialType || entry.graduateCredentialType ? 'grad' : 'ug',
+    // Graduate: the academic unit ("David R. Cheriton School of Computer Science"), study options (Thesis,
+    // Master's Research Paper, Coursework), kinds (Co-operative, Collaborative, Internship, Joint, Diploma), the
+    // terms it admits in, full- and part-time, on campus and online.
+    unit: norm(d.groupFilter2?.name ?? ''),
+    options: names(d.studyOptionsForCalendar),
+    kinds,
+    admit: on(d.admitTerms),
+    reg: on(d.registrationOptions),
+    delivery: on(d.deliveryModes),
+    coop: Boolean(d.systemsOfStudy?.coOperative) || kinds.includes('Co-operative'),
     regular: Boolean(d.systemsOfStudy?.regular),
     online: names(d.onlineDegree),
     audience: names(d.declarationAudience),
@@ -201,7 +235,8 @@ export function normalizeProgram(entry, d) {
     text: Object.fromEntries(TEXT_FIELDS.map(([f]) => [f, typeof d[f] === 'string' ? d[f] : ''])),
     missing: !entry || !d.pid,
   };
-  p.slug = programSlug(p.code);
+  // A few graduate programs have no code (Accelerated Master's Program in Biostatistics): their title then.
+  p.slug = programSlug(d.code ?? entry.code ? p.code : p.title);
   p.name = programName(p);
   return p;
 }
@@ -552,7 +587,7 @@ export function richText(html, { known, byId = new Map(), cat }) {
       let m;
       if ((m = /#\/programs\/view\/([A-Za-z0-9]+)/.exec(href))) {
         const p = byId.get(m[1]);
-        return p ? `<a href="/programs/${p.slug}/">${esc(text)}</a>` : esc(text);
+        return p ? `<a href="${programPath(p)}">${esc(text)}</a>` : esc(text);
       }
       if (/#\/courses\//.test(href)) return linkCodes(text, known);
       if ((m = /#\/policy\/([A-Za-z0-9]+)/.exec(href))) return m[1] === ICC_PID ? `<a href="/programs/combinations/">${esc(text)}</a>` : `<a href="${esc(`${cat?.pageUrl ?? CALENDAR_PAGE}#/policy/${m[1]}`)}">${esc(text)}</a>`;
@@ -569,14 +604,16 @@ export function richText(html, { known, byId = new Map(), cat }) {
   return norm(out.replace(/<[^>]*>/g, '')) ? out : '';
 }
 
-const programLink = (p) => `<a href="/programs/${p.slug}/">${esc(p.name)}</a>`;
+/** A program's page: /programs/{slug}/, or /programs/grad/{slug}/ for the Graduate Calendar's. */
+export const programPath = (p) => (p.level === 'grad' ? `/programs/grad/${p.slug}/` : `/programs/${p.slug}/`);
+const programLink = (p) => `<a href="${programPath(p)}">${esc(p.name)}</a>`;
 const programHref = (byId) => (href) => {
   const m = /#\/programs\/view\/([A-Za-z0-9]+)/.exec(href);
   const p = m && byId.get(m[1]);
-  return p ? `/programs/${p.slug}/` : null;
+  return p ? programPath(p) : null;
 };
 
-function sectionHtml(s, known, byId, depth = 3, words = null) {
+export function sectionHtml(s, known, byId, depth = 3, words = null) {
   const units = s.units != null ? ` <span class="t">${esc(s.units)} units</span>` : '';
   const head = s.heading ? `<h${depth}>${esc(s.heading)}${units}</h${depth}>` : '';
   const tree = s.tree ? renderTree(s.tree, known, programHref(byId), { words }) : '';
@@ -715,7 +752,7 @@ function majorLines(list) {
     .join('');
 }
 
-export function programsIndexPage({ programs, cat, builtAt, version }) {
+export function programsIndexPage({ programs, cat, grad = false, builtAt, version }) {
   const byFaculty = new Map();
   for (const p of programs.list) {
     const f = p.faculty || 'Other';
@@ -745,7 +782,7 @@ export function programsIndexPage({ programs, cat, builtAt, version }) {
     .join('');
   const body = `<h1>Programs</h1>
 <p class="lede">Every major, minor, option, specialization, diploma and certificate in the ${esc(cat.label)} Undergraduate Calendar: ${counts.map(([t, n]) => `${n} ${esc(typePlural(t).toLowerCase())}`).join(', ')}.</p>
-<p><a href="/pathways/">Map out your degree in Pathways</a> · <a href="/pathways/#browse">Pick electives from any of these there</a> · <a href="/programs/combinations/">What can’t be combined</a></p>
+<p><a href="/pathways/">Map out your degree in Pathways</a> · <a href="/pathways/#browse">Pick electives from any of these there</a> · <a href="/programs/combinations/">What can’t be combined</a>${grad ? ' · <a href="/programs/grad/">Graduate programs</a>' : ''}</p>
 <div class="pfilter"><label for="pf">Filter</label><input id="pf" type="search" placeholder="economics, minor, co-op…" autocomplete="off" spellcheck="false"></div>
 ${groups}
 <p class="none" id="pnone" hidden>No program matches.</p>
@@ -805,7 +842,7 @@ export function combinationsPage({ icc, cat, known, programs, builtAt, version }
  * "Counts toward" on a course page: every program that lists it by name, by kind; then the ones whose rules in
  * words it fits ("2.0 units of ECON courses at the 200-level or above"), fits: [{p, rules}].
  */
-export function countsSection(code, list, cat, fits = []) {
+export function countsSection(code, list, cat, fits = [], { grad = false } = {}) {
   list = list ?? [];
   const named = new Set(list.map((x) => x.p.slug));
   const more = fits.filter((x) => x.p && !named.has(x.p.slug)).sort((a, b) => TYPE_ORDER.indexOf(a.p.type) - TYPE_ORDER.indexOf(b.p.type) || a.p.name.localeCompare(b.p.name));
@@ -823,6 +860,6 @@ export function countsSection(code, list, cat, fits = []) {
     return items.length > 8 ? `<details class="counts-g"><summary>${head}</summary><ul class="plinks">${items.join('')}</ul></details>` : `<h3>${head}</h3><ul class="plinks">${items.join('')}</ul>`;
   };
   return `<section aria-labelledby="counts-h"><h2 id="counts-h">Counts toward</h2>
-<p class="t">Programs in the ${esc(cat.label)} Undergraduate Calendar that list ${esc(fmtCode(code))} by name${more.length ? ', then ones whose rules in words it fits (“units of a subject at a level”)' : ''}. <a href="/pathways/">Pathways</a> puts it in your grid toward any of them.</p>
+<p class="t">${grad ? `Graduate programs in the ${esc(cat.label)} Graduate Calendar that name ${esc(fmtCode(code))}, in their course lists or their words. <a href="/programs/grad/">Every graduate program</a>.` : `Programs in the ${esc(cat.label)} Undergraduate Calendar that list ${esc(fmtCode(code))} by name${more.length ? ', then ones whose rules in words it fits (“units of a subject at a level”)' : ''}. <a href="/pathways/#course=${esc(code)}">Pathways</a> puts it in your grid toward any of them.`}</p>
 <div class="counts">${types.map(group).join('')}${words}</div></section>`;
 }

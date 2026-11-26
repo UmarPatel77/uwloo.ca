@@ -217,6 +217,17 @@ h2 { font-size: 1.05rem; font-weight: 700; font-stretch: 87.5%; margin: 2.25rem 
 .fits .t { font-size: 0.85rem; margin: 0.15rem 0 0; }
 .plan-link .t { font-weight: 400; color: var(--muted); }
 .plan-link a + .t + a { font-weight: 600; text-decoration-thickness: 2px; }
+/* Pathways on other pages: the way in from a course, and what's yours (from the grid kept in this browser). */
+.deg-tie { margin: 0.55rem 0 0; font-size: 0.95rem; }
+.deg-tie a { font-weight: 700; }
+.deg-tie .t { font-size: 0.86rem; }
+.deg-tie.in a { text-decoration-color: var(--gold); text-decoration-thickness: 3px; }
+.pw-yours { display: inline-block; font-size: 0.72rem; font-weight: 700; line-height: 1.35; color: #1d1f22; background: var(--gold); border-radius: 4px; padding: 0 0.35rem; vertical-align: 0.1em; }
+a.cc.in-grid::after { content: "✓"; margin-left: 0.15rem; font-weight: 700; text-decoration: none; display: inline-block; }
+p.pw-mark { margin: 0.3rem 0 0; font-size: 0.86rem; }
+/* A graduate program's page: each study option's courses and milestones. */
+.grad .gopt > h2 { font-size: 1.2rem; margin-top: 2.4rem; }
+.grad .gopt h3 { font-size: 0.95rem; color: var(--muted); margin: 1rem 0 0.35rem; }
 /* A subject page's plans built on its courses. */
 .subj-plans { margin: 0.4rem 0 1.4rem; }
 .subj-plans summary { cursor: pointer; }
