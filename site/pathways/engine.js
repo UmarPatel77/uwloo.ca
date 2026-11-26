@@ -1043,6 +1043,78 @@ export function directions(programs, planned, { chosen = [], cant = new Map(), c
 /** Units total a program states ("Complete a total of 20.0 units"), if any. */
 export const totalUnits = (p) => p.tu ?? null;
 
+// The usual short forms of the degrees majors lead to ("Computer Science" is a BCS or a BMath; Psychology a BA or a
+// BSc). Ones without a well-known short form keep the name alone.
+const DEGREES = {
+  'Bachelor of Arts': 'BA',
+  'Bachelor of Science': 'BSc',
+  'Bachelor of Mathematics': 'BMath',
+  'Bachelor of Applied Science': 'BASc',
+  'Bachelor of Environmental Studies': 'BES',
+  'Bachelor of Computer Science': 'BCS',
+  'Bachelor of Accounting and Financial Management': 'BAFM',
+  'Bachelor of Computing and Financial Management': 'BCFM',
+  'Bachelor of Software Engineering': 'BSE',
+  'Bachelor of Knowledge Integration': 'BKI',
+  'Bachelor of Global Business and Digital Arts': 'BGBDA',
+  'Bachelor of Architectural Studies': 'BAS',
+  'Bachelor of Public Health': 'BPH',
+  'Bachelor of Social Work': 'BSW',
+  'Bachelor of Business Administration': 'BBA',
+  'Doctor of Optometry': 'OD',
+  'Doctor of Pharmacy': 'PharmD',
+};
+/**
+ * A plan's short name and kind, for chips and lists, and what the calendar's name says it's of: "Computer Science"
+ * · BCS Honours (of Bachelor of Computer Science), "Financial Markets" · Specialization (of Accounting and Financial
+ * Management), "Economics" · Minor, "Business and Entrepreneurship" · Diploma. The calendar's whole name stays the
+ * title.
+ */
+export function planParts(p) {
+  if (!p) return { name: '', kind: '', of: '' };
+  const n = String(p.n ?? '');
+  const par = /\s*\(([^()]*)\)\s*$/.exec(n);
+  const bare = par ? n.slice(0, par.index) : n;
+  if (p.t === 'Major') {
+    // "(Bachelor of Arts - Honours)", "(Joint Honours)", or two degrees: "(Bachelor of Arts - Three-Year General and
+    // Bachelor of Social Work - Honours)", "(Bachelor of Business Administration and Bachelor of Mathematics - Honours)".
+    const parts = (par?.[1] ?? '').split(/ and (?=Bachelor of |Doctor of )/).filter(Boolean);
+    const degrees = [];
+    const kind = parts
+      .map((x) => {
+        const m = /^(?:(.*?)\s*[-–,]\s*)?(Joint Honours.*|Honours|Four-Year General|Three-Year General)$/.exec(x);
+        const degree = m ? (m[1] ?? '') : x;
+        if (degree) degrees.push(degree);
+        return [DEGREES[degree] ?? (parts.length > 1 ? degree : ''), m?.[2]].filter(Boolean).join(' ');
+      })
+      .filter(Boolean)
+      .join(' and ');
+    return { name: bare || n, kind: kind || 'Major', of: degrees.join(' and ') };
+  }
+  if (p.t === 'Degree Requirements') return { name: bare.replace(/\s*Degree Requirements$/, '') || n, kind: 'Degree requirements', of: par?.[1] ?? '' };
+  if (p.t === 'Specialization') return { name: bare.replace(/\s+Specialization$/, '') || n, kind: 'Specialization', of: par?.[1] ?? '' };
+  const name = n.replace(/^(?:Diploma|Certificate) in /, '').replace(/\s+(?:Minor|Option|Diploma|Certificate)$/, '');
+  return { name: name || n, kind: p.t, of: '' };
+}
+
+const COLLEGES = /(Renison|Conrad Grebel|St\. Jerome's|United)/;
+/**
+ * Where a plan sits, the way the calendar listed academic plans: "Faculty of Arts with Renison University College"
+ * is Arts, at Renison; "Faculties of Engineering and Mathematics" a group of its own; none (EDGE) university-wide.
+ */
+export function facultyOf(p) {
+  const f = String(p?.f ?? '');
+  const college = new RegExp(`(?:with |^)${COLLEGES.source}`).exec(f)?.[1] ?? null;
+  const one = /^Faculty of ([A-Za-z]+)/.exec(f)?.[1];
+  if (one) return { group: one, college };
+  const joint = /^Faculties of (.+)$/.exec(f)?.[1];
+  if (joint) return { group: joint.replace(/,? and /g, ' and '), college: null };
+  return { group: college ? 'Arts' : '', college };
+}
+/** Faculties in the calendar's order, then joint ones A to Z, then university-wide. */
+export const FACULTY_ORDER = ['Arts', 'Engineering', 'Environment', 'Health', 'Mathematics', 'Science'];
+export const facultyRank = (g) => (FACULTY_ORDER.includes(g) ? FACULTY_ORDER.indexOf(g) : g ? 50 : 99);
+
 // ---------------- finding a plan by name ----------------
 // Names stay the calendar's, but a search (app.js's plan box) finds a plan the way people say it: each word typed
 // is the start of a word in the name ("math/cpa", "bio cpa"), the starts of a run of words in it ("cpa" =

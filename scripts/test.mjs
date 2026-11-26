@@ -2035,6 +2035,32 @@ test('pathways: a program’s progress, and what’s still open', () => {
   assert.deepEqual(chosen.map((x) => [x.p.s, x.blocked]), [['x', []], ['econ-minor', ['econ-pp']]], 'ones that can’t combine go last');
 });
 
+test('pathways: plans named short for chips and the list, by faculty', () => {
+  const parts = (n, t) => PE.planParts({ n, t });
+  assert.deepEqual(parts('Accounting and Financial Management (Bachelor of Accounting and Financial Management - Honours)', 'Major'), { name: 'Accounting and Financial Management', kind: 'BAFM Honours', of: 'Bachelor of Accounting and Financial Management' });
+  assert.equal(parts('Computer Science (Bachelor of Mathematics - Joint Honours)', 'Major').kind, 'BMath Joint Honours', 'the degree tells a BCS from a BMath');
+  assert.equal(parts('Psychology (Bachelor of Science - Honours)', 'Major').kind, 'BSc Honours');
+  assert.equal(parts('Social Development Studies and Social Work Double Degree (Bachelor of Arts - Three-Year General and Bachelor of Social Work - Honours)', 'Major').kind, 'BA Three-Year General and BSW Honours');
+  assert.equal(parts('Business Administration and Mathematics Double Degree (Bachelor of Business Administration and Bachelor of Mathematics - Honours)', 'Major').kind, 'BBA and BMath Honours');
+  assert.equal(parts('Science and Financial Management (Bachelor of Science and Financial Management - Honours)', 'Major').kind, 'Honours', 'not a BSc');
+  assert.equal(parts('Pharmacy (Doctor of Pharmacy)', 'Major').kind, 'PharmD');
+  assert.deepEqual(parts('Biology (Joint Honours)', 'Major'), { name: 'Biology', kind: 'Joint Honours', of: '' });
+  assert.deepEqual(parts('Arts and Business', 'Major'), { name: 'Arts and Business', kind: 'Major', of: '' });
+  assert.deepEqual(parts('Artificial Intelligence Specialization (Software Engineering)', 'Specialization'), { name: 'Artificial Intelligence', kind: 'Specialization', of: 'Software Engineering' });
+  assert.deepEqual(parts('Economics Minor', 'Minor'), { name: 'Economics', kind: 'Minor', of: '' });
+  assert.equal(parts('Diploma in Business and Entrepreneurship', 'Diploma').name, 'Business and Entrepreneurship');
+  assert.equal(parts('Certificate in Experiential Education (EDGE)', 'Certificate').name, 'Experiential Education (EDGE)');
+  assert.deepEqual(parts('Bachelor of Arts Degree Requirements (Health)', 'Degree Requirements'), { name: 'Bachelor of Arts', kind: 'Degree requirements', of: 'Health' });
+  const fac = (f) => PE.facultyOf({ f });
+  assert.deepEqual(fac('Faculty of Arts with Renison University College'), { group: 'Arts', college: 'Renison' });
+  assert.deepEqual(fac("Faculty of Arts with St. Jerome's University"), { group: 'Arts', college: "St. Jerome's" });
+  assert.deepEqual(fac('Renison University College'), { group: 'Arts', college: 'Renison' }, 'Social Work');
+  assert.deepEqual(fac('Faculties of Arts, Health, and Science'), { group: 'Arts, Health and Science', college: null });
+  assert.deepEqual(fac(''), { group: '', college: null }, 'EDGE, university-wide');
+  const order = ['', 'Engineering and Mathematics', 'Science', 'Arts', 'Mathematics'].sort((a, b) => PE.facultyRank(a) - PE.facultyRank(b));
+  assert.deepEqual(order, ['Arts', 'Mathematics', 'Science', 'Engineering and Mathematics', '']);
+});
+
 test('pathways: the data file and the page', () => {
   const sec = PR.sectionsOf(PUBLIC_POLICY);
   const programs = { list: [{ pid: 'p1', slug: 'econ-pp', name: 'Public Policy Specialization (Economics)', type: 'Specialization', faculty: 'Faculty of Arts', field: 'Economics', code: 'ECON-Public Policy Specialization', sections: sec, availableTo: [], text: { graduationRequirements: '<p>Complete a total of 2.0 units.</p>', coOperativeRequirementsUndergraduate: '' } }], byId: new Map() };

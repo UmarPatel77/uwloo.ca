@@ -167,7 +167,7 @@ function decode(text) {
 }
 const encode = (s) => btoa(unescape(encodeURIComponent(JSON.stringify(s)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 /** What a shared link carries: the plan, without your grades or courses set aside on a term of another kind. */
-const shareable = (s) => ({ ...s, rows: s.rows.map(({ g, stash, ...r }) => r) });
+const shareable = ({ explore, exorder, ...s }) => ({ ...s, rows: s.rows.map(({ g, stash, ...r }) => r) });
 
 let state = null;
 const hash = location.hash.slice(1);
@@ -384,7 +384,10 @@ function render() {
   const focus = document.activeElement?.closest?.('[data-r]');
   const keep = focus ? { r: focus.dataset.r, c: focus.dataset.c, sel: [focus.selectionStart, focus.selectionEnd], value: focus.value } : null;
   const pq = document.activeElement?.id === 'pw-pq' ? { value: document.activeElement.value, sel: document.activeElement.selectionStart } : null;
+  exTop = document.getElementById('pw-dirlist')?.scrollTop ?? exTop;
   app.innerHTML = `${barHtml()}${plansHtml()}<div class="pw-main"><div class="pw-left">${gridHtml()}<div class="pw-detail" id="pw-detail" aria-live="polite">${detailHtml()}</div></div><aside class="pw-side">${sideHtml()}</aside></div>`;
+  const exList = document.getElementById('pw-dirlist');
+  if (exList) exList.scrollTop = exTop;
   if (keep) {
     const el = app.querySelector(`[data-r="${keep.r}"][data-c="${keep.c}"]`);
     if (el) {
@@ -427,7 +430,10 @@ function barHtml() {
 
 function plansHtml() {
   const chips = A.plans
-    .map((p, k) => `<li class="pw-plan d${k % 8}"><a href="/programs/${esc(p.s)}/">${esc(p.n)}</a><span class="t">${esc(p.t)}</span><button type="button" data-unplan="${esc(p.s)}" aria-label="Remove ${esc(p.n)}">×</button></li>`)
+    .map((p, k) => {
+      const { name, kind } = E.planParts(p);
+      return `<li class="pw-plan d${k % 8}" title="${esc(p.n)}"><a href="/programs/${esc(p.s)}/">${esc(name)}</a><span class="t">${esc(kind)}</span><button type="button" data-unplan="${esc(p.s)}" aria-label="Remove ${esc(p.n)}">×</button></li>`;
+    })
     .join('');
   const warns = [];
   for (let a = 0; a < A.plans.length; a++)
@@ -466,6 +472,7 @@ function plansHtml() {
   }
   return `<div class="pw-plans"><ul>${chips}</ul>
 <form class="pw-addplan" id="pw-addplan" autocomplete="off">${kindChips()}<label class="vh" for="pw-pq">Add a plan</label><div class="pw-pqbox"><input id="pw-pq" placeholder="${esc(planType ? `Search ${PLAN_KINDS[planType].toLowerCase()}, or pick from the list` : A.plans.length ? 'Add a minor, option, specialization… (math/cpa, cs, afm)' : 'Add your major, minors, options… (math/cpa, cs, afm)')}" role="combobox" aria-expanded="false" aria-controls="pw-psugg" aria-autocomplete="list" spellcheck="false"><ul id="pw-psugg" class="pw-sugg" role="listbox" hidden></ul></div></form>
+${exploreShell()}
 ${A.plans.length ? '<p class="pw-acts"><button type="button" class="pw-fillbtn" data-act="fill">Fill in courses…</button> <button type="button" class="pw-findbtn pw-bestbtn" data-act="best" title="Picks the courses that count toward the most of your plans, so you take the fewest, and adds terms (5A, 5B…) if they don’t fit">Optimal plan…</button> <button type="button" class="pw-findbtn" data-act="find">Find courses…</button></p>' : ''}
 ${undo ? `<p class="pw-offer" role="status"><span>Added ${plural(undo.n, 'course')} from ${undo.names.length > 2 ? `${undo.names.length} plans` : esc(undo.names.join(' and '))}.</span> <button type="button" class="pw-linkbtn" data-act="undo">Undo</button></p>` : offered ? `<p class="pw-offer" role="status"><span>Added <b>${esc(offered.n)}</b>.</span>${coop} <button type="button" class="pw-fillbtn" data-act="fill" data-only="${esc(offered.s)}">Fill in its courses</button> <button type="button" class="pw-linkbtn" data-act="nooffer">Not now</button></p>` : ''}
 ${deg ? `<p class="pw-hint">Add the <button type="button" class="pw-linkbtn" data-plan="${esc(deg.s)}">${esc(deg.n)}</button> too, for the degree’s own rules.</p>` : ''}
@@ -650,7 +657,7 @@ function sideHtml() {
   const avgLine = all ? `<p>Cumulative average <b>${pct(all.avg)}</b> <span class="t">over ${plural(all.n, 'graded course')}${A.graded.some((x) => x.v == null) ? ' (CR and the like aren’t in it)' : ''}</span></p>` : '';
   const summary = `<section class="pw-box"><h2>Your degree</h2>${unitLine}${avgLine}<p>${plural(study.length, 'study term')}${len.work ? ` and ${plural(len.work, 'work term')}` : ''}${over ? `, ${plural(over, 'with an overload', 'with overloads')}` : ''}.${span}</p>${fit}${gaps ? `<p class="t">Counted from requirements that name courses; ones in words that the grid can’t check are ticked by hand below.</p>` : ''}</section>`;
   const checklists = A.plans.map((p, k) => checklistHtml(p, A.evals[k], k)).join('');
-  return `${summary}${checklists}${directionsShell()}`;
+  return `${summary}${checklists}`;
 }
 
 function chip(code, state_) {
@@ -720,26 +727,37 @@ function averagesHtml(p, k) {
   return lines.length ? `<div class="pw-avgs"><h4>Averages</h4><ul>${lines.join('')}</ul></div>` : '';
 }
 
-// ---------------- directions: what's still open ----------------
+// ---------------- browsing every plan: what's still open ----------------
+// Every plan of a kind, by faculty as the calendar's lists of academic plans had them (or closest first), with how
+// much of each the grid already covers, the courses it names one tap from the grid, and its page for the rest.
 
-function directionsShell() {
+let exShown = new Set(); // plans whose courses are open in the list
+let exCache = { key: '', html: '' }; // the list as last drawn, for drawing the page again without a blank
+let exTop = 0; // how far down the list was, across drawing the page again
+const exKey = () => `${state.dir}|${state.exorder ?? 'fac'}|${dirAll}`;
+let exLast = null; // {code, r, c}: a course just put in the grid from the list
+let dirAll = false;
+
+function exploreShell() {
   const study = state.rows.map((r, i) => ({ r, i })).filter((x) => x.r.k === 's');
   const types = TYPE_ORDER.filter((t) => t !== 'Degree Requirements' && P.some((p) => p.t === t));
-  return `<section class="pw-box pw-dir"><h2>Still open</h2>
-<p><label>With what’s planned through <select id="pw-cut"><option value="-1"${state.cut === -1 ? ' selected' : ''}>the whole grid</option>${study.map((x) => `<option value="${x.i}"${state.cut === x.i ? ' selected' : ''}>${esc(A.lv[x.i])} (${esc(E.termName(termOf(x.i)))})</option>`).join('')}</select></label></p>
-<div class="pw-tabs" role="group" aria-label="Kind of program">${types.map((t) => `<button type="button" data-dir="${t}" aria-pressed="${state.dir === t}">${t === 'Specialization' ? 'Specializations' : `${t}s`}</button>`).join('')}</div>
-<ol class="pw-dirlist" id="pw-dirlist"><li class="t">Working it out…</li></ol></section>`;
+  const word = (t) => (t === 'Specialization' ? 'specializations' : `${t.toLowerCase()}s`);
+  return `<details class="pw-explore" id="pw-explore"${state.explore ? ' open' : ''}><summary><b>Browse every plan</b> <span class="t" id="pw-extease">by faculty, with how much of each your grid already covers</span></summary>
+<div class="pw-exbar"><div class="pw-tabs" role="group" aria-label="Kind of plan">${types.map((t) => `<button type="button" data-dir="${t}" aria-pressed="${state.dir === t}">${word(t).replace(/^./, (x) => x.toUpperCase())}</button>`).join('')}</div>
+<label>Order <select id="pw-exorder"><option value="fac"${state.exorder !== 'near' ? ' selected' : ''}>by faculty</option><option value="near"${state.exorder === 'near' ? ' selected' : ''}>closest first</option></select></label>
+<label>Counting <select id="pw-cut"><option value="-1"${state.cut === -1 ? ' selected' : ''}>the whole grid</option>${study.map((x) => `<option value="${x.i}"${state.cut === x.i ? ' selected' : ''}>through ${esc(A.lv[x.i])} (${esc(E.termName(termOf(x.i)))})</option>`).join('')}</select></label></div>
+<p class="pw-exlast" id="pw-exlast" role="status"></p>
+<div class="pw-exlist" id="pw-dirlist">${exCache.key === exKey() ? exCache.html : '<p class="t">Working it out…</p>'}</div>
+<p class="t pw-exfoot">Tap a plan’s <b>Courses</b> to put one in your grid without taking the plan. Each plan’s page has all its rules; <a href="/programs/">every plan, by faculty</a>.</p></details>`;
 }
 
 let dirTimer = 0;
-let dirAll = false;
 function scheduleDirections() {
   clearTimeout(dirTimer);
   dirTimer = setTimeout(renderDirections, 120);
 }
-function renderDirections() {
-  const list = document.getElementById('pw-dirlist');
-  if (!list) return;
+/** What the grid has (through the term picked under Counting). */
+function exPlanned() {
   const planned = new Map();
   state.rows.forEach((r, i) => {
     if (!hasCells(r) || (state.cut >= 0 && i > state.cut)) return;
@@ -747,23 +765,113 @@ function renderDirections() {
       if (code && A.keys[i]?.[j] !== null) planned.set(code, { units: C[code]?.[1] ?? 0.5 });
     });
   });
+  return planned;
+}
+/**
+ * The courses a plan names, rule by rule ("All of", "1 of", the lists its rules in words draw from), as buttons that
+ * put one in the grid; what it asks for in words under them. A choice already made dims the rest of its options.
+ */
+function exCourses(p, planned) {
+  const inGrid = (c) => planned.has(c) || (equiv.get(c) ?? []).some((x) => planned.has(x));
+  const lines = [];
+  const words = [];
+  let room = 60;
+  let more = 0;
+  const walk = (nodes) =>
+    nodes.forEach((n) => {
+      if (n.g) return walk(n.i);
+      if (!n.r) {
+        if (n.t && !n.info) words.push(n.t.replace(/^Complete /, ''));
+        return;
+      }
+      if (n.r === 'not' || n.r === 'max') return;
+      const live = n.c.filter((c) => !C[c]?.[7]);
+      if (!live.length) return;
+      const want = n.r === 'n' ? Math.max(1, Math.round(n.n ?? 1)) : 0;
+      const done = want > 0 && live.filter(inGrid).length >= want;
+      const shown = live.slice(0, Math.max(0, room));
+      room -= shown.length;
+      more += live.length - shown.length;
+      if (!shown.length) return;
+      const chip = (c) =>
+        inGrid(c)
+          ? `<span class="pw-exc got" title="${esc(C[c]?.[0] ?? '')}: in your grid">${esc(fmt(c))} ✓</span>`
+          : `<button type="button" class="pw-exc${done ? ' spare' : ''}" data-exadd="${esc(c)}" title="${esc(C[c]?.[0] ?? '')}${done ? ' (this choice is made already)' : ''}: put it in your grid">${esc(fmt(c))}</button>`;
+      const label = n.r === 'all' ? (live.length > 1 ? 'All of' : '') : n.r === 'n' ? `${want} of` : 'From';
+      lines.push(`<p${done ? ' class="done"' : ''}>${label ? `<span class="pw-exlab">${label}</span>` : ''}${shown.map(chip).join('')}</p>`);
+    });
+  const sec = (x) => (walk(x.r), x.l.forEach(sec));
+  p.req.forEach(sec);
+  const moreLink = more ? `<p><a href="/programs/${esc(p.s)}/">${more} more on its page</a></p>` : '';
+  const said = [...new Set(words)];
+  if (!lines.length && !said.length) return `<div class="pw-excourses"><p class="t">It names no courses; <a href="/programs/${esc(p.s)}/">its page</a> has its rules.</p></div>`;
+  return `<div class="pw-excourses">${lines.join('')}${moreLink}${said.length ? `<ul>${said.slice(0, 6).map((w) => `<li>${esc(w)}</li>`).join('')}${said.length > 6 ? `<li><a href="/programs/${esc(p.s)}/">${said.length - 6} more</a></li>` : ''}</ul>` : ''}</div>`;
+}
+function renderDirections() {
+  const box = document.getElementById('pw-explore');
+  const list = document.getElementById('pw-dirlist');
+  if (!box || !list) return;
+  const planned = exPlanned();
   const majors = A.plans.filter((p) => p.t === 'Major').map((p) => p.s);
   // Ones open to your majors first; specializations for other majors after; ones that can't combine last.
   const forOthers = (p) => Boolean(p.open?.length && !p.open.some((s) => majors.includes(s)));
-  const every = E.directions(P, planned, { chosen: state.plans, cant, courses: C, types: [state.dir] })
+  const found = E.directions(P, planned, { chosen: state.plans, cant, courses: C, types: [state.dir] });
+  // Every one, with ones whose rules are all in words (no courses to count) after.
+  const inWords = P.filter((p) => p.t === state.dir && !state.plans.includes(p.s) && !found.some((x) => x.p === p)).map((p) => ({ p, need: 0, have: 0, left: 0, unknown: true, blocked: state.plans.filter((c) => cant.get(p.s)?.has(c) || cant.get(c)?.has(p.s)) }));
+  const every = [...found, ...inWords]
     .map((x, i) => ({ ...x, i, other: forOthers(x.p) }))
     .sort((a, b) => (a.blocked.length > 0) - (b.blocked.length > 0) || a.other - b.other || a.i - b.i);
-  const res = dirAll ? every : every.slice(0, 12);
-  list.innerHTML = res.length
-    ? res
-        .map(({ p, need, have, left, unknown, blocked }) => {
-          const notFor = forOthers(p);
-          const note = blocked.length ? `<span class="pw-no">can’t go with ${esc(bySlug.get(blocked[0])?.n ?? '')}</span>` : notFor ? `<span class="t">for ${esc(p.open.map((s) => bySlug.get(s)?.fi).filter(Boolean).slice(0, 2).join(', '))} majors</span>` : '';
-          return `<li class="${blocked.length ? 'blocked' : ''}"><a href="/programs/${esc(p.s)}/">${esc(p.n)}</a> <span class="pw-left">${left ? `${left} to go` : 'all listed courses planned'}</span> <span class="t">${have} of ${need}${unknown ? '+' : ''}</span> ${note} ${blocked.length ? '' : `<button type="button" class="pw-linkbtn" data-plan="${esc(p.s)}">Add</button>`}</li>`;
-        })
-        .join('')
-    : '<li class="t">Nothing of this kind lists courses by name.</li>';
-  if (every.length > 12) list.insertAdjacentHTML('beforeend', `<li class="pw-allbtn"><button type="button" class="pw-linkbtn" data-act="dirall">${dirAll ? 'Show fewer' : `Show all ${every.length}`}</button></li>`);
+  // Closed, the summary still says which are closest: what someone would come looking for.
+  const kinds = state.dir === 'Specialization' ? 'specializations' : `${state.dir.toLowerCase()}s`;
+  const near = every.filter((x) => !x.blocked.length && !x.other && x.have > 0 && x.need).slice(0, 2);
+  const tease = document.getElementById('pw-extease');
+  if (tease) tease.textContent = near.length ? `${every.length} ${kinds}; closest: ${near.map((x) => `${E.planParts(x.p).name} (${x.left ? `${x.left} to go` : 'done'})`).join(', ')}` : `${every.length} ${kinds} by faculty, with how much of each your grid already covers`;
+  if (exLast && state.rows[exLast.r]?.c[exLast.c] !== exLast.code) exLast = null; // moved or taken out since
+  const last = document.getElementById('pw-exlast');
+  if (last) last.innerHTML = exLast ? `<b>${esc(fmt(exLast.code))}</b> is in ${esc(A.lv[exLast.r] ?? '')} (${esc(E.termName(termOf(exLast.r)))}). <button type="button" class="pw-linkbtn" data-exundo>Undo</button>` : '';
+  if (!box.open) return;
+  const row = ({ p, need, have, left, unknown, blocked, other }) => {
+    const { name, kind, of } = E.planParts(p);
+    const { college } = E.facultyOf(p);
+    const open = exShown.has(p.s);
+    const sub = p.t === 'Major' ? kind : of ? `(${of})` : '';
+    // A specialization says whose it is; other plans only open to some majors say which.
+    const note = blocked.length ? `<span class="pw-no">can’t go with ${esc(E.planParts(bySlug.get(blocked[0])).name)}</span>` : other && p.t !== 'Specialization' ? `<span class="t">for ${esc(p.open.map((s) => bySlug.get(s)?.fi).filter(Boolean).slice(0, 2).join(', '))} majors</span>` : '';
+    const share = need ? Math.round((100 * have) / need) : 0;
+    const prog = need ? `<span class="pw-exprog" title="${have} of ${need}${unknown ? '+' : ''} courses it names"><span class="pw-exmeter" style="--f:${share}%"></span>${left ? `${left} to go` : 'all planned'}</span>` : '<span class="pw-exprog t">rules in words</span>';
+    return `<li data-row="${esc(p.s)}"${blocked.length ? ' class="blocked"' : other ? ' class="other"' : ''}><div class="pw-exrow"><span class="pw-exname"><a href="/programs/${esc(p.s)}/" title="${esc(p.n)}">${esc(name)}</a>${sub ? ` <span class="t">${esc(sub)}</span>` : ''}${college ? ` <span class="pw-col">${esc(college)}</span>` : ''}</span> ${prog}${note ? ` ${note}` : ''} <span class="pw-exacts"><button type="button" class="pw-linkbtn" data-excourses="${esc(p.s)}" aria-expanded="${open}">${open ? 'Hide' : 'Courses'}</button>${blocked.length ? '' : ` <button type="button" class="pw-linkbtn" data-plan="${esc(p.s)}">Add</button>`}</span></div>${open ? exCourses(p, planned) : ''}</li>`;
+  };
+  // The list keeps its place while the grid changes (and is drawn again from this until the numbers are redone).
+  const show = (html) => {
+    const top = list.scrollTop;
+    const a = document.activeElement;
+    const at = a && list.contains(a) ? a.closest('[data-row]')?.dataset.row : null;
+    const what = at && ['exadd', 'excourses', 'plan'].find((k) => a.dataset[k] != null);
+    list.innerHTML = html;
+    list.scrollTop = top;
+    if (what) list.querySelector(`[data-row="${CSS.escape(at)}"] [data-${what}="${CSS.escape(a.dataset[what])}"]`)?.focus({ preventScroll: true });
+    exCache = { key: exKey(), html };
+  };
+  if (!every.length) return show('<p class="t">Nothing of this kind lists courses by name.</p>');
+  if (state.exorder === 'near') {
+    const shown = dirAll ? every : every.slice(0, 20);
+    return show(`<ol class="pw-exitems">${shown.map(row).join('')}</ol>${every.length > 20 ? `<p><button type="button" class="pw-linkbtn" data-act="dirall">${dirAll ? 'Show fewer' : `Show all ${every.length}`}</button></p>` : ''}`);
+  }
+  // By faculty, A to Z in each, the way the calendar listed its academic plans: ones for your majors first, ones
+  // that can't go with your plans last.
+  const groups = new Map();
+  for (const x of every) {
+    const g = E.facultyOf(x.p).group;
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push(x);
+  }
+  show([...groups]
+    .sort((a, b) => E.facultyRank(a[0]) - E.facultyRank(b[0]) || a[0].localeCompare(b[0]))
+    .map(([g, xs]) => `<section class="pw-exgroup"><h3>${esc(!g ? 'University-wide' : /\band\b/.test(g) ? `Faculties of ${g}` : `Faculty of ${g}`)} <span class="t">${xs.length}</span></h3><ul class="pw-exitems">${xs
+      .sort((a, b) => (a.blocked.length > 0) - (b.blocked.length > 0) || a.other - b.other || E.planParts(a.p).name.localeCompare(E.planParts(b.p).name) || a.p.n.localeCompare(b.p.n))
+      .map(row)
+      .join('')}</ul></section>`)
+    .join(''));
 }
 
 // ---------------- editing ----------------
@@ -1058,6 +1166,7 @@ app.addEventListener('click', async (e) => {
   const kindChip = t.closest('[data-ptype]');
   if (kindChip) {
     planType = kindChip.dataset.ptype === planType ? '' : kindChip.dataset.ptype;
+    if (planType && planType !== 'Degree Requirements') state.dir = planType;
     const typed = document.getElementById('pw-pq')?.value ?? '';
     render();
     const pq = document.getElementById('pw-pq');
@@ -1114,10 +1223,47 @@ app.addEventListener('click', async (e) => {
     renderDirections();
     return;
   }
+  const exc = t.closest('[data-excourses]');
+  if (exc) {
+    const s = exc.dataset.excourses;
+    if (exShown.has(s)) exShown.delete(s);
+    else exShown.add(s);
+    renderDirections();
+    document.querySelector(`[data-excourses="${CSS.escape(s)}"]`)?.focus();
+    return;
+  }
+  const exadd = t.closest('[data-exadd]');
+  if (exadd) {
+    const code = exadd.dataset.exadd;
+    const plan = exadd.closest('[data-row]')?.dataset.row ?? '';
+    exLast = { ...place(code), code, plan };
+    render();
+    clearTimeout(dirTimer);
+    renderDirections();
+    // On to the plan's next course (or Undo, if that was its last).
+    const row = document.querySelector(`[data-row="${CSS.escape(plan)}"]`);
+    (row?.querySelector('[data-exadd]:not(.spare)') ?? document.querySelector('[data-exundo]'))?.focus({ preventScroll: true });
+    return;
+  }
+  if (t.closest('[data-exundo]') && exLast) {
+    const { r, c, code, plan } = exLast;
+    if (state.rows[r]?.c[c] === code) setCell(r, c, '');
+    exLast = null;
+    render();
+    clearTimeout(dirTimer);
+    renderDirections();
+    document.querySelector(`[data-row="${CSS.escape(plan)}"] [data-exadd="${CSS.escape(code)}"]`)?.focus({ preventScroll: true });
+    return;
+  }
   const dir = t.closest('[data-dir]');
   if (dir) {
     state.dir = dir.dataset.dir;
-    render();
+    dirAll = false;
+    for (const b of document.querySelectorAll('[data-dir]')) b.setAttribute('aria-pressed', String(b === dir));
+    const list = document.getElementById('pw-dirlist');
+    if (list) list.scrollTop = 0;
+    renderDirections();
+    save();
     return;
   }
   const act = t.closest('[data-act]')?.dataset.act;
@@ -1170,6 +1316,17 @@ app.addEventListener('click', async (e) => {
     done((await copy(lines.join('\n'))) ? 'Copied: paste it into Excel or Google Sheets.' : 'Couldn’t copy.');
   }
 });
+// Opening "Browse every plan" fills it in; it stays open (or closed) next time.
+app.addEventListener(
+  'toggle',
+  (e) => {
+    if (e.target.id !== 'pw-explore' || Boolean(state.explore) === e.target.open) return;
+    state.explore = e.target.open;
+    save();
+    if (e.target.open) renderDirections();
+  },
+  true,
+);
 app.addEventListener('change', async (e) => {
   const t = e.target;
   if (t.id === 'pw-start') {
@@ -1198,6 +1355,11 @@ app.addEventListener('change', async (e) => {
     render();
   } else if (t.id === 'pw-cut') {
     state.cut = Number(t.value);
+    renderDirections();
+    save();
+  } else if (t.id === 'pw-exorder') {
+    state.exorder = t.value;
+    dirAll = false;
     renderDirections();
     save();
   } else if (t.matches('[data-tick]')) {
