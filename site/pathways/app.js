@@ -167,7 +167,7 @@ function decode(text) {
 }
 const encode = (s) => btoa(unescape(encodeURIComponent(JSON.stringify(s)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 /** What a shared link carries: the plan, without your grades or courses set aside on a term of another kind. */
-const shareable = ({ explore, exorder, ...s }) => ({ ...s, rows: s.rows.map(({ g, stash, ...r }) => r) });
+const shareable = ({ explore, exorder, exview, exfac, ...s }) => ({ ...s, rows: s.rows.map(({ g, stash, ...r }) => r) });
 
 let state = null;
 const hash = location.hash.slice(1);
@@ -728,27 +728,122 @@ function averagesHtml(p, k) {
 }
 
 // ---------------- browsing every plan: what's still open ----------------
-// Every plan of a kind, by faculty as the calendar's lists of academic plans had them (or closest first), with how
-// much of each the grid already covers, the courses it names one tap from the grid, and its page for the rest.
+// Every plan laid out by faculty and field, the way the calendar's lists of academic plans had them (a field's
+// majors, minor, diplomas and specializations in one row), with what goes with your plans first: a major's
+// specializations, the majors Arts and Business is taken with. Or every plan of one kind, by faculty or closest
+// first, with how much of each the grid already covers and the courses it names one tap from the grid.
 
 let exShown = new Set(); // plans whose courses are open in the list
 let exCache = { key: '', html: '' }; // the list as last drawn, for drawing the page again without a blank
 let exTop = 0; // how far down the list was, across drawing the page again
-const exKey = () => `${state.dir}|${state.exorder ?? 'fac'}|${dirAll}`;
+const exView = () => state.exview ?? 'all'; // 'all' (by field) or a kind of plan
+const exKey = () => `${exView()}|${state.dir}|${state.exorder ?? 'fac'}|${state.exfac ?? ''}|${dirAll}`;
+const OTHER = 'Other plans';
+let laidOut = null; // every plan by faculty and field, for the year's plans, and each plan's group
+function layout() {
+  if (laidOut?.P !== P) {
+    const rows = E.byField(P);
+    const group = new Map(rows.flatMap((g) => g.rows.flatMap((r) => r.plans.map((p) => [p.s, g.group || OTHER]))));
+    laidOut = { P, rows, group };
+  }
+  return laidOut;
+}
+const byField = () => layout().rows;
+const facKey = (p) => layout().group.get(p.s) ?? (E.facultyOf(p).group || OTHER);
+const facName = (g) => (g === OTHER ? g : /\band\b/.test(g) ? `Faculties of ${g}` : `Faculty of ${g}`);
 let exLast = null; // {code, r, c}: a course just put in the grid from the list
+let exTease = ''; // the closed list's summary as last worked out, for drawing the page again
 let dirAll = false;
 
 function exploreShell() {
   const study = state.rows.map((r, i) => ({ r, i })).filter((x) => x.r.k === 's');
   const types = TYPE_ORDER.filter((t) => t !== 'Degree Requirements' && P.some((p) => p.t === t));
-  const word = (t) => (t === 'Specialization' ? 'specializations' : `${t.toLowerCase()}s`);
-  return `<details class="pw-explore" id="pw-explore"${state.explore ? ' open' : ''}><summary><b>Browse every plan</b> <span class="t" id="pw-extease">by faculty, with how much of each your grid already covers</span></summary>
-<div class="pw-exbar"><div class="pw-tabs" role="group" aria-label="Kind of plan">${types.map((t) => `<button type="button" data-dir="${t}" aria-pressed="${state.dir === t}">${word(t).replace(/^./, (x) => x.toUpperCase())}</button>`).join('')}</div>
-<label>Order <select id="pw-exorder"><option value="fac"${state.exorder !== 'near' ? ' selected' : ''}>by faculty</option><option value="near"${state.exorder === 'near' ? ' selected' : ''}>closest first</option></select></label>
-<label>Counting <select id="pw-cut"><option value="-1"${state.cut === -1 ? ' selected' : ''}>the whole grid</option>${study.map((x) => `<option value="${x.i}"${state.cut === x.i ? ' selected' : ''}>through ${esc(A.lv[x.i])} (${esc(E.termName(termOf(x.i)))})</option>`).join('')}</select></label></div>
+  const word = (t) => (t === 'Specialization' ? 'Specializations' : `${t}s`);
+  const view = exView();
+  const facs = [...new Set(byField().map((g) => g.group || OTHER))];
+  return `<details class="pw-explore" id="pw-explore"${state.explore ? ' open' : ''}><summary><b>Browse every plan</b> <span class="t" id="pw-extease">${esc(exTease || 'by faculty and field: every major, minor, specialization, option and diploma')}</span></summary>
+<div class="pw-exbar"><div class="pw-tabs" role="group" aria-label="Show"><button type="button" data-dir="all" aria-pressed="${view === 'all'}">All, by field</button>${types.map((t) => `<button type="button" data-dir="${t}" aria-pressed="${view === t}">${word(t)}</button>`).join('')}</div>
+<label>Faculty <select id="pw-exfac"><option value="">All faculties</option>${facs.map((g) => `<option value="${esc(g)}"${state.exfac === g ? ' selected' : ''}>${esc(g)}</option>`).join('')}</select></label>
+<span class="pw-exopts" id="pw-exopts"${view === 'all' ? ' hidden' : ''}><label>Order <select id="pw-exorder"><option value="fac"${state.exorder !== 'near' ? ' selected' : ''}>by faculty</option><option value="near"${state.exorder === 'near' ? ' selected' : ''}>closest first</option></select></label>
+<label>Counting <select id="pw-cut"><option value="-1"${state.cut === -1 ? ' selected' : ''}>the whole grid</option>${study.map((x) => `<option value="${x.i}"${state.cut === x.i ? ' selected' : ''}>through ${esc(A.lv[x.i])} (${esc(E.termName(termOf(x.i)))})</option>`).join('')}</select></label></span></div>
 <p class="pw-exlast" id="pw-exlast" role="status"></p>
-<div class="pw-exlist" id="pw-dirlist">${exCache.key === exKey() ? exCache.html : '<p class="t">Working it out…</p>'}</div>
-<p class="t pw-exfoot">Tap a plan’s <b>Courses</b> to put one in your grid without taking the plan. Each plan’s page has all its rules; <a href="/programs/">every plan, by faculty</a>.</p></details>`;
+<div class="pw-exlist" id="pw-dirlist" tabindex="-1">${exCache.key === exKey() ? exCache.html : '<p class="t">Working it out…</p>'}</div>
+<p class="t pw-exfoot">Tap a plan to add it. Majors, Minors and the rest show how much of each your grid covers; a plan’s <b>Courses</b> puts one in your grid without taking the plan. Each plan’s page has all its rules; <a href="/programs/">every plan, by faculty</a>.</p></details>`;
+}
+
+/**
+ * What goes with the plans you've picked, for the top of the list: a major's specializations, the majors Arts and
+ * Business is taken with, the majors a specialization is for. Each: {key, head, note, plans, label(plan), tease}.
+ */
+function withYourPlans() {
+  const out = [];
+  for (const c of state.plans.map((s) => bySlug.get(s)).filter(Boolean)) {
+    const { name, kind } = E.planParts(c);
+    const head = c.t === 'Major' ? `${name} · ${kind}` : `${name} ${c.t.toLowerCase()}`;
+    const named = (q) => {
+      const x = E.planParts(q);
+      return q.t === 'Major' && x.kind !== 'BA Honours' ? `${x.name} · ${x.kind}` : x.name;
+    };
+    const tw = E.takenWith(c, P);
+    if (tw && !tw.plans.some((q) => state.plans.includes(q.s))) {
+      const tease = c.fi === 'Arts and Business' ? `${name}: pick from ${tw.plans.length} Arts honours majors` : tw.plans.length ? `${name} is for ${tw.plans.length === 1 ? named(tw.plans[0]) : `${tw.plans.length} majors`}` : '';
+      out.push({ key: `${c.s}:with`, head, note: tw.text, plans: tw.plans, label: named, tease });
+    }
+    if (c.t !== 'Major') continue;
+    // Its specializations (the calendar lists which majors each is open to), yours among them ticked.
+    const xs = E.openTo(c, P)
+      .filter((q) => q.t === 'Specialization')
+      .sort((a, b) => E.planParts(a).name.localeCompare(E.planParts(b).name));
+    if (!xs.length) continue;
+    const picked = xs.some((q) => state.plans.includes(q.s));
+    out.push({ key: `${c.s}:spec`, head, note: xs.length === 1 ? 'Its specialization' : `Its ${xs.length} specializations`, plans: xs, label: (q) => E.planParts(q).name, tease: picked ? '' : `${plural(xs.length, 'specialization')} for ${name}` });
+  }
+  return out;
+}
+/** A plan's chip in the list: tap to add it; yours, or ones that can't go with yours, say so. */
+function planChip(p, label) {
+  if (state.plans.includes(p.s)) return `<span class="pw-fc got" title="${esc(p.n)}: one of your plans">${esc(label)} ✓</span>`;
+  const no = state.plans.filter((c) => cant.get(p.s)?.has(c) || cant.get(c)?.has(p.s));
+  if (no.length) return `<span class="pw-fc no" title="${esc(p.n)}: can’t go with ${esc(E.planParts(bySlug.get(no[0])).name)}">${esc(label)}</span>`;
+  return `<button type="button" class="pw-fc" data-plan="${esc(p.s)}" title="Add ${esc(p.n)}">${esc(label)}</button>`;
+}
+/** A plan's name in its field's row: "BA Honours" in Economics, "Literature · BA Honours" in English. */
+function fieldLabel(p, field) {
+  const { name, kind } = E.planParts(p);
+  if (p.t === 'Specialization' || p.t === 'Option') return name;
+  if (p.t === 'Major') {
+    if (name === field) return kind;
+    if (/Double Degree$/.test(name)) return `Double degree · ${kind}`;
+    return `${name.startsWith(`${field} - `) ? name.slice(field.length + 3) : name} · ${kind}`;
+  }
+  return name === field ? p.t : `${name} ${p.t.toLowerCase()}`;
+}
+/** Every plan by faculty and field, what goes with yours first. */
+function allHtml(withYours) {
+  const fac = state.exfac ?? '';
+  const parts = [];
+  if (withYours.length)
+    parts.push(
+      `<section class="pw-exgroup pw-exwith"><h3>With your plans</h3>${withYours
+        .map((w) => `<div class="pw-frow" data-row="${esc(w.key)}"><span class="pw-fname">${esc(w.head)}</span><span class="pw-fchips"><span class="pw-fnote">${esc(w.note)}${w.plans.length ? '' : '.'}</span>${w.plans.map((q) => planChip(q, w.label(q))).join('')}</span></div>`)
+        .join('')}</section>`,
+    );
+  for (const { group, rows } of byField()) {
+    const g = group || OTHER;
+    if (fac && g !== fac) continue;
+    const n = rows.reduce((k, r) => k + r.plans.length, 0);
+    parts.push(
+      `<section class="pw-exgroup"><h3>${esc(facName(g))} <span class="t">${plural(n, 'plan')}</span></h3>${rows
+        .map((r) => {
+          const main = r.plans.filter((p) => p.t !== 'Specialization');
+          const specs = r.plans.filter((p) => p.t === 'Specialization');
+          const arbus = main.find((p) => p.t === 'Major' && p.fi === 'Arts and Business');
+          return `<div class="pw-frow" data-row="${esc(`${g}|${r.field}`)}"><span class="pw-fname">${esc(r.field)}${r.college ? ` <span class="pw-col">${esc(r.college)}</span>` : ''}</span><span class="pw-fchips">${main.map((p) => planChip(p, fieldLabel(p, r.field))).join('')}${specs.length ? `<span class="pw-flab">${specs.length === 1 ? 'Specialization' : 'Specializations'}</span>${specs.map((p) => planChip(p, fieldLabel(p, r.field))).join('')}` : ''}${arbus ? `<span class="pw-fnote">with a Faculty of Arts honours major</span>` : ''}</span></div>`;
+        })
+        .join('')}</section>`,
+    );
+  }
+  return parts.join('') || '<p class="t">No plans here.</p>';
 }
 
 let dirTimer = 0;
@@ -811,24 +906,50 @@ function renderDirections() {
   const box = document.getElementById('pw-explore');
   const list = document.getElementById('pw-dirlist');
   if (!box || !list) return;
+  const view = exView();
+  const fac = state.exfac ?? '';
+  for (const b of box.querySelectorAll('[data-dir]')) b.setAttribute('aria-pressed', String(b.dataset.dir === view));
+  const opts = document.getElementById('pw-exopts');
+  if (opts) opts.hidden = view === 'all';
+  const withYours = withYourPlans();
+  if (exLast && state.rows[exLast.r]?.c[exLast.c] !== exLast.code) exLast = null; // moved or taken out since
+  const last = document.getElementById('pw-exlast');
+  if (last) last.innerHTML = exLast ? `<b>${esc(fmt(exLast.code))}</b> is in ${esc(A.lv[exLast.r] ?? '')} (${esc(E.termName(termOf(exLast.r)))}). <button type="button" class="pw-linkbtn" data-exundo>Undo</button>` : '';
+  // The list keeps its place while the grid changes (and is drawn again from this until the numbers are redone).
+  const show = (html) => {
+    const top = list.scrollTop;
+    const a = document.activeElement;
+    const at = a && list.contains(a) ? a.closest('[data-row]')?.dataset.row : null;
+    const what = at && ['exadd', 'excourses', 'plan'].find((k) => a.dataset[k] != null);
+    list.innerHTML = html;
+    list.scrollTop = top;
+    if (what) list.querySelector(`[data-row="${CSS.escape(at)}"] [data-${what}="${CSS.escape(a.dataset[what])}"]`)?.focus({ preventScroll: true });
+    exCache = { key: exKey(), html };
+  };
+  const teaser = document.getElementById('pw-extease');
+  const tease = { set textContent(text) { exTease = text; if (teaser) teaser.textContent = text; } };
+  // Closed, the summary still says what goes with your plans: what someone would come looking for.
+  const teaseYours = withYours.map((w) => w.tease).filter(Boolean);
+  if (view === 'all') {
+    tease.textContent = teaseYours.length ? `With your plans: ${teaseYours.slice(0, 2).join(' · ')}` : `${P.filter((p) => p.t !== 'Degree Requirements').length} plans by faculty and field: every major, minor, specialization, option and diploma`;
+    if (box.open) show(allHtml(withYours));
+    return;
+  }
   const planned = exPlanned();
   const majors = A.plans.filter((p) => p.t === 'Major').map((p) => p.s);
   // Ones open to your majors first; specializations for other majors after; ones that can't combine last.
   const forOthers = (p) => Boolean(p.open?.length && !p.open.some((s) => majors.includes(s)));
-  const found = E.directions(P, planned, { chosen: state.plans, cant, courses: C, types: [state.dir] });
+  const inFac = (p) => !fac || facKey(p) === fac;
+  const found = E.directions(P.filter(inFac), planned, { chosen: state.plans, cant, courses: C, types: [view] });
   // Every one, with ones whose rules are all in words (no courses to count) after.
-  const inWords = P.filter((p) => p.t === state.dir && !state.plans.includes(p.s) && !found.some((x) => x.p === p)).map((p) => ({ p, need: 0, have: 0, left: 0, unknown: true, blocked: state.plans.filter((c) => cant.get(p.s)?.has(c) || cant.get(c)?.has(p.s)) }));
+  const inWords = P.filter((p) => p.t === view && inFac(p) && !state.plans.includes(p.s) && !found.some((x) => x.p === p)).map((p) => ({ p, need: 0, have: 0, left: 0, unknown: true, blocked: state.plans.filter((c) => cant.get(p.s)?.has(c) || cant.get(c)?.has(p.s)) }));
   const every = [...found, ...inWords]
     .map((x, i) => ({ ...x, i, other: forOthers(x.p) }))
     .sort((a, b) => (a.blocked.length > 0) - (b.blocked.length > 0) || a.other - b.other || a.i - b.i);
   // Closed, the summary still says which are closest: what someone would come looking for.
-  const kinds = state.dir === 'Specialization' ? 'specializations' : `${state.dir.toLowerCase()}s`;
+  const kinds = view === 'Specialization' ? 'specializations' : `${view.toLowerCase()}s`;
   const near = every.filter((x) => !x.blocked.length && !x.other && x.have > 0 && x.need).slice(0, 2);
-  const tease = document.getElementById('pw-extease');
-  if (tease) tease.textContent = near.length ? `${every.length} ${kinds}; closest: ${near.map((x) => `${E.planParts(x.p).name} (${x.left ? `${x.left} to go` : 'done'})`).join(', ')}` : `${every.length} ${kinds} by faculty, with how much of each your grid already covers`;
-  if (exLast && state.rows[exLast.r]?.c[exLast.c] !== exLast.code) exLast = null; // moved or taken out since
-  const last = document.getElementById('pw-exlast');
-  if (last) last.innerHTML = exLast ? `<b>${esc(fmt(exLast.code))}</b> is in ${esc(A.lv[exLast.r] ?? '')} (${esc(E.termName(termOf(exLast.r)))}). <button type="button" class="pw-linkbtn" data-exundo>Undo</button>` : '';
+  tease.textContent = teaseYours.length ? `With your plans: ${teaseYours.slice(0, 2).join(' · ')}` : near.length ? `${every.length} ${kinds}; closest: ${near.map((x) => `${E.planParts(x.p).name} (${x.left ? `${x.left} to go` : 'done'})`).join(', ')}` : `${every.length} ${kinds} by faculty, with how much of each your grid already covers`;
   if (!box.open) return;
   const row = ({ p, need, have, left, unknown, blocked, other }) => {
     const { name, kind, of } = E.planParts(p);
@@ -841,18 +962,7 @@ function renderDirections() {
     const prog = need ? `<span class="pw-exprog" title="${have} of ${need}${unknown ? '+' : ''} courses it names"><span class="pw-exmeter" style="--f:${share}%"></span>${left ? `${left} to go` : 'all planned'}</span>` : '<span class="pw-exprog t">rules in words</span>';
     return `<li data-row="${esc(p.s)}"${blocked.length ? ' class="blocked"' : other ? ' class="other"' : ''}><div class="pw-exrow"><span class="pw-exname"><a href="/programs/${esc(p.s)}/" title="${esc(p.n)}">${esc(name)}</a>${sub ? ` <span class="t">${esc(sub)}</span>` : ''}${college ? ` <span class="pw-col">${esc(college)}</span>` : ''}</span> ${prog}${note ? ` ${note}` : ''} <span class="pw-exacts"><button type="button" class="pw-linkbtn" data-excourses="${esc(p.s)}" aria-expanded="${open}">${open ? 'Hide' : 'Courses'}</button>${blocked.length ? '' : ` <button type="button" class="pw-linkbtn" data-plan="${esc(p.s)}">Add</button>`}</span></div>${open ? exCourses(p, planned) : ''}</li>`;
   };
-  // The list keeps its place while the grid changes (and is drawn again from this until the numbers are redone).
-  const show = (html) => {
-    const top = list.scrollTop;
-    const a = document.activeElement;
-    const at = a && list.contains(a) ? a.closest('[data-row]')?.dataset.row : null;
-    const what = at && ['exadd', 'excourses', 'plan'].find((k) => a.dataset[k] != null);
-    list.innerHTML = html;
-    list.scrollTop = top;
-    if (what) list.querySelector(`[data-row="${CSS.escape(at)}"] [data-${what}="${CSS.escape(a.dataset[what])}"]`)?.focus({ preventScroll: true });
-    exCache = { key: exKey(), html };
-  };
-  if (!every.length) return show('<p class="t">Nothing of this kind lists courses by name.</p>');
+  if (!every.length) return show(`<p class="t">No ${kinds} ${fac ? `in ${esc(facName(fac))}` : 'here'}.</p>`);
   if (state.exorder === 'near') {
     const shown = dirAll ? every : every.slice(0, 20);
     return show(`<ol class="pw-exitems">${shown.map(row).join('')}</ol>${every.length > 20 ? `<p><button type="button" class="pw-linkbtn" data-act="dirall">${dirAll ? 'Show fewer' : `Show all ${every.length}`}</button></p>` : ''}`);
@@ -861,13 +971,13 @@ function renderDirections() {
   // that can't go with your plans last.
   const groups = new Map();
   for (const x of every) {
-    const g = E.facultyOf(x.p).group;
+    const g = facKey(x.p);
     if (!groups.has(g)) groups.set(g, []);
     groups.get(g).push(x);
   }
   show([...groups]
-    .sort((a, b) => E.facultyRank(a[0]) - E.facultyRank(b[0]) || a[0].localeCompare(b[0]))
-    .map(([g, xs]) => `<section class="pw-exgroup"><h3>${esc(!g ? 'University-wide' : /\band\b/.test(g) ? `Faculties of ${g}` : `Faculty of ${g}`)} <span class="t">${xs.length}</span></h3><ul class="pw-exitems">${xs
+    .sort((a, b) => E.facultyRank(a[0] === OTHER ? '' : a[0]) - E.facultyRank(b[0] === OTHER ? '' : b[0]) || a[0].localeCompare(b[0]))
+    .map(([g, xs]) => `<section class="pw-exgroup"><h3>${esc(facName(g))} <span class="t">${xs.length}</span></h3><ul class="pw-exitems">${xs
       .sort((a, b) => (a.blocked.length > 0) - (b.blocked.length > 0) || a.other - b.other || E.planParts(a.p).name.localeCompare(E.planParts(b.p).name) || a.p.n.localeCompare(b.p.n))
       .map(row)
       .join('')}</ul></section>`)
@@ -1166,6 +1276,7 @@ app.addEventListener('click', async (e) => {
   const kindChip = t.closest('[data-ptype]');
   if (kindChip) {
     planType = kindChip.dataset.ptype === planType ? '' : kindChip.dataset.ptype;
+    if (planType !== 'Degree Requirements') state.exview = planType || 'all';
     if (planType && planType !== 'Degree Requirements') state.dir = planType;
     const typed = document.getElementById('pw-pq')?.value ?? '';
     render();
@@ -1180,8 +1291,15 @@ app.addEventListener('click', async (e) => {
   const pl = t.closest('[data-plan]');
   if (pl) {
     const fromList = Boolean(pl.closest('#pw-psugg'));
+    const inPanel = pl.closest('#pw-dirlist') ? (pl.closest('[data-row]')?.dataset.row ?? '') : null;
     addPlan(pl.dataset.plan);
     if (fromList) document.getElementById('pw-pq')?.focus({ preventScroll: true });
+    if (inPanel != null) {
+      clearTimeout(dirTimer);
+      renderDirections();
+      const list = document.getElementById('pw-dirlist');
+      (list?.querySelector(`[data-row="${CSS.escape(inPanel)}"] button`) ?? list)?.focus({ preventScroll: true });
+    }
     return;
   }
   const fb = t.closest('[data-find]');
@@ -1257,9 +1375,9 @@ app.addEventListener('click', async (e) => {
   }
   const dir = t.closest('[data-dir]');
   if (dir) {
-    state.dir = dir.dataset.dir;
+    state.exview = dir.dataset.dir;
+    if (dir.dataset.dir !== 'all') state.dir = dir.dataset.dir;
     dirAll = false;
-    for (const b of document.querySelectorAll('[data-dir]')) b.setAttribute('aria-pressed', String(b === dir));
     const list = document.getElementById('pw-dirlist');
     if (list) list.scrollTop = 0;
     renderDirections();
@@ -1355,6 +1473,12 @@ app.addEventListener('change', async (e) => {
     render();
   } else if (t.id === 'pw-cut') {
     state.cut = Number(t.value);
+    renderDirections();
+    save();
+  } else if (t.id === 'pw-exfac') {
+    state.exfac = t.value;
+    dirAll = false;
+    document.getElementById('pw-dirlist').scrollTop = 0;
     renderDirections();
     save();
   } else if (t.id === 'pw-exorder') {

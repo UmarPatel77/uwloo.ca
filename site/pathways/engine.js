@@ -1100,7 +1100,7 @@ export function planParts(p) {
 const COLLEGES = /(Renison|Conrad Grebel|St\. Jerome's|United)/;
 /**
  * Where a plan sits, the way the calendar listed academic plans: "Faculty of Arts with Renison University College"
- * is Arts, at Renison; "Faculties of Engineering and Mathematics" a group of its own; none (EDGE) university-wide.
+ * is Arts, at Renison; "Faculties of Engineering and Mathematics" a group of its own; none (EDGE) no group ('').
  */
 export function facultyOf(p) {
   const f = String(p?.f ?? '');
@@ -1111,9 +1111,74 @@ export function facultyOf(p) {
   if (joint) return { group: joint.replace(/,? and /g, ' and '), college: null };
   return { group: college ? 'Arts' : '', college };
 }
-/** Faculties in the calendar's order, then joint ones A to Z, then university-wide. */
+/** Faculties in the calendar's order, then joint ones A to Z, then plans in none. */
 export const FACULTY_ORDER = ['Arts', 'Engineering', 'Environment', 'Health', 'Mathematics', 'Science'];
 export const facultyRank = (g) => (FACULTY_ORDER.includes(g) ? FACULTY_ORDER.indexOf(g) : g ? 50 : 99);
+
+// ---------------- every plan, laid out ----------------
+
+const KIND_ORDER = { Major: 0, Minor: 1, Diploma: 2, Certificate: 3, Option: 4, Specialization: 5 };
+const majorRank = (kind) => (/Joint/.test(kind) ? 1 : /Four-Year/.test(kind) ? 2 : /Three-Year/.test(kind) ? 3 : 0);
+/**
+ * Every plan laid out the way the calendar's lists of academic plans had them: by faculty, then field, A to Z. A
+ * field's row has its majors (honours, joint, general), minor, diplomas and the specializations for its majors
+ * ("Economics": two majors, a minor, four specializations); a faculty's options share a row. Degree requirements
+ * aren't plans to pick. → [{group, rows: [{field, college, plans}]}]
+ */
+export function byField(programs) {
+  // A plan an earlier calendar gave no faculty goes with its field's (Sustainability, AFM's specialization, in Arts).
+  const fieldFaculty = new Map();
+  for (const p of programs) if (p.f && p.fi && !fieldFaculty.has(p.fi)) fieldFaculty.set(p.fi, p.f);
+  const groups = new Map();
+  for (const p of programs) {
+    if (p.t === 'Degree Requirements') continue;
+    const { group } = facultyOf(p.f ? p : { ...p, f: fieldFaculty.get(p.fi) ?? '' });
+    const field = /^Options\b/.test(p.fi ?? '') ? 'Options' : p.fi || planParts(p).name;
+    if (!groups.has(group)) groups.set(group, new Map());
+    const rows = groups.get(group);
+    if (!rows.has(field)) rows.set(field, []);
+    rows.get(field).push(p);
+  }
+  // The field's own majors first (honours, joint, general), then double degrees; minors, diplomas, specializations.
+  const order = (field) => (a, b) => {
+    const [pa, pb] = [planParts(a), planParts(b)];
+    const majors = a.t === 'Major' && b.t === 'Major' ? (pa.name !== field) - (pb.name !== field) || majorRank(pa.kind) - majorRank(pb.kind) : 0;
+    return (KIND_ORDER[a.t] ?? 9) - (KIND_ORDER[b.t] ?? 9) || majors || pa.name.localeCompare(pb.name) || a.n.localeCompare(b.n);
+  };
+  return [...groups]
+    .sort((a, b) => facultyRank(a[0]) - facultyRank(b[0]) || a[0].localeCompare(b[0]))
+    .map(([group, rows]) => ({
+      group,
+      rows: [...rows]
+        .sort((a, b) => (a[0] === 'Options') - (b[0] === 'Options') || a[0].localeCompare(b[0]))
+        .map(([field, plans]) => {
+          const colleges = new Set(plans.map((p) => facultyOf(p).college));
+          return { field, college: colleges.size === 1 ? [...colleges][0] : null, plans: plans.sort(order(field)) };
+        }),
+    }));
+}
+
+/**
+ * What a plan is taken with, as its rules say, and the plans that fit. Arts and Business: "Complete the
+ * requirements for a Faculty of Arts honours major or Honours Liberal Studies" (any not in the invalid
+ * combinations). A plan open only to some majors (a specialization, most options): one of those. A joint major
+ * goes with another major too, but which ones differ by department (its page says), so it names none.
+ * → {text, plans} or null.
+ */
+export function takenWith(p, programs) {
+  if (!p) return null;
+  const fits = (q) => q.s !== p.s && !(p.cant ?? []).includes(q.s) && !(q.cant ?? []).includes(p.s);
+  if (p.t === 'Major' && p.fi === 'Arts and Business') {
+    const plans = programs.filter((q) => q.t === 'Major' && fits(q) && facultyOf(q).group === 'Arts' && planParts(q).kind === 'BA Honours');
+    return { text: 'Taken with a Faculty of Arts honours major or Honours Liberal Studies', plans };
+  }
+  if (p.t === 'Major' && /Joint Honours/.test(planParts(p).kind)) return { text: 'A joint major, taken with another major; its page says which', plans: [] };
+  const plans = (p.open ?? []).map((s) => programs.find((q) => q.s === s)).filter(Boolean);
+  return plans.length ? { text: plans.length === 1 ? 'For students in' : 'For students in one of', plans } : null;
+}
+
+/** Plans open only to some majors that are open to this one: its specializations (the only plans that list majors). */
+export const openTo = (major, programs) => programs.filter((q) => q.s !== major.s && q.open?.includes(major.s));
 
 // ---------------- finding a plan by name ----------------
 // Names stay the calendar's, but a search (app.js's plan box) finds a plan the way people say it: each word typed

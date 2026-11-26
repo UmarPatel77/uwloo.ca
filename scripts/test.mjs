@@ -2061,6 +2061,40 @@ test('pathways: plans named short for chips and the list, by faculty', () => {
   assert.deepEqual(order, ['Arts', 'Mathematics', 'Science', 'Engineering and Mathematics', '']);
 });
 
+test('pathways: every plan by faculty and field, and what each is taken with', () => {
+  const plan = (s, n, t, fi, extra = {}) => ({ s, n, t, fi, f: 'Faculty of Arts', ...extra });
+  const programs = [
+    plan('econ-pp', 'Public Policy Specialization (Economics)', 'Specialization', 'Economics', { open: ['h-econ', '4g-econ'] }),
+    plan('h-econ', 'Economics (Bachelor of Arts - Honours)', 'Major', 'Economics'),
+    plan('econ-minor', 'Economics Minor', 'Minor', 'Economics'),
+    plan('4g-econ', 'Economics (Bachelor of Arts - Four-Year General)', 'Major', 'Economics'),
+    plan('arbus', 'Arts and Business', 'Major', 'Arts and Business', { cant: ['h-afm'] }),
+    plan('h-afm', 'Accounting and Financial Management (Bachelor of Accounting and Financial Management - Honours)', 'Major', 'Accounting and Financial Management'),
+    plan('h-sds', 'Social Development Studies (Bachelor of Arts - Honours)', 'Major', 'Social Development Studies', { f: 'Faculty of Arts with Renison University College' }),
+    plan('ba-reqs', 'Bachelor of Arts Degree Requirements (Arts)', 'Degree Requirements', 'Arts'),
+    plan('h-pmath', 'Pure Mathematics (Bachelor of Mathematics - Honours)', 'Major', 'Pure Mathematics', { f: 'Faculty of Mathematics' }),
+    plan('jh-pmath', 'Pure Mathematics (Joint Honours)', 'Major', 'Pure Mathematics', { f: 'Faculty of Mathematics' }),
+    plan('ai-option', 'Artificial Intelligence Option', 'Option', 'Options: Faculty of Engineering', { f: 'Faculty of Engineering', open: ['h-ce'] }),
+  ];
+  const laid = PE.byField(programs);
+  assert.deepEqual(laid.map((g) => g.group), ['Arts', 'Engineering', 'Mathematics']);
+  const econ = laid[0].rows.find((r) => r.field === 'Economics');
+  assert.deepEqual(econ.plans.map((p) => p.s), ['h-econ', '4g-econ', 'econ-minor', 'econ-pp'], 'honours, general, minor, then its specializations');
+  assert.equal(laid[0].rows.find((r) => r.field === 'Social Development Studies').college, 'Renison');
+  assert.ok(!laid.flatMap((g) => g.rows).some((r) => r.plans.some((p) => p.t === 'Degree Requirements')));
+  assert.deepEqual(laid[1].rows.map((r) => r.field), ['Options'], 'a faculty’s options share a row');
+  assert.deepEqual(laid[2].rows[0].plans.map((p) => p.s), ['h-pmath', 'jh-pmath']);
+  const arbus = PE.takenWith(programs.find((p) => p.s === 'arbus'), programs);
+  assert.match(arbus.text, /Faculty of Arts honours major/);
+  assert.deepEqual(arbus.plans.map((p) => p.s), ['h-econ', 'h-sds'], 'Arts honours majors, not general ones or ones it can’t go with');
+  assert.deepEqual(PE.takenWith(programs[0], programs).plans.map((p) => p.s), ['h-econ', '4g-econ'], 'a specialization, with its majors');
+  assert.deepEqual(PE.takenWith(programs.find((p) => p.s === 'jh-pmath'), programs).plans, [], 'a joint major names none');
+  assert.equal(PE.takenWith(programs.find((p) => p.s === 'econ-minor'), programs), null);
+  assert.deepEqual(PE.openTo(programs.find((p) => p.s === 'h-econ'), programs).map((p) => p.s), ['econ-pp']);
+  const older = PE.byField([...programs, { s: 'old-spec', n: 'Sustainability Specialization (Economics)', t: 'Specialization', fi: 'Economics' }]);
+  assert.ok(older[0].rows.find((r) => r.field === 'Economics').plans.some((p) => p.s === 'old-spec'), 'a plan with no faculty goes with its field’s');
+});
+
 test('pathways: the data file and the page', () => {
   const sec = PR.sectionsOf(PUBLIC_POLICY);
   const programs = { list: [{ pid: 'p1', slug: 'econ-pp', name: 'Public Policy Specialization (Economics)', type: 'Specialization', faculty: 'Faculty of Arts', field: 'Economics', code: 'ECON-Public Policy Specialization', sections: sec, availableTo: [], text: { graduationRequirements: '<p>Complete a total of 2.0 units.</p>', coOperativeRequirementsUndergraduate: '' } }], byId: new Map() };
