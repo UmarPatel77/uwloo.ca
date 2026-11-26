@@ -398,9 +398,37 @@ function entryHtml(c, known, cat, opts) {
 </section>`;
 }
 
+const PLAN_KINDS = ['Major', 'Specialization', 'Minor', 'Option', 'Diploma', 'Certificate'];
+const PLAN_PLURAL = { Major: 'majors', Specialization: 'specializations', Minor: 'minors', Option: 'options', Diploma: 'diplomas', Certificate: 'certificates' };
+/**
+ * A subject page's plans built on its courses (pathways.mjs's subjectPlans, with their programs): the ones that
+ * name two or more of them, and the ones whose rules in words take them, by kind, each with its Pathways panel.
+ */
+export function subjectPlansSection(subject, plans) {
+  if (!plans?.length) return '';
+  const kinds = [...PLAN_KINDS, ...new Set(plans.map((x) => x.p.type).filter((t) => !PLAN_KINDS.includes(t)))].filter((t) => plans.some((x) => x.p.type === t));
+  const count = kinds
+    .map((t) => {
+      const n = plans.filter((x) => x.p.type === t).length;
+      return `${n} ${n === 1 ? t.toLowerCase() : (PLAN_PLURAL[t] ?? `${t.toLowerCase()}s`)}`;
+    })
+    .join(', ');
+  const item = (x) => {
+    const what = [x.named ? `names ${x.named} ${esc(subject)} course${x.named === 1 ? '' : 's'}` : '', ...x.words.map((w) => esc(w.replace(/^Complete /, '')))].filter(Boolean).join('; ');
+    return `<li><a href="/programs/${esc(x.p.slug)}/">${esc(x.p.name)}</a> <span class="t">${what}</span> <a class="sp-pw" href="/pathways/#show=${esc(x.p.slug)}">its courses in Pathways</a></li>`;
+  };
+  const groups = kinds.map((t) => {
+    const xs = plans.filter((x) => x.p.type === t);
+    return `<h3>${esc((PLAN_PLURAL[t] ?? `${t.toLowerCase()}s`).replace(/^./, (c) => c.toUpperCase()))} <span class="t">${xs.length}</span></h3><ul class="plinks">${xs.map(item).join('')}</ul>`;
+  });
+  return `<section class="subj-plans" aria-labelledby="sp-h"><details${plans.length <= 12 ? ' open' : ''}><summary><h2 id="sp-h">Plans built on ${esc(subject)} courses</h2> <span class="t">${plans.length}: ${esc(count)}</span></summary>
+<p class="t">Majors, minors, specializations and more that name ${esc(subject)} courses or ask for them in words (“2.0 units of ${esc(subject)} at the 300-level”). Pick from them as electives toward one in <a href="/pathways/">Pathways</a>.</p>
+${groups.join('')}</details></section>`;
+}
+
 /** /2627/cs: the year's undergrad courses, then grad courses from that year's latest grad calendar. */
 export function yearSubjectPage(p) {
-  const { cat, catalogs, gradCat, gradCatalogs, subject, subjectName, ugCourses, gradCourses, known, faculty } = p;
+  const { cat, catalogs, gradCat, gradCatalogs, subject, subjectName, ugCourses, gradCourses, known, faculty, plans } = p;
   const both = ugCourses.length > 0 && gradCourses.length > 0;
   const counts = [
     ugCourses.length && `${plural(ugCourses.length, 'undergraduate course')} in the ${cat.label} Undergraduate Calendar`,
@@ -419,6 +447,7 @@ export function yearSubjectPage(p) {
   <p>${counts}.</p>
   ${yearNav(catalogs, cat, subject)}
 </header>
+${subjectPlansSection(subject, plans)}
 ${both ? numsNav('Undergraduate', ugCourses) + numsNav('Graduate', gradCourses) : numsNav('', [...ugCourses, ...gradCourses])}
 ${both ? '<h2 class="level" id="undergraduate">Undergraduate</h2>' : ''}
 ${ugCourses.map((c) => entryHtml(c, known, cat, { term: termFrom(cat.start, 9), codeHref: (code) => hrefFor(known, code) })).join('\n')}

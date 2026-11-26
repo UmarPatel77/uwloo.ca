@@ -299,15 +299,18 @@ function sentence(text, segs, known, calendarBase) {
   return segs.map((x) => (x.href && to(x.href) ? `<a href="${esc(to(x.href))}">${esc(x.t)}</a>` : linkCodes(x.t, known))).join('');
 }
 
-/** Tree → nested list HTML, in the calendar's own words. */
-export function renderTree(tree, known, calendarBase) {
+/**
+ * Tree → nested list HTML, in the calendar's own words. words(text): HTML to add after a rule in words (a
+ * program page's courses that fit "2.0 units of ECON courses at the 200-level or above").
+ */
+export function renderTree(tree, known, calendarBase, { words } = {}) {
   const node = (n) => {
     if (n.type === 'group') return `<li class="g"><span class="lead">${esc(lead(n))}</span><ul>${n.items.map(node).join('')}</ul></li>`;
     if (n.type === 'rule') {
-      const list = `<ul class="cl">${n.courses.map((c) => courseItem(c, known)).join('')}</ul>`;
+      const list = n.courses.length ? `<ul class="cl">${n.courses.map((c) => courseItem(c, known)).join('')}</ul>` : (words?.(lead(n)) ?? '');
       return `<li class="r"><span class="lead">${n.segs ? sentence(null, n.segs, known, calendarBase) : esc(lead(n))}</span>${list}</li>`;
     }
-    return `<li class="x">${sentence(n.text, n.segs, known, calendarBase)}</li>`;
+    return `<li class="x">${sentence(n.text, n.segs, known, calendarBase)}${words?.(n.text) ?? ''}</li>`;
   };
   return tree?.length ? `<ul class="req">${tree.map(node).join('')}</ul>` : '';
 }

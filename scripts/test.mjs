@@ -2095,6 +2095,48 @@ test('pathways: every plan by faculty and field, and what each is taken with', (
   assert.ok(older[0].rows.find((r) => r.field === 'Economics').plans.some((p) => p.s === 'old-spec'), 'a plan with no faculty goes with its field’s');
 });
 
+test('every plan’s rules in words, as courses: program, course and subject pages', async () => {
+  const { fittingCodes, wordsFits, subjectPlans, hints } = await import('./lib/pathways.mjs');
+  const { fitsHtml, countsSection } = await import('./lib/programs.mjs');
+  const { subjectPlansSection } = await import('./lib/render.mjs');
+  const { renderTree } = await import('./lib/requisites.mjs');
+  const codes = ['ECON101', 'ECON201', 'ECON361', 'ECON490', 'CS341', 'CS450', 'PSYCH101'];
+  assert.deepEqual(fittingCodes(hints('Complete 2.0 additional units of ECON courses at the 200-level or above'), codes), ['ECON201', 'ECON361', 'ECON490']);
+  assert.deepEqual(fittingCodes(hints('Complete 1.0 unit from CS340-CS398, CS440-CS489'), codes), ['CS341', 'CS450']);
+  assert.deepEqual(fittingCodes({ subj: ['ECON', 'PSYCH'], nos: ['PSYCH'] }, codes), ['ECON101', 'ECON201', 'ECON361', 'ECON490'], 'a breadth rule’s subjects left out');
+
+  const minor = { s: 'economics-minor', t: 'Minor', req: [{ h: 'Required Courses', r: [{ r: 'all', c: ['ECON101', 'ECON102', 'ECON201'] }, { t: 'Complete 2.0 additional units of ECON courses at the 200-level or above', u: 2, subj: ['ECON'], min: 2 }], l: [] }] };
+  const major = { s: 'h-cs', t: 'Major', req: [{ h: '', r: [{ r: 'all', c: ['CS135', 'CS136', 'CS341', 'MATH135', 'MATH136'] }], l: [{ h: 'List', r: [{ t: 'Complete 1.0 unit from CS340-CS398, CS440-CS489', u: 1, rg: [['CS', 340, 398], ['CS', 440, 489]] }], l: [] }] }] };
+  const degree = { s: 'ba', t: 'Degree Requirements', req: [{ h: '', r: [{ r: 'all', c: ['ECON101', 'ECON102'] }], l: [] }] };
+  const fits = wordsFits([minor, major, degree], codes);
+  assert.deepEqual(fits.get('ECON361'), [{ s: 'economics-minor', t: ['Complete 2.0 additional units of ECON courses at the 200-level or above'] }]);
+  assert.deepEqual(fits.get('CS450').map((x) => x.s), ['h-cs']);
+  assert.equal(fits.get('ECON101'), undefined, 'below the level');
+  const bySubject = subjectPlans([minor, major, degree]);
+  assert.deepEqual(bySubject.get('ECON'), [{ s: 'economics-minor', named: 3, words: ['Complete 2.0 additional units of ECON courses at the 200-level or above'] }], 'degree requirements left out');
+  assert.deepEqual(bySubject.get('MATH').map((x) => x.s), ['h-cs'], 'names two MATH courses');
+  assert.deepEqual(bySubject.get('CS')[0], { s: 'h-cs', named: 3, words: ['Complete 1.0 unit from CS340-CS398, CS440-CS489'] });
+
+  const courses = new Map(codes.map((c) => [c, { title: `Title of ${c}` }]));
+  const html = fitsHtml('Complete 2.0 additional units of ECON courses at the 200-level or above', { courses, subjects: new Set(['ECON']), yearCode: '2627' });
+  assert.match(html, /3 courses fit/);
+  assert.match(html, /href="\/econ361\/" title="Title of ECON361">ECON 361</);
+  assert.match(html, /href="\/2627\/econ\/">Every ECON course/);
+  assert.equal(fitsHtml('Complete all of the following', { courses, subjects: new Set(), yearCode: '2627' }), '');
+  const tree = [{ type: 'text', text: 'Complete 2.0 additional units of ECON courses at the 200-level or above' }];
+  assert.match(renderTree(tree, new Set(), null, { words: (t) => `<i>${t.length}</i>` }), /<li class="x">.*<i>\d+<\/i><\/li>/);
+
+  const prog = (slug, name, type) => ({ slug, name, type });
+  const counts = countsSection('ECON361', [], { label: '2026–27' }, [{ p: prog('economics-minor', 'Economics Minor', 'Minor'), rules: ['Complete 2.0 additional units of ECON courses at the 200-level or above'] }]);
+  assert.match(counts, /Rules in words it fits <span class="t">1<\/span>/);
+  assert.match(counts, /Economics Minor<\/a> <span class="t">Minor · Complete 2.0/);
+  assert.equal(countsSection('ECON999', [], { label: '2026–27' }, []), '');
+  const sp = subjectPlansSection('ECON', [{ p: prog('economics-minor', 'Economics Minor', 'Minor'), named: 3, words: ['Complete 2.0 additional units of ECON courses at the 200-level or above'] }]);
+  assert.match(sp, /Plans built on ECON courses<\/h2> <span class="t">1: 1 minor</);
+  assert.match(sp, /names 3 ECON courses; 2.0 additional units/);
+  assert.match(sp, /href="\/pathways\/#show=economics-minor"/);
+});
+
 test('pathways: who a plan is for, options by degree, entry programs, other names', () => {
   // What the calendar says when declaring (2026–27's own sentences).
   const el = (fields, audience = []) => PW.eligibility({ text: fields, audience });

@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { archiveSubjectPage, archiveYearPage, loadArchiveText, textMap } from './lib/archive.mjs';
 import * as kuali from './lib/kuali.mjs';
 import * as programsLib from './lib/programs.mjs';
-import { pathwaysData, pathwaysPage, pathwaysPrograms } from './lib/pathways.mjs';
+import { pathwaysData, pathwaysPage, pathwaysPrograms, subjectPlans, wordsFits } from './lib/pathways.mjs';
 import { archivePrograms, loadArchivePrograms } from './lib/archiveprograms.mjs';
 import { searchDocs, searchIndex, searchPage } from './lib/search.mjs';
 import { loadReddit, redditSection, SHOWN } from './lib/reddit.mjs';
@@ -315,6 +315,9 @@ async function main() {
   const progCat = ug.find((c) => c.status === 'current') ?? ug.at(-1);
   let programs = null;
   let counts = new Map();
+  // From Pathways' data: the rules in words each course fits (course pages), the plans built on each subject.
+  let fitsByCode = new Map();
+  let plansBySubject = new Map();
   try {
     programs = await programsLib.loadPrograms(progCat);
     counts = programsLib.countsToward(programs);
@@ -323,7 +326,7 @@ async function main() {
     const { byProgram, stats } = programsLib.combosFor(icc.rows, programs, icc.rulesHtml);
     console.log(`Programs: ${programs.list.length}; combinations table ${stats.rows} rows, ${stats.plans} matched to programs, ${stats.matched}/${stats.names} names`);
     for (const p of programs.list) {
-      pages.push([`programs/${p.slug}/index.html`, programsLib.programPage({ ...ctxBase, p, programs, combos: byProgram, cat: progCat, known: linkable })]);
+      pages.push([`programs/${p.slug}/index.html`, programsLib.programPage({ ...ctxBase, p, programs, combos: byProgram, cat: progCat, known: linkable, courses: progCat.courses, subjects: new Set(progCat.subjects) })]);
       sitemap.push(`/programs/${p.slug}/`);
     }
     pages.push(['programs/index.html', programsLib.programsIndexPage({ ...ctxBase, programs, cat: progCat })]);
@@ -359,6 +362,9 @@ async function main() {
         }
       }
       const pw = pathwaysData({ programs, combos: byProgram, catalog: progCat, schedules, published, curTerm, retired, years, faculty: offerings?.faculty ?? new Map() });
+      const withPlan = (x) => ({ ...x, p: programs.bySlug.get(x.s) });
+      fitsByCode = new Map([...wordsFits(pw.programs, progCat.courses.keys())].map(([c, xs]) => [c, xs.map((x) => ({ p: programs.bySlug.get(x.s), rules: x.t })).filter((x) => x.p)]));
+      plansBySubject = new Map([...subjectPlans(pw.programs)].map(([sj, xs]) => [sj, xs.map(withPlan).filter((x) => x.p)]));
       // Start years before the Kuali calendars (2021–22 to 2023–24): plans read from the archive's program pages
       // (data/archive-programs), named and slugged as the same plans in the later calendars (the earliest that has
       // each, the closest to them). Courses they name that the current calendar doesn't have come along from that
@@ -446,7 +452,7 @@ async function main() {
         uwflow: flowSection(code, flow?.courses[code], { repo }),
         reddit: redditSection(code, reddit.map.get(code), reddit.meta, { repo, slug: slug(code), version }),
         resources: resourcesSection(code, resourcesFor.get(code), { known: linkable, repo, found: foundFor.get(code) }),
-        counts: cat.level === 'grad' ? '' : programsLib.countsSection(code, counts.get(code), progCat),
+        counts: cat.level === 'grad' ? '' : programsLib.countsSection(code, counts.get(code), progCat, fitsByCode.get(code) ?? []),
       }),
     ]);
     sitemap.push(`/${slug(code)}/`);
@@ -556,6 +562,7 @@ async function main() {
           gradCourses,
           known,
           faculty: subjectFaculty(subject),
+          plans: cat === progCat ? (plansBySubject.get(subject) ?? []) : [],
         }),
       ]);
       if (cat === current) sitemap.push(`/${cat.yearCode}/${slug(subject)}/`);

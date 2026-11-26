@@ -1117,6 +1117,9 @@ export const facultyRank = (g) => (FACULTY_ORDER.includes(g) ? FACULTY_ORDER.ind
 
 // ---------------- every plan, laid out ----------------
 
+/** The row a plan sits in: its field ("Economics"), its faculty's options ("Options"), or its own name. */
+export const fieldOf = (p) => (/^Options\b/.test(p?.fi ?? '') ? 'Options' : p?.fi || planParts(p).name);
+
 const KIND_ORDER = { Major: 0, Minor: 1, Diploma: 2, Certificate: 3, Option: 4, Specialization: 5 };
 const majorRank = (kind) => (/Joint/.test(kind) ? 1 : /Four-Year/.test(kind) ? 2 : /Three-Year/.test(kind) ? 3 : 0);
 /**
@@ -1133,7 +1136,7 @@ export function byField(programs) {
   for (const p of programs) {
     if (p.t === 'Degree Requirements') continue;
     const { group } = facultyOf(p.f ? p : { ...p, f: fieldFaculty.get(p.fi) ?? '' });
-    const field = /^Options\b/.test(p.fi ?? '') ? 'Options' : p.fi || planParts(p).name;
+    const field = fieldOf(p);
     if (!groups.has(group)) groups.set(group, new Map());
     const rows = groups.get(group);
     if (!rows.has(field)) rows.set(field, []);

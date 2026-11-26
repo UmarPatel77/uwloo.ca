@@ -9,7 +9,8 @@
 import { ageDays, getJson, pool, readCache, writeCache } from './http.mjs';
 import { CALENDAR_PAGE, KUALI_BASE } from './kuali.mjs';
 import { shell } from './render.mjs';
-import { codesIn, esc, find, findAll, fmtCode, linkCodes, nodeToTree, norm, parseHtml, renderTree, textOf } from './requisites.mjs';
+import { codesIn, esc, find, findAll, fmtCode, linkCodes, nodeToTree, norm, parseHtml, renderTree, slug, textOf } from './requisites.mjs';
+import { fittingCodes, hints } from './pathways.mjs';
 
 export const ICC_PID = 'S17gweg46'; // the Invalid Credential Combinations policy
 const CACHE = '.cache/kuali';
@@ -575,11 +576,11 @@ const programHref = (byId) => (href) => {
   return p ? `/programs/${p.slug}/` : null;
 };
 
-function sectionHtml(s, known, byId, depth = 3) {
+function sectionHtml(s, known, byId, depth = 3, words = null) {
   const units = s.units != null ? ` <span class="t">${esc(s.units)} units</span>` : '';
   const head = s.heading ? `<h${depth}>${esc(s.heading)}${units}</h${depth}>` : '';
-  const tree = s.tree ? renderTree(s.tree, known, programHref(byId)) : '';
-  const lists = s.lists.map((l) => sectionHtml(l, known, byId, Math.min(depth + 1, 5))).join('');
+  const tree = s.tree ? renderTree(s.tree, known, programHref(byId), { words }) : '';
+  const lists = s.lists.map((l) => sectionHtml(l, known, byId, Math.min(depth + 1, 5), words)).join('');
   return head || tree || lists ? `<div class="psec">${head}${tree}${lists}</div>` : '';
 }
 
@@ -591,7 +592,22 @@ function openTo(p, byId) {
   return p.audience.map(esc).join(' ');
 }
 
-export function programPage({ p, programs, combos, cat, known, builtAt, version }) {
+/**
+ * After a rule in words on a program page ("Complete 2.0 additional units of ECON courses at the 200-level or
+ * above"): the calendar's courses that fit it, and their subject's page, so the list is one tap away rather than
+ * a subject page away. courses: the calendar's (code → {title}); subjects: the ones with a page this year.
+ */
+export function fitsHtml(text, { courses, subjects, yearCode }) {
+  const h = hints(text);
+  if (!(h.u || h.nc) || !(h.subj || h.rg) || !courses?.size) return '';
+  const codes = fittingCodes(h, courses.keys());
+  if (!codes.length) return '';
+  const subj = [...new Set(h.subj ?? h.rg.map((r) => r[0]))].filter((x) => subjects?.has(x));
+  const links = codes.map((c) => `<a class="cc" href="/${slug(c)}/" title="${esc(courses.get(c)?.title ?? '')}">${esc(fmtCode(c))}</a>`).join(' ');
+  return `<details class="fits"><summary>${codes.length === 1 ? '1 course fits' : `${codes.length} courses fit`}</summary><p class="fits-l">${links}</p>${subj.length && yearCode ? `<p class="t">${subj.map((x) => `<a href="/${yearCode}/${slug(x)}/">Every ${esc(x)} course</a>`).join(' · ')}, with descriptions and requisites.</p>` : ''}</details>`;
+}
+
+export function programPage({ p, programs, combos, cat, known, courses = null, subjects = null, builtAt, version }) {
   const { byId } = programs;
   const systems = [p.regular && 'Regular', p.coop && 'Co-op'].filter(Boolean).join(', ');
   const open = openTo(p, byId);
@@ -608,7 +624,8 @@ export function programPage({ p, programs, combos, cat, known, builtAt, version 
     const h = text(f);
     return h ? `<section aria-labelledby="${id}"><h2 id="${id}">${esc(heading)}</h2><div class="notes">${h}</div></section>` : '';
   };
-  const sections = p.sections.map((s) => sectionHtml(s, known, byId)).join('');
+  const words = courses ? (text) => fitsHtml(text, { courses, subjects, yearCode: cat.yearCode }) : null;
+  const sections = p.sections.map((s) => sectionHtml(s, known, byId, 3, words)).join('');
   const specs = p.specializationRefs.map((r) => byId.get(r.id)).filter(Boolean);
   const cant = combos?.get(p.pid) ?? [];
   const cantItem = (o) => {
@@ -632,7 +649,7 @@ export function programPage({ p, programs, combos, cat, known, builtAt, version 
   <p class="kicker"><a href="/programs/">Programs</a> · ${esc(p.type)}</p>
   <h1>${h1}</h1>
   <dl class="facts">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
-  <p class="plan-link"><a href="/pathways/#add=${esc(p.slug)}">Map it out term by term in Pathways</a></p>
+  <p class="plan-link"><a href="/pathways/#add=${esc(p.slug)}">Map it out term by term in Pathways</a>${p.type === 'Degree Requirements' ? '' : ` <span class="t">or</span> <a href="/pathways/#show=${esc(p.slug)}">pick electives from its courses</a>`}</p>
 </header>
 ${p.text.specialNotice ? `<div class="gone-note">${text('specialNotice')}</div>` : ''}
 ${prose('graduationRequirements', 'Graduation requirements', 'grad-h')}
@@ -728,7 +745,7 @@ export function programsIndexPage({ programs, cat, builtAt, version }) {
     .join('');
   const body = `<h1>Programs</h1>
 <p class="lede">Every major, minor, option, specialization, diploma and certificate in the ${esc(cat.label)} Undergraduate Calendar: ${counts.map(([t, n]) => `${n} ${esc(typePlural(t).toLowerCase())}`).join(', ')}.</p>
-<p><a href="/pathways/">Map out your degree in Pathways</a> · <a href="/programs/combinations/">What can’t be combined</a></p>
+<p><a href="/pathways/">Map out your degree in Pathways</a> · <a href="/pathways/#browse">Pick electives from any of these there</a> · <a href="/programs/combinations/">What can’t be combined</a></p>
 <div class="pfilter"><label for="pf">Filter</label><input id="pf" type="search" placeholder="economics, minor, co-op…" autocomplete="off" spellcheck="false"></div>
 ${groups}
 <p class="none" id="pnone" hidden>No program matches.</p>
@@ -784,9 +801,18 @@ export function combinationsPage({ icc, cat, known, programs, builtAt, version }
   });
 }
 
-/** "Counts toward" on a course page: every program that lists it by name, by kind. */
-export function countsSection(code, list, cat) {
-  if (!list?.length) return '';
+/**
+ * "Counts toward" on a course page: every program that lists it by name, by kind; then the ones whose rules in
+ * words it fits ("2.0 units of ECON courses at the 200-level or above"), fits: [{p, rules}].
+ */
+export function countsSection(code, list, cat, fits = []) {
+  list = list ?? [];
+  const named = new Set(list.map((x) => x.p.slug));
+  const more = fits.filter((x) => x.p && !named.has(x.p.slug)).sort((a, b) => TYPE_ORDER.indexOf(a.p.type) - TYPE_ORDER.indexOf(b.p.type) || a.p.name.localeCompare(b.p.name));
+  if (!list.length && !more.length) return '';
+  const words = more.length
+    ? `<details class="counts-g counts-w"${!list.length && more.length <= 12 ? ' open' : ''}><summary>Rules in words it fits <span class="t">${more.length}</span></summary><ul class="plinks">${more.map((x) => `<li>${programLink(x.p)} <span class="t">${esc(x.p.type)} · ${esc(x.rules.join('; '))}</span></li>`).join('')}</ul></details>`
+    : '';
   const types = [...new Set([...TYPE_ORDER, ...list.map((x) => x.p.type)])].filter((t) => list.some((x) => x.p.type === t));
   const group = (t) => {
     const items = list
@@ -797,6 +823,6 @@ export function countsSection(code, list, cat) {
     return items.length > 8 ? `<details class="counts-g"><summary>${head}</summary><ul class="plinks">${items.join('')}</ul></details>` : `<h3>${head}</h3><ul class="plinks">${items.join('')}</ul>`;
   };
   return `<section aria-labelledby="counts-h"><h2 id="counts-h">Counts toward</h2>
-<p class="t">Programs in the ${esc(cat.label)} Undergraduate Calendar that list ${esc(fmtCode(code))} by name. Rules like “any 300-level course in the subject” aren’t counted here.</p>
-<div class="counts">${types.map(group).join('')}</div></section>`;
+<p class="t">Programs in the ${esc(cat.label)} Undergraduate Calendar that list ${esc(fmtCode(code))} by name${more.length ? ', then ones whose rules in words it fits (“units of a subject at a level”)' : ''}. <a href="/pathways/">Pathways</a> puts it in your grid toward any of them.</p>
+<div class="counts">${types.map(group).join('')}${words}</div></section>`;
 }

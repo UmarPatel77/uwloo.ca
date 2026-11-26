@@ -83,6 +83,98 @@ export function hints(text) {
   return h;
 }
 
+const byCode = (a, b) => a.localeCompare(b, 'en', { numeric: true });
+/**
+ * The courses a rule in words takes (hints: {subj, min} or {rg}; no and nos, courses and subjects a breadth rule
+ * leaves out), from codes, by subject and number: "2.0 units of ECON courses at the 200-level or above" → ECON 201…
+ */
+export function fittingCodes(h, codes) {
+  const out = [];
+  for (const c of codes) {
+    const m = /^([A-Z]{2,8})(\d{3})/.exec(c);
+    if (!m || (h.no ?? []).includes(c) || (h.nos ?? []).includes(m[1])) continue;
+    const num = Number(m[2]);
+    if (h.rg ? h.rg.some(([s, lo, hi]) => s === m[1] && num >= lo && num <= hi) : h.subj?.includes(m[1]) && (!h.min || num >= h.min * 100)) out.push(c);
+  }
+  return out.sort(byCode);
+}
+/** Every rule in words (with a number of courses or units, from subjects or ranges) in compact sections. */
+function eachWordsRule(sections, fn) {
+  const node = (n) => {
+    if (n.g) return n.i.forEach(node);
+    if (!n.r && !n.info && (n.u || n.nc) && (n.subj || n.rg)) fn(n);
+  };
+  const sec = (x) => {
+    (x.r ?? []).forEach(node);
+    (x.l ?? []).forEach(sec);
+  };
+  (sections ?? []).forEach(sec);
+}
+/**
+ * For course pages: the plans whose rules in words a course fits, beyond the ones that name it. programs:
+ * pathwaysPrograms' list; codes: the calendar's courses. → Map code → [{s, t: [rule texts]}]
+ */
+export function wordsFits(programs, codes) {
+  const all = [...codes];
+  const out = new Map();
+  for (const p of programs) {
+    const mine = new Map();
+    eachWordsRule(p.req, (n) => {
+      for (const c of fittingCodes(n, all)) {
+        if (!mine.has(c)) mine.set(c, new Set());
+        mine.get(c).add(n.t);
+      }
+    });
+    for (const [c, t] of mine) {
+      if (!out.has(c)) out.set(c, []);
+      out.get(c).push({ s: p.s, t: [...t] });
+    }
+  }
+  return out;
+}
+/**
+ * For subject pages: the plans built on a subject's courses: the ones naming two or more of them, and the ones
+ * whose rules in words take them. Degree requirements name too much to say. → Map subject → [{s, named, words}]
+ * (named: how many of its courses the plan names; words: the rules), the ones naming the most first.
+ */
+export function subjectPlans(programs) {
+  const out = new Map();
+  const entry = (subj, s) => {
+    if (!out.has(subj)) out.set(subj, new Map());
+    const m = out.get(subj);
+    if (!m.has(s)) m.set(s, { s, named: new Set(), words: new Set() });
+    return m.get(s);
+  };
+  for (const p of programs) {
+    if (p.t === 'Degree Requirements') continue;
+    const node = (n) => {
+      if (n.g) return n.i.forEach(node);
+      if (n.r === 'not' || n.r === 'max') return;
+      for (const c of n.c ?? []) {
+        const subj = /^[A-Z]{2,8}(?=\d)/.exec(c)?.[0];
+        if (subj) entry(subj, p.s).named.add(c);
+      }
+    };
+    const sec = (x) => {
+      (x.r ?? []).forEach(node);
+      (x.l ?? []).forEach(sec);
+    };
+    (p.req ?? []).forEach(sec);
+    eachWordsRule(p.req, (n) => {
+      for (const subj of n.subj ?? n.rg.map((r) => r[0])) entry(subj, p.s).words.add(n.t);
+    });
+  }
+  return new Map(
+    [...out].map(([subj, m]) => [
+      subj,
+      [...m.values()]
+        .filter((x) => x.named.size >= 2 || x.words.size)
+        .map((x) => ({ s: x.s, named: x.named.size, words: [...x.words] }))
+        .sort((a, b) => b.named - a.named || b.words.length - a.words.length || a.s.localeCompare(b.s)),
+    ]),
+  );
+}
+
 /** kualiToTree's nodes → the compact shape engine.js reads. */
 export function compact(nodes) {
   return (nodes ?? [])

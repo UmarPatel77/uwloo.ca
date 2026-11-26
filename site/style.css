@@ -208,6 +208,23 @@ h2 { font-size: 1.05rem; font-weight: 700; font-stretch: 87.5%; margin: 2.25rem 
 .counts h3 { font-size: 1rem; margin: 1.1rem 0 0.35rem; }
 .counts h3 .t, .counts summary .t { font-weight: 500; }
 .counts-g summary { cursor: pointer; font-weight: 700; margin: 1.1rem 0 0.35rem; }
+/* A rule in words on a program page: the courses that fit it ("2.0 units of ECON at the 200-level or above"). */
+.fits { margin: 0.25rem 0 0.1rem; }
+.fits summary { cursor: pointer; font-size: 0.88rem; color: var(--muted); font-weight: 600; width: fit-content; }
+.fits summary:hover { color: var(--ink); }
+.fits-l { margin: 0.3rem 0 0.2rem; line-height: 1.9; max-width: 70ch; }
+.fits-l .cc { margin-right: 0.35rem; white-space: nowrap; }
+.fits .t { font-size: 0.85rem; margin: 0.15rem 0 0; }
+.plan-link .t { font-weight: 400; color: var(--muted); }
+.plan-link a + .t + a { font-weight: 600; text-decoration-thickness: 2px; }
+/* A subject page's plans built on its courses. */
+.subj-plans { margin: 0.4rem 0 1.4rem; }
+.subj-plans summary { cursor: pointer; }
+.subj-plans summary h2 { display: inline; font-size: 1.15rem; margin: 0; }
+.subj-plans summary .t { font-size: 0.9rem; }
+.subj-plans h3 { font-size: 0.98rem; margin: 0.9rem 0 0.3rem; }
+.subj-plans h3 .t { font-weight: 500; }
+.subj-plans .sp-pw { font-size: 0.82rem; white-space: nowrap; }
 .notes h4 { font-size: 1rem; margin: 1rem 0 0.3rem; }
 .notes table { border-collapse: collapse; font-size: 0.88rem; margin: 0.6rem 0; display: block; overflow-x: auto; }
 .notes th, .notes td { border: 1px solid var(--rule); padding: 0.25rem 0.5rem; text-align: left; vertical-align: top; }
