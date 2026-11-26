@@ -846,6 +846,9 @@ export function arrange(rows, want, { courses = {}, load = 5, max = 7, from = 0,
 // Courses that need a supervisor or a placement first: picked only when nothing else will do.
 const ARRANGED = /\b(independent stud|directed stud|special stud|reading course|honours (?:essay|thesis)|senior (?:honours|essay|thesis)|thesis|research project|practicum|internship|field (?:placement|course|work)|exchange)/i;
 
+// Subjects a program keeps for its own students (engineering, pharmacy, optometry, architecture): not picked as
+// electives for anyone whose plans don't name them.
+const OWN_SUBJECTS = new Set(['AE', 'ARCH', 'BME', 'CHE', 'CIVE', 'ECE', 'ENVE', 'GENE', 'GEOE', 'ME', 'MSE', 'MTE', 'NE', 'SE', 'SYDE', 'TRON', 'PHARM', 'OPTOM']);
 // Advanced and enriched versions need high marks or permission, and non-specialist ones are for students outside
 // the subject: the regular one first, when both would do.
 const ADVANCED = /\(Advanced Level\)|\bEnriched\b|\bNon-?Specialist\b|\bfor Non-(?:Majors|Math)/i;
@@ -853,7 +856,7 @@ const ADVANCED = /\(Advanced Level\)|\bEnriched\b|\bNon-?Specialist\b|\bfor Non-
 const AUDIENCE = /\bfor (?:the )?(?:honours |life |physical )?(mathematics|math|sciences?|engineering|engineers|arts|environment|health)\b/i;
 const AUDIENCE_FACULTY = { mathematics: 'Mathematics', math: 'Mathematics', sciences: 'Science', science: 'Science', engineering: 'Engineering', engineers: 'Engineering', arts: 'Arts', environment: 'Environment', health: 'Health' };
 
-export function optimize(plans, planned, { courses = {}, equiv, faculty = {}, ctx = {}, exclude = new Set(), limit = 80, complete = [] } = {}) {
+export function optimize(plans, planned, { courses = {}, equiv, faculty = {}, ctx = {}, exclude = new Set(), limit = 80, complete = [], goal = null, total = null } = {}) {
   const have = new Map(planned);
   const odd = (c) => ARRANGED.test(courses[c]?.[0] ?? '');
   const advanced = (c) => ADVANCED.test(courses[c]?.[0] ?? '');
@@ -863,6 +866,11 @@ export function optimize(plans, planned, { courses = {}, equiv, faculty = {}, ct
     const m = AUDIENCE.exec(courses[c]?.[0] ?? '');
     return m ? (homes.has(AUDIENCE_FACULTY[m[1].toLowerCase()]) ? 1 : -1) : 0;
   };
+  // How well a course fits the goal, 0 to 1 (a cross-listed course, its best code); 0 without one.
+  const rel = (c) => (goal ? Math.max(goal.get(c) ?? 0, ...(courses[c]?.[6] ?? []).map((x) => goal.get(x) ?? 0)) : 0);
+  // With a goal, a course is worth what it counts toward times how well it fits: one that fits well and counts
+  // once beats one that fits poorly and counts twice.
+  const worth = (g, c) => (goal ? g * (0.25 + rel(c)) : g);
   const hctx = { ...ctx, equiv };
   const runs = (c) => {
     const s = courses[c]?.[5];
@@ -951,19 +959,20 @@ export function optimize(plans, planned, { courses = {}, equiv, faculty = {}, ct
     const cands = [...needed]
       .map(([c, ks]) => ({ c, ks, gain: gainOf(ks), runs: Math.min(runs(c), 4), odd: odd(c) }))
       .filter((x) => x.gain > 0)
-      .sort((a, b) => b.gain - a.gain || a.odd - b.odd || yearOf(a.c) - yearOf(b.c) || b.runs - a.runs || (a.c < b.c ? -1 : 1));
+      .map((x) => ({ ...x, top: worth(x.gain, x.c) }))
+      .sort((a, b) => b.top - a.top || a.odd - b.odd || yearOf(a.c) - yearOf(b.c) || b.runs - a.runs || (a.c < b.c ? -1 : 1));
     let best = null;
     let looked = 0;
     for (const x of cands) {
       // A course scores its gain at most, unless prerequisites that count too come with it: stop once nothing
       // left could beat the best by itself.
-      if (best && x.gain + 0.05 <= best.score && looked > 60) break;
+      if (best && x.top + 0.05 <= best.score && looked > 60) break;
       if (++looked > 600) break;
       if (!usable(x.c, have)) continue;
       const pre = prereqs(x.c, have, needed);
       if (!pre) continue;
       // The course and the prerequisites it brings, together: what they count toward for each course they cost.
-      const gain = x.gain + pre.reduce((t, p) => t + (needed.has(p) ? gainOf(needed.get(p)) : 0), 0);
+      const gain = worth(x.gain, x.c) + pre.reduce((t, p) => t + (needed.has(p) ? worth(gainOf(needed.get(p)), p) : 0), 0);
       const cost = 1 + pre.length + (x.runs || !anyRuns ? 0 : 0.75) + (x.odd ? 1.5 : 0) + (advanced(x.c) ? 0.5 : 0);
       // Among equals: one meant for the plans' faculty, what the plans build on, then lower levels (fewer
       // prerequisites to come), then ones that run in more terms.
@@ -978,6 +987,40 @@ export function optimize(plans, planned, { courses = {}, equiv, faculty = {}, ct
     addPlanned(have, best.c, { units: courses[best.c]?.[1] ?? UNIT });
     out.push({ code: best.c, plans: best.ks });
   }
+  // With a goal and the degree's total units: its free electives, from the courses that fit the goal best (with
+  // up to two prerequisites each, which count as electives too), until the degree's units are reached.
+  if (goal && total) {
+    // The subjects the plans themselves name: a program's own courses are electives only for its students.
+    const named = new Set();
+    const walk = (nodes) => nodes.forEach((n) => (n.c?.forEach((c) => named.add(numbered(c)?.[0])), n.subj?.forEach((x) => named.add(x)), n.i && walk(n.i)));
+    const sec = (x) => (walk(x.r), (x.l ?? []).forEach(sec));
+    plans.forEach((p) => p.req.forEach(sec));
+    const open = (c) => !OWN_SUBJECTS.has(numbered(c)?.[0]) || named.has(numbered(c)?.[0]);
+    const unitsNow = () => [...have].reduce((t, [k, x]) => t + (WORK_COURSE.test(k) || isPlaceholder(k) ? 0 : (x.units ?? UNIT)), 0);
+    const pool = [...goal].filter(([c, r]) => r >= 0.12 && courses[c]).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, 500).map(([c]) => c);
+    const none = new Map();
+    for (let step = 0; step < limit && unitsNow() < total - 1e-6; step++) {
+      let best = null;
+      for (const c of pool) {
+        const r = rel(c);
+        if (best && r + 0.02 <= best.score) break;
+        if (!open(c) || !usable(c, have) || odd(c)) continue;
+        const pre = prereqs(c, have, none);
+        if (!pre || pre.length > 2) continue;
+        const cost = 1 + pre.length + (runs(c) || !anyRuns ? 0 : 0.75) + (advanced(c) ? 0.5 : 0);
+        const score = (r + pre.reduce((t, p) => t + rel(p), 0)) / cost;
+        if (!best || score > best.score) best = { c, pre, score };
+      }
+      if (!best) break;
+      for (const p of best.pre) {
+        addPlanned(have, p, { units: courses[p]?.[1] ?? UNIT });
+        out.push({ code: p, plans: [], for: best.c, goal: rel(p) });
+      }
+      addPlanned(have, best.c, { units: courses[best.c]?.[1] ?? UNIT });
+      out.push({ code: best.c, plans: [], goal: rel(best.c) });
+    }
+  }
+  if (goal) for (const x of out) x.goal ??= rel(x.code);
   return out;
 }
 

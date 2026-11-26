@@ -2325,6 +2325,14 @@ test('search: an index from a few courses ranks by words, pairs and what courses
   assert.ok(top.results[0].mask & 4 && top.results[0].mask & 16, 'matched in its description and on Reddit');
   assert.ok(ask('eigenvalues').results.slice(0, 6).every((x) => d.codes[x.i].startsWith('S1')));
   assert.equal(respell('eigenvaleus', get('search/vocab.json'))?.[0], 'eigenvalues');
+  // Every course's fit for a goal, 0 to 1, for Pathways.
+  const { relevance } = await import('../site/search/rank.js');
+  const qt = queryTerms('latin translation');
+  const fit = relevance(qt, new Map([...qt.words, ...qt.pairs].map((x) => [x.t, get(`search/t/${shardOf(x.t)}.json`)[x.t]])), d, vec);
+  const best = [...fit].sort((a, b) => b[1] - a[1]);
+  assert.equal(best[0][1], 1);
+  assert.ok(best.slice(0, 6).every(([c]) => c.startsWith('S2')), 'the Latin courses fit best');
+  assert.ok((fit.get('CS341') ?? 0) < 0.3);
 });
 
 test('pathways: finding a plan the way people say it', () => {
@@ -2583,4 +2591,50 @@ test('pathways: the optimal plan picks courses that count twice, with what they 
   assert.deepEqual(early.placed.find((p) => p.code === 'A205').row, 0, 'into the first term with room');
   const chain = { A205: ['x', 0.5, [{ r: 'all', c: ['A204'] }], 0, 0, [1, 1, 1]] };
   assert.deepEqual(PE.arrange(rows, want, { courses: chain, load: 2, early: true }).left, ['A205'], 'not before its prerequisite');
+});
+
+test('pathways: a goal for the optimal plan', async () => {
+  const { goalQuery } = await import('../site/pathways/goals.js');
+  // A career stands for its topics; a topic or a textbook's contents is searched as it is; roles drop out.
+  const swe = goalQuery('non-math student still swe');
+  assert.deepEqual(swe.names, ['software engineering']);
+  assert.match(swe.query, /^software engineering, software design, algorithms/);
+  assert.doesNotMatch(swe.query, /math|student/);
+  assert.deepEqual(goalQuery('classics professor').names, ['classics']);
+  assert.doesNotMatch(goalQuery('classics professor').query, /professor/);
+  assert.deepEqual(goalQuery('Latin and Greek').names, ['classical languages']);
+  assert.deepEqual(goalQuery('latin american studies'), { query: 'latin american studies', names: [] });
+  assert.deepEqual(goalQuery('machine learning'), { query: 'machine learning', names: [] });
+  assert.doesNotMatch(goalQuery('high school teacher').query, /high|school/);
+  const toc = 'Introduction to Algorithms: sorting, heaps, hash tables, binary search trees, dynamic programming, greedy algorithms, graph algorithms, NP-completeness';
+  assert.deepEqual(goalQuery(toc), { query: toc, names: [] });
+  assert.deepEqual(goalQuery('  '), { query: '', names: [] });
+
+  // With a goal, a requirement's choice goes to the course that fits it, and free electives come from it, up to
+  // the degree's units, not from another program's own courses.
+  const C = {
+    ECON101: ['Microeconomics', 0.5, 0, 0, 0, [2, 2, 2]],
+    ECON301: ['Labour Economics', 0.5, 0, 0, 0, [2, 2, 2]],
+    ECON302: ['Economics of Technology and Software', 0.5, 0, 0, 0, [2, 2, 2]],
+    CS230: ['Introduction to Computers', 0.5, 0, 0, 0, [2, 2, 2]],
+    CS330: ['Management Information Systems', 0.5, [{ r: 'all', c: ['CS230'] }], 0, 0, [2, 2, 2]],
+    CS430: ['Applications Software Engineering', 0.5, [{ r: 'all', c: ['CS330'] }], 0, 0, [2, 2, 2]],
+    SE101: ['Introduction to Methods of Software Engineering', 0.5, 0, 0, 0, [2, 2, 2]],
+    HIST101: ['History', 0.5, 0, 0, 0, [2, 2, 2]],
+  };
+  const econ = { s: 'e', n: 'Economics', t: 'Major', req: [{ h: '', r: [{ r: 'all', c: ['ECON101'] }, { r: 'n', n: 1, c: ['ECON301', 'ECON302'] }], l: [] }] };
+  const goal = new Map([['SE101', 1], ['CS430', 0.95], ['CS330', 0.6], ['ECON302', 0.4], ['CS230', 0.3], ['ECON301', 0.05]]);
+  const have = new Map([['ECON101', { units: 0.5 }]]);
+  assert.deepEqual(PE.optimize([econ], have, { courses: C }).map((a) => a.code), ['ECON301'], 'without one, the first that does');
+  const add = PE.optimize([econ], have, { courses: C, goal, total: 3 });
+  assert.equal(add[0].code, 'ECON302', 'the choice that fits the goal');
+  assert.deepEqual(
+    add.slice(1).map((a) => [a.code, a.for ?? null]),
+    [['CS230', 'CS430'], ['CS330', 'CS430'], ['CS430', null]],
+    'an elective that fits, with its prerequisites ahead of it',
+  );
+  assert.ok(!add.some((a) => a.code === 'SE101'), 'not a program’s own course');
+  assert.ok(add.every((a) => typeof a.goal === 'number'));
+  const units = [...have.values(), ...add].length * 0.5;
+  assert.ok(units <= 3, 'no more than the degree takes');
 });

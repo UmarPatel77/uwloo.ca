@@ -63,12 +63,8 @@ const near = (q, M, i, dims) => {
   return s / 127;
 };
 
-/**
- * Scores courses for a query. entries: term → its postings entry ({p, w, m, d, v}) or undefined. docs: docs.json;
- * vec: loadVec(vec.json), or null while it loads.
- * → {results: [{i, score, lex, sem, mask, hits}], related: [[shown, term]], subjects: [[[code, name], share]], total}
- */
-export function rank({ words, pairs }, entries, docs, vec = null, { limit = 40 } = {}) {
+/** Every course's score for a query (BM25 by where its words are, plus nearness in LSA space): {out, q, known}. */
+function scoreAll({ words, pairs }, entries, docs, vec) {
   const score = new Map();
   const get = (i) => {
     let e = score.get(i);
@@ -123,6 +119,26 @@ export function rank({ words, pairs }, entries, docs, vec = null, { limit = 40 }
     if (x.score > 0.02) out.push(x);
   }
   out.sort((a, b) => b.score - a.score || a.i - b.i);
+  return { out, q, known };
+}
+
+/**
+ * How well each course fits a query, 0 to 1 (the best is 1), for Pathways' goals: Map code → fit, courses with
+ * any fit at all. Same scores as rank, every course, cross-listed ones each under its own code.
+ */
+export function relevance(qt, entries, docs, vec = null) {
+  const { out } = scoreAll(qt, entries, docs, vec);
+  const top = Math.max(1e-9, ...out.map((x) => x.score));
+  return new Map(out.map((x) => [docs.codes[x.i], x.score / top]));
+}
+
+/**
+ * Scores courses for a query. entries: term → its postings entry ({p, w, m, d, v}) or undefined. docs: docs.json;
+ * vec: loadVec(vec.json), or null while it loads.
+ * → {results: [{i, score, lex, sem, mask, hits}], related: [[shown, term]], subjects: [[[code, name], share]], total}
+ */
+export function rank({ words, pairs }, entries, docs, vec = null, { limit = 40 } = {}) {
+  const { out, q, known } = scoreAll({ words, pairs }, entries, docs, vec);
   // Related ideas: the terms nearest the query, not ones it already has.
   const asked = new Set([...words, ...pairs].map((x) => x.t));
   const related = [];

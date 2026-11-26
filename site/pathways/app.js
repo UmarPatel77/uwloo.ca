@@ -5,6 +5,7 @@ const root = document.getElementById('pathways');
 const V = root.dataset.v;
 const app = document.getElementById('pw-app');
 const E = await import(`/pathways/engine.js?v=${V}`);
+const { goalQuery } = await import(`/pathways/goals.js?v=${V}`);
 let data;
 try {
   data = await (await fetch(`/pathways/data.json?v=${V}`)).json();
@@ -1351,6 +1352,90 @@ function adopt(slug) {
 let fill = null; // {slugs: Set, choice: Map key → Set, load, from, ph, last, auto, grow, drop: Set}
 // Terms "Optimal plan" may add after the grid's last (5A, 5B… up to 7B in an eight-term degree).
 const GROW_MAX = 6;
+
+// ---------------- goals ----------------
+// "Aim it at a goal": how well each course fits what someone wants from their degree (goals.js turns a career
+// into topics), scored by the course search's index (site/search/: its words' postings and LSA vectors), which is
+// fetched the first time a goal is used.
+const SX = { mods: null, docs: null, vec: null, shards: new Map() };
+const sxJson = (path) => fetch(`/search/${path}?v=${V}`).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${path}: ${r.status}`))));
+async function goalFit(query) {
+  SX.mods ??= Promise.all([import('/search/rank.js'), import('/search/text.js')]);
+  const [R, T] = await SX.mods;
+  SX.docs ??= sxJson('docs.json');
+  SX.vec ??= sxJson('vec.json')
+    .then((v) => R.loadVec(v))
+    .catch(() => null);
+  const qt = R.queryTerms(query);
+  const terms = [...qt.words, ...qt.pairs];
+  const shard = (i) => {
+    if (!SX.shards.has(i)) SX.shards.set(i, sxJson(`t/${i}.json`).catch(() => ({})));
+    return SX.shards.get(i);
+  };
+  const got = await Promise.all(terms.map((x) => shard(T.shardOf(x.t))));
+  const [docs, vec] = await Promise.all([SX.docs, SX.vec]);
+  return R.relevance(qt, new Map(terms.map((x, k) => [x.t, got[k][x.t]])), docs, vec);
+}
+const GOAL_EXAMPLES = ['software engineering', 'data science', 'law school', 'medical school', 'Latin and Greek', 'theory and proofs', 'hands-on projects'];
+/** Aim the Optimal plan at a goal (or none, with ''): its courses' fit loads, then the picks follow it. */
+function setGoal(text, { focus = true } = {}) {
+  const g = goalQuery(text);
+  // Kept with the plan, for the next time.
+  state.goal = text.trim();
+  save();
+  Object.assign(fill, { goal: text.trim(), goalQ: g, rel: null, relQ: g.query, relErr: false, relBusy: !!g.query, best: null });
+  renderFill(focus && text.trim() ? '#pw-goal' : null);
+  if (!g.query) return;
+  goalFit(g.query)
+    .then((rel) => {
+      if (!fill || fill.relQ !== g.query) return;
+      Object.assign(fill, { rel, relBusy: false, best: null });
+      renderFill();
+    })
+    .catch(() => {
+      if (!fill || fill.relQ !== g.query) return;
+      Object.assign(fill, { relBusy: false, relErr: true });
+      renderFill();
+    });
+}
+/** Minors, options, specializations, diplomas and certificates whose courses fit the goal, that go with the plans
+ *  picked: the four that fit best, by their six best-fitting courses. */
+function goalPlans() {
+  if (!fill?.rel) return [];
+  const chosen = new Set(state.plans);
+  const blocked = new Set(A.plans.flatMap((p) => p.cant ?? []));
+  const majors = A.plans.filter((p) => p.t === 'Major');
+  const faculties = new Set(majors.map((p) => p.f));
+  // Courses by subject, for plans that ask for units of a few subjects ("4.0 units of CLAS, GRK, or LAT").
+  const bySubject = new Map();
+  for (const c of Object.keys(C)) {
+    if (C[c][7]) continue;
+    const subj = /^[A-Z]+/.exec(c)?.[0];
+    if (!bySubject.has(subj)) bySubject.set(subj, []);
+    bySubject.get(subj).push(c);
+  }
+  const out = [];
+  for (const p of P) {
+    if (!['Minor', 'Option', 'Specialization', 'Diploma', 'Certificate'].includes(p.t) || chosen.has(p.s) || blocked.has(p.s) || (p.cant ?? []).some((x) => chosen.has(x))) continue;
+    // A specialization is for the majors it names; an option, for its faculty's majors (Engineering's for
+    // engineering students); engineering's plans for engineering students.
+    if (p.t === 'Specialization' && !(p.open ?? []).some((x) => majors.some((m) => m.s === x))) continue;
+    if ((p.t === 'Option' || /Engineering/.test(p.f ?? '')) && majors.length && !faculties.has(p.f)) continue;
+    const codes = new Set();
+    const walk = (nodes) =>
+      nodes.forEach((n) => {
+        n.c?.forEach((c) => codes.add(c));
+        if (n.subj && n.subj.length <= 3) for (const x of n.subj) for (const c of bySubject.get(x) ?? []) codes.add(c);
+        if (n.i) walk(n.i);
+      });
+    const sec = (x) => (walk(x.r), x.l.forEach(sec));
+    p.req.forEach(sec);
+    const fits = [...codes].map((c) => fill.rel.get(c) ?? 0).sort((a, b) => b - a);
+    if (fits.filter((x) => x >= 0.2).length < 3) continue;
+    out.push({ p, score: fits.slice(0, 6).reduce((a, b) => a + b, 0) / 6 });
+  }
+  return out.sort((a, b) => b.score - a.score).slice(0, 4);
+}
 const dlg = document.createElement('dialog');
 dlg.className = 'pw-fill';
 dlg.setAttribute('aria-labelledby', 'pw-fill-h');
@@ -1366,12 +1451,14 @@ function openFill(only = null, { auto = false } = {}) {
   // unless unticked, and are added to the plans.
   const deg = degreeFor(A.plans);
   const extraOn = Boolean(deg) && (!only || bySlug.get(only)?.t === 'Major');
-  fill = { slugs: new Set(only ? [only] : state.plans), choice: new Map(), load: NORMAL, from: now, ph: true, extra: deg?.s ?? null, extraOn, skip: new Set(), more: 0, auto, grow: auto, drop: new Set() };
+  fill = { slugs: new Set(only ? [only] : state.plans), choice: new Map(), load: NORMAL, from: now, ph: true, extra: deg?.s ?? null, extraOn, skip: new Set(), more: 0, auto, grow: auto, drop: new Set(), goal: '', goalQ: null, rel: null, relQ: '', relBusy: false, relErr: false };
   offer = null;
   render();
   renderFill();
   if (!dlg.open) dlg.showModal();
   (dlg.querySelector('.pw-opt') ?? dlg.querySelector('[data-fill="add"]'))?.focus();
+  // The goal it was aimed at last time.
+  if (auto && state.goal) setGoal(state.goal, { focus: false });
 }
 
 /** What filling in would add, plan by plan (each sees what the ones before it add), and where it goes. */
@@ -1408,8 +1495,11 @@ function fillPlan() {
       }
     }
     const progs = plans.map((x) => E.forPlans(x, everyPlan));
-    const sig = JSON.stringify([plans.map((x) => x.s), [...have.keys()].sort(), [...fill.drop].sort()]);
-    if (fill.best?.sig !== sig) fill.best = { sig, add: E.optimize(progs, have, { courses: C, equiv, faculty: SF, ctx: { plans: planCtx }, exclude: fill.drop, complete: [...must.keys()] }) };
+    // With a goal: picks lean toward it, and the degree's free electives come from it.
+    const goal = fill.rel;
+    const degreeUnits = goal && plans.some((p) => p.t === 'Major' || p.t === 'Degree Requirements') ? degreeTotalOf(everyPlan) : null;
+    const sig = JSON.stringify([plans.map((x) => x.s), [...have.keys()].sort(), [...fill.drop].sort(), goal ? fill.relQ : '', degreeUnits]);
+    if (fill.best?.sig !== sig) fill.best = { sig, add: E.optimize(progs, have, { courses: C, equiv, faculty: SF, ctx: { plans: planCtx }, exclude: fill.drop, complete: [...must.keys()], goal, total: degreeUnits }) };
     for (const a of fill.best.add) {
       if (have.has(a.code)) continue;
       take(a.code, null);
@@ -1557,9 +1647,22 @@ function renderFill(focus = null) {
   // "Optimal plan": the courses it picked, what each counts toward, and how far that goes.
   const shared = F.auto.filter((a) => a.names.filter((nm) => !/Degree Requirements/.test(nm)).length > 1).length;
   const short = (nm) => nm.replace(/\s*\((Bachelor|Joint)[^)]*\)$/, '').replace(/ Degree Requirements.*$/, ' degree');
-  const autoRow = (a) => `<li><span class="pw-old" title="${esc(title(a.code))}">${esc(fmt(a.code))}</span> <span class="pw-autot">${esc(C[a.code]?.[0] ?? '')}</span> <button type="button" class="pw-drop" data-drop="${esc(a.code)}" aria-label="Don’t pick ${esc(fmt(a.code))}" title="Don’t pick it (another takes its place)">×</button> <span class="t">${a.for ? `for ${esc(fmt(a.for))}’s prerequisites${a.names.length ? '; ' : ''}` : ''}${esc(a.names.map(short).join(' · '))}</span></li>`;
+  const goalTag = (a) => (fill.rel && a.goal >= 0.35 ? ' <span class="pw-goaltag">fits your goal</span>' : '');
+  const autoRow = (a) => `<li><span class="pw-old" title="${esc(title(a.code))}">${esc(fmt(a.code))}</span> <span class="pw-autot">${esc(C[a.code]?.[0] ?? '')}${goalTag(a)}</span> <button type="button" class="pw-drop" data-drop="${esc(a.code)}" aria-label="Don’t pick ${esc(fmt(a.code))}" title="Don’t pick it (another takes its place)">×</button> <span class="t">${a.for ? `for ${esc(fmt(a.for))}’s prerequisites${a.names.length ? '; ' : ''}` : !a.names.length && fill.rel ? 'an elective toward your goal' : ''}${esc(a.names.map(short).join(' · '))}</span></li>`;
+  const fits = goalPlans();
+  const goalBox = fill.auto
+    ? `<form class="pw-goal" data-goalform><label for="pw-goal">Aim it at a goal <span class="t">(optional): a career, a field, or a textbook’s contents</span></label><div class="pw-goalrow"><input id="pw-goal" type="text" value="${esc(fill.goal)}" placeholder="software engineering, classics professor, machine learning…" autocomplete="off" spellcheck="false"><button type="submit" class="pw-fillbtn">Aim</button>${fill.goal ? '<button type="button" class="pw-linkbtn" data-goal="">Clear</button>' : ''}</div>${
+        !fill.goal
+          ? `<p class="t">Try ${GOAL_EXAMPLES.map((x) => `<button type="button" class="pw-linkbtn" data-goal="${esc(x)}">${esc(x)}</button>`).join(', ')}. Without one, it goes for the fewest courses.</p>`
+          : fill.relBusy
+            ? '<p class="t" role="status">Finding the courses that fit…</p>'
+            : fill.relErr
+              ? '<p class="t" role="status">Couldn’t load the course search. Try again in a moment.</p>'
+              : `<p class="t" role="status">Looking for ${esc(fill.goalQ.query.length > 170 ? `${fill.goalQ.query.slice(0, 170).replace(/[,\s]+\S*$/, '')}…` : fill.goalQ.query)}${fill.goalQ.names.length ? ` (for “${esc(fill.goal)}”: change the words to steer it)` : ''}. Picks lean toward these, and free electives come from them.</p>${fits.length ? `<p class="t">Plans that fit it: ${fits.map(({ p }) => `<button type="button" class="pw-linkbtn" data-goalplan="${esc(p.s)}" title="Add it to your plans">+ ${esc(p.n)}</button>`).join(', ')}</p>` : ''}`
+      }</form>`
+    : '';
   const autoBox = fill.auto
-    ? `<div class="pw-auto"><h3>Picked for the fewest courses <span class="t">${F.auto.length ? `${plural(F.auto.length, 'course')}${shared ? `, ${shared} counting toward two of your plans` : ''}` : 'nothing more to pick'}</span></h3>${F.auto.length ? `<ul class="pw-autolist">${F.auto.map(autoRow).join('')}</ul>` : ''}${fill.drop.size ? `<p class="t">Not picking ${[...fill.drop].map((c) => `<button type="button" class="pw-linkbtn" data-undrop="${esc(c)}" title="Let it be picked again">${esc(fmt(c))}</button>`).join(', ')}.</p>` : ''}</div>`
+    ? `${goalBox}<div class="pw-auto"><h3>${fill.rel ? 'Picked for your goal' : 'Picked for the fewest courses'} <span class="t">${F.auto.length ? `${plural(F.auto.length, 'course')}${shared ? `, ${shared} counting toward two of your plans` : ''}` : 'nothing more to pick'}</span></h3>${F.auto.length ? `<ul class="pw-autolist">${F.auto.map(autoRow).join('')}</ul>` : ''}${fill.drop.size ? `<p class="t">Not picking ${[...fill.drop].map((c) => `<button type="button" class="pw-linkbtn" data-undrop="${esc(c)}" title="Let it be picked again">${esc(fmt(c))}</button>`).join(', ')}.</p>` : ''}</div>`
     : '';
   // Co-op terms first, so courses land in study terms.
   const coopMajor = F.plans.find((p) => p.t === 'Major' && p.seq?.length);
@@ -1572,7 +1675,7 @@ function renderFill(focus = null) {
   const musts = F.must.length ? `<details class="pw-musts"><summary>${plural(F.must.length, 'course')} required by name go in as they are</summary><p>${F.must.map((m) => `<span class="pw-old" title="${esc(title(m.code))}">${esc(fmt(m.code))}</span>`).join('')}</p></details>` : '';
   const empty = !F.must.length && !F.picks.length && !F.words.length;
   dlg.innerHTML = `<div class="pw-fillin">
-<div class="pw-fillhead"><h2 id="pw-fill-h">${fill.auto ? 'Optimal plan' : 'Fill in courses'}</h2><p class="t">${fill.auto ? 'The fewest courses that complete these plans: where one course can count toward two of them (the most the calendar allows), it’s picked over two that count once, with its prerequisites, in terms that fit your load. ' : ''}From the ${esc(labelOf(calYear))} calendar, for a start in ${esc(E.termName(state.start))}. Nothing changes until you add them.</p><button type="button" class="pw-x" data-fill="close" aria-label="Close">×</button></div>
+<div class="pw-fillhead"><h2 id="pw-fill-h">${fill.auto ? 'Optimal plan' : 'Fill in courses'}</h2><p class="t">${fill.auto ? (fill.rel ? 'Courses that complete these plans and fit your goal, with their prerequisites, in terms that fit your load; one that counts toward two plans still counts for more. ' : 'The fewest courses that complete these plans: where one course can count toward two of them (the most the calendar allows), it’s picked over two that count once, with its prerequisites, in terms that fit your load. ') : ''}From the ${esc(labelOf(calYear))} calendar, for a start in ${esc(E.termName(state.start))}. Nothing changes until you add them.</p><button type="button" class="pw-x" data-fill="close" aria-label="Close">×</button></div>
 ${plansBox}
 <div class="pw-fillbody">
 <section class="pw-fillpicks" aria-label="Choices">${autoBox}${empty && !F.auto.length ? '<p>Everything these plans name is already in your grid.</p>' : ''}${F.picks.length ? `<h3>Choose <span class="t">${open ? `${open} of ${F.picks.length} still open; ones you skip stay in the checklist` : 'all picked'}</span></h3>${F.picks.map(pickCard).join('')}` : ''}${F.words.length ? `<h3>Described in words</h3>${F.words.map(wordsCard).join('')}` : ''}${musts}</section>
@@ -1585,7 +1688,7 @@ ${plansBox}
   if (active) dlg.querySelector(active)?.focus({ preventScroll: true });
 }
 const selectorOf = (el) => {
-  for (const a of ['data-pick', 'data-word', 'data-fill', 'data-fplan', 'data-fextra', 'data-unpick', 'data-skip', 'data-undrop']) {
+  for (const a of ['data-pick', 'data-word', 'data-fill', 'data-fplan', 'data-fextra', 'data-unpick', 'data-skip', 'data-undrop', 'data-goalplan']) {
     if (!el.hasAttribute?.(a)) continue;
     const extra = a === 'data-pick' ? `[data-opt="${el.dataset.opt}"]` : a === 'data-word' ? `[data-code="${CSS.escape(el.dataset.code)}"]` : '';
     return `[${a}="${CSS.escape(el.getAttribute(a))}"]${extra}`;
@@ -1610,6 +1713,11 @@ function applyFill() {
   render();
 }
 
+dlg.addEventListener('submit', (e) => {
+  if (!e.target.matches('[data-goalform]')) return;
+  e.preventDefault();
+  setGoal(e.target.querySelector('#pw-goal').value);
+});
 dlg.addEventListener('click', (e) => {
   const t = e.target;
   if (t === dlg) return dlg.close(); // the backdrop
@@ -1642,6 +1750,18 @@ dlg.addEventListener('click', (e) => {
     }
     fill.choice.set(key, sel);
     return renderFill(selectorOf(word));
+  }
+  const aim = t.closest('[data-goal]');
+  if (aim) {
+    setGoal(aim.dataset.goal);
+    return;
+  }
+  const gp = t.closest('[data-goalplan]');
+  if (gp) {
+    addPlan(gp.dataset.goalplan);
+    fill.slugs.add(gp.dataset.goalplan);
+    fill.best = null;
+    return renderFill();
   }
   const drop = t.closest('[data-drop]');
   if (drop) {
