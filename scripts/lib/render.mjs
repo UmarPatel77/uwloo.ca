@@ -35,6 +35,7 @@ ${head}
 <body${faculty ? ` class="f-${faculty}"` : ''}>
 <header class="bar">
   <a class="mark" href="/">uwloo</a>
+  <a class="nav-plan nav-path" href="/pathways/"${path === '/pathways/' ? ' aria-current="page"' : ''}>Pathways</a>
   <a class="nav-plan" href="/calendar/"${path === '/calendar/' ? ' aria-current="page"' : ''}>Timetable<span class="nav-count" aria-hidden="true"></span></a>
   <form class="jump" action="/" role="search">
     <label class="vh" for="q">Go to a course code</label>

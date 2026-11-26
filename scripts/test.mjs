@@ -1795,6 +1795,7 @@ test('planner: saved plans per term; the course page button; the header link', a
   assert.match(btn, /data-plan="\[\{&quot;term&quot;:&quot;1269&quot;,&quot;name&quot;:&quot;Fall 2026&quot;,&quot;from&quot;:&quot;2026-09-08&quot;,&quot;has&quot;:true\}/);
   const page = plannerPage({ terms: [{ term: '1271', name: 'Winter 2027', asOf: null, from: '2027-01-11', courses: 1 }], builtAt: new Date(), version: 'v1' });
   assert.match(page, /<a class="nav-plan" href="\/calendar\/" aria-current="page">Timetable<span class="nav-count" aria-hidden="true"><\/span><\/a>/);
+  assert.match(page, /<a class="nav-plan nav-path" href="\/pathways\/">Pathways<\/a>/, 'Pathways sits beside it in the header');
   assert.match(page, /<p class="support">uwloo is free and has no ads\. If it’s useful to you: <a href="https:\/\/buymeacoffee\.com\/umarhq">Buy me a coffee<\/a> · <a href="https:\/\/github\.com\/sponsors\/UmarPatel77">Sponsor on GitHub<\/a><\/p>/);
 });
 
@@ -2529,4 +2530,57 @@ test('archive programs: pages become plans with the later calendars’ names', a
   assert.equal(by['h-accounting-and-financial-management'].n, 'Accounting and Financial Management (Bachelor of Accounting and Financial Management - Honours)');
   assert.equal(readArchivePage(regs.html).title, 'Co-op Regulations and Requirements');
   assert.equal(pageSections(null, 'x').sections.length, 0);
+});
+
+test('pathways: the optimal plan picks courses that count twice, with what they need', () => {
+  // A cross-listed course is one course under each code: SOC 327 meets "LS 327" and LS words.
+  const X = { SOC327: ['Policing', 0.5, 0, 0, 0, [1, 1, 1], ['LS327']], LS327: ['Policing', 0.5, 0, 0, 0, [1, 1, 1], ['SOC327']] };
+  const ls = { s: 'ls', n: 'Legal Studies Minor', t: 'Minor', req: [{ h: '', r: [{ t: 'Complete 0.5 units of LS courses', u: 0.5, subj: ['LS'] }], l: [] }] };
+  const named = { s: 'x', n: 'X Minor', t: 'Minor', req: [{ h: '', r: [{ r: 'all', c: ['LS327'] }], l: [] }] };
+  const soc = new Map([['SOC327', { units: 0.5 }]]);
+  assert.deepEqual([PE.evaluate(ls, soc, { courses: X }).have, PE.evaluate(named, soc, { courses: X }).have], [1, 1]);
+  assert.equal(PE.evaluate(ls, soc, { courses: {} }).have, 0, 'not without the cross-listing');
+
+  // Two minors: the course both can use first; a prerequisite comes along; arranged and advanced courses last.
+  const C = {
+    SOC101: ['Introduction to Sociology', 0.5, 0, 0, 0, [2, 2, 2]],
+    SOC201: ['Sociology A', 0.5, 0, 0, 0, [2, 2, 2]],
+    SOC306: ['Juvenile Justice', 0.5, [{ r: 'all', c: ['SOC101'] }], 0, 0, [1, 1, 0], ['LS306']],
+    LS306: ['Juvenile Justice', 0.5, [{ r: 'all', c: ['SOC101'] }], 0, 0, [1, 1, 0], ['SOC306']],
+    LS201: ['Legal A', 0.5, 0, 0, 0, [2, 2, 2]],
+    LS202: ['Legal B', 0.5, 0, 0, 0, [2, 2, 2]],
+    SOC499A: ['Senior Honours Essay', 0.5, 0, 0, 0, [3, 3, 3]],
+    MATH237: ['Calculus 3 for Honours Mathematics', 0.5, 0, 0, 0, [2, 2, 2]],
+    MATH247: ['Calculus 3 (Advanced Level)', 0.5, 0, 0, 0, [2, 2, 2]],
+    OLD101: ['Gone', 0.5, 0, 0, 0, [1, 1, 1], [], 1],
+  };
+  const sm = { s: 'sm', n: 'Sociology Minor', t: 'Minor', req: [{ h: '', r: [{ r: 'all', c: ['SOC101'] }, { t: 'Complete 1.0 units of SOC courses at the 200-level or above', u: 1, subj: ['SOC'], min: 2 }], l: [] }] };
+  const lm = { s: 'lm', n: 'Legal Studies Minor', t: 'Minor', req: [{ h: '', r: [{ t: 'Complete 1.0 units of LS courses', u: 1, subj: ['LS'] }, { r: 'n', n: 1, c: ['OLD101', 'LS201'] }], l: [] }] };
+  const math = { s: 'm', n: 'Math', t: 'Major', req: [{ h: '', r: [{ r: 'n', n: 1, c: ['MATH237', 'MATH247'] }], l: [] }] };
+  const have = new Map([['SOC101', { units: 0.5 }]]);
+  const add = PE.optimize([sm, lm, math], have, { courses: C });
+  assert.ok(['SOC306', 'LS306'].includes(add[0].code) && add[0].plans.join() === '0,1', 'Juvenile Justice counts toward both minors (as SOC 306 and LS 306)');
+  const codes = add.map((a) => a.code);
+  assert.ok(!(codes.includes('LS306') && codes.includes('SOC306')), 'not the same course twice');
+  assert.ok(!codes.includes('OLD101'), 'not a course that’s no longer offered');
+  assert.ok(codes.includes('MATH237') && !codes.includes('MATH247'), 'the regular section over the advanced one');
+  assert.ok(codes.indexOf('SOC201') >= 0 && !codes.includes('SOC499A'), 'a lecture before an honours essay');
+  const all = new Map([...have, ...codes.map((c) => [c, { units: 0.5 }])]);
+  assert.deepEqual(PE.evaluateAll([sm, lm, math], all, { courses: C }).evals.map((e) => e.have === e.need), [true, true, true]);
+  // A course with a prerequisite brings it, ahead of it.
+  const pre = PE.optimize([sm], new Map(), { courses: { ...C, SOC201: ['Sociology A', 0.5, [{ r: 'all', c: ['SOC101'] }], 0, 0, [2, 2, 2]] }, exclude: new Set(['SOC306', 'LS306']) });
+  assert.deepEqual(pre.slice(0, 2).map((a) => [a.code, a.for ?? null]), [['SOC101', null], ['SOC201', null]], 'SOC 101 counts on its own and comes first');
+  const exclude = PE.optimize([sm, lm], have, { courses: C, exclude: new Set(['SOC306', 'LS306']) }).map((x) => x.code);
+  assert.ok(!exclude.includes('SOC306') && !exclude.includes('LS306'), 'a course taken out stays out');
+
+  // With early, what has no room in its year can go in an earlier term with room: a 200-level course in 1B.
+  const rows = ['F', 'W', 'F', 'W'].map((season) => ({ kind: 'study', season, codes: [] }));
+  const want = ['A101', 'A201', 'A202', 'A203', 'A204', 'A205'].map((code) => ({ code }));
+  const byYear = PE.arrange(rows, want, { courses: {}, load: 2 });
+  assert.deepEqual(byYear.left, ['A205'], 'second year is full');
+  const early = PE.arrange(rows, want, { courses: {}, load: 2, early: true });
+  assert.deepEqual(early.left, []);
+  assert.deepEqual(early.placed.find((p) => p.code === 'A205').row, 0, 'into the first term with room');
+  const chain = { A205: ['x', 0.5, [{ r: 'all', c: ['A204'] }], 0, 0, [1, 1, 1]] };
+  assert.deepEqual(PE.arrange(rows, want, { courses: chain, load: 2, early: true }).left, ['A205'], 'not before its prerequisite');
 });

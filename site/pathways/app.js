@@ -465,7 +465,7 @@ function plansHtml() {
   }
   return `<div class="pw-plans"><ul>${chips}</ul>
 <form class="pw-addplan" id="pw-addplan" autocomplete="off">${kindChips()}<label class="vh" for="pw-pq">Add a plan</label><div class="pw-pqbox"><input id="pw-pq" placeholder="${esc(planType ? `Search ${PLAN_KINDS[planType].toLowerCase()}, or pick from the list` : A.plans.length ? 'Add a minor, option, specialization… (math/cpa, cs, afm)' : 'Add your major, minors, options… (math/cpa, cs, afm)')}" role="combobox" aria-expanded="false" aria-controls="pw-psugg" aria-autocomplete="list" spellcheck="false"><ul id="pw-psugg" class="pw-sugg" role="listbox" hidden></ul></div></form>
-${A.plans.length ? '<p class="pw-acts"><button type="button" class="pw-fillbtn" data-act="fill">Fill in courses…</button> <button type="button" class="pw-findbtn" data-act="find">Find courses…</button></p>' : ''}
+${A.plans.length ? '<p class="pw-acts"><button type="button" class="pw-fillbtn" data-act="fill">Fill in courses…</button> <button type="button" class="pw-findbtn pw-bestbtn" data-act="best" title="Picks the courses that count toward the most of your plans, so you take the fewest, and adds terms (5A, 5B…) if they don’t fit">Optimal plan…</button> <button type="button" class="pw-findbtn" data-act="find">Find courses…</button></p>' : ''}
 ${undo ? `<p class="pw-offer" role="status"><span>Added ${plural(undo.n, 'course')} from ${undo.names.length > 2 ? `${undo.names.length} plans` : esc(undo.names.join(' and '))}.</span> <button type="button" class="pw-linkbtn" data-act="undo">Undo</button></p>` : offered ? `<p class="pw-offer" role="status"><span>Added <b>${esc(offered.n)}</b>.</span>${coop} <button type="button" class="pw-fillbtn" data-act="fill" data-only="${esc(offered.s)}">Fill in its courses</button> <button type="button" class="pw-linkbtn" data-act="nooffer">Not now</button></p>` : ''}
 ${deg ? `<p class="pw-hint">Add the <button type="button" class="pw-linkbtn" data-plan="${esc(deg.s)}">${esc(deg.n)}</button> too, for the degree’s own rules.</p>` : ''}
 ${notes.map((w) => `<p class="pw-hint">${w}</p>`).join('')}
@@ -485,11 +485,15 @@ const degreeTotal = () => degreeTotalOf(A.plans);
 /** The degree requirements a chosen major belongs to, if not already chosen. */
 function degreeFor(plans) {
   if (plans.some((p) => p.t === 'Degree Requirements')) return null;
-  const major = plans.find((p) => p.t === 'Major');
-  const deg = major && /\((Bachelor of [A-Za-z ]+?)\s*-/.exec(major.n)?.[1];
-  if (!deg) return null;
-  const hits = P.filter((p) => p.t === 'Degree Requirements' && p.n.startsWith(deg));
-  return hits.find((p) => p.n.includes(major.f.replace('Faculty of ', ''))) ?? hits[0] ?? null;
+  // The first major that names its degree ("Economics (Bachelor of Arts - Honours)"; Arts and Business doesn't).
+  for (const major of plans.filter((p) => p.t === 'Major')) {
+    const deg = /\((Bachelor of [A-Za-z ]+?)\s*-/.exec(major.n)?.[1];
+    if (!deg) continue;
+    const hits = P.filter((p) => p.t === 'Degree Requirements' && p.n.startsWith(deg));
+    const hit = hits.find((p) => p.n.includes(major.f.replace('Faculty of ', ''))) ?? hits[0];
+    if (hit) return hit;
+  }
+  return null;
 }
 
 function cellHtml(r, i, j, term) {
@@ -1126,6 +1130,8 @@ app.addEventListener('click', async (e) => {
   };
   if (act === 'fill') {
     openFill(t.closest('[data-act]').dataset.only ?? null);
+  } else if (act === 'best') {
+    openFill(null, { auto: true });
   } else if (act === 'find') {
     openFind();
   } else if (act === 'nooffer') {
@@ -1342,7 +1348,9 @@ function adopt(slug) {
 // program gives), after its prerequisites; choices ("MATH 135 or MATH 145") are buttons to click; courses
 // described in words go in as placeholders (PMATH 4XX) unless picked. Nothing changes until "Add".
 
-let fill = null; // {slugs: Set, choice: Map key → Set, load, from, ph, last}
+let fill = null; // {slugs: Set, choice: Map key → Set, load, from, ph, last, auto, grow, drop: Set}
+// Terms "Optimal plan" may add after the grid's last (5A, 5B… up to 7B in an eight-term degree).
+const GROW_MAX = 6;
 const dlg = document.createElement('dialog');
 dlg.className = 'pw-fill';
 dlg.setAttribute('aria-labelledby', 'pw-fill-h');
@@ -1350,7 +1358,7 @@ root.append(dlg);
 const PLAN_ORDER = { 'Degree Requirements': 0, Major: 1, Specialization: 2, Option: 3, Minor: 4, Diploma: 5, Certificate: 6 };
 const studyRows = () => state.rows.map((r, i) => (r.k === 's' ? i : -1)).filter((i) => i >= 0);
 
-function openFill(only = null) {
+function openFill(only = null, { auto = false } = {}) {
   const study = studyRows();
   // Courses go in from this term on: what's in earlier terms is what's been taken.
   const now = study.find((i) => Number(termOf(i)) >= Number(data.term)) ?? study[0] ?? 0;
@@ -1358,7 +1366,7 @@ function openFill(only = null) {
   // unless unticked, and are added to the plans.
   const deg = degreeFor(A.plans);
   const extraOn = Boolean(deg) && (!only || bySlug.get(only)?.t === 'Major');
-  fill = { slugs: new Set(only ? [only] : state.plans), choice: new Map(), load: NORMAL, from: now, ph: true, extra: deg?.s ?? null, extraOn, skip: new Set(), more: 0 };
+  fill = { slugs: new Set(only ? [only] : state.plans), choice: new Map(), load: NORMAL, from: now, ph: true, extra: deg?.s ?? null, extraOn, skip: new Set(), more: 0, auto, grow: auto, drop: new Set() };
   offer = null;
   render();
   renderFill();
@@ -1384,6 +1392,30 @@ function fillPlan() {
   };
   const everyPlan = [...A.plans, ...(extra ? [extra] : [])];
   const asPicked = A.plans.map((x) => E.forPlans(x, everyPlan));
+  const planCtx = A.plans.map((p) => ({ code: p.c, faculty: p.f, name: p.n }));
+  // "Optimal plan": every plan's required courses, then the courses that count toward the most of them (engine.js's
+  // optimize), before any choice is asked; what's left is asked as usual or goes in as placeholders.
+  const auto = [];
+  if (fill.auto) {
+    for (const plan of plans) {
+      const k = A.plans.indexOf(plan);
+      const p = E.forPlans(plan, everyPlan);
+      const { avail } = E.evaluateAll(asPicked, have, { courses: C, faculty: SF });
+      for (const m of E.fillItems(p, have, { courses: C, equiv, avail: avail[k], faculty: SF }).must) {
+        if (must.has(m.code)) continue;
+        must.set(m.code, { ...m, from: p.n });
+        take(m.code, m.at);
+      }
+    }
+    const progs = plans.map((x) => E.forPlans(x, everyPlan));
+    const sig = JSON.stringify([plans.map((x) => x.s), [...have.keys()].sort(), [...fill.drop].sort()]);
+    if (fill.best?.sig !== sig) fill.best = { sig, add: E.optimize(progs, have, { courses: C, equiv, faculty: SF, ctx: { plans: planCtx }, exclude: fill.drop, complete: [...must.keys()] }) };
+    for (const a of fill.best.add) {
+      if (have.has(a.code)) continue;
+      take(a.code, null);
+      auto.push({ ...a, names: a.plans.map((k) => progs[k].n) });
+    }
+  }
   for (const plan of plans) {
     const k = A.plans.indexOf(plan);
     const p = E.forPlans(plan, everyPlan);
@@ -1453,12 +1485,17 @@ function fillPlan() {
       if (fill.ph && !fill.skip.has(item.key)) for (let x = 0; x < count; x++) take('ELECTIVE', null);
     }
   }
-  // Terms the dialog adds at the end (only when the courses are added).
-  const all = [...state.rows, ...Array.from({ length: fill.more }, () => ({ k: 's', c: [] }))];
-  const rows = all.map((r, i) => ({ kind: KIND[r.k], season: E.seasonOf(termOf(i)), codes: r.c }));
-  const planCtx = A.plans.map((p) => ({ code: p.c, faculty: p.f, name: p.n }));
-  const res = E.arrange(rows, want, { courses: C, load: fill.load, max: SLOTS, from: fill.from, equiv, plans: planCtx });
-  return { plans, must: [...must.values()], picks, words, want, res, rows, lv: E.levels(rows) };
+  // Terms the dialog adds at the end (only when the courses are added): as many as it takes when "add terms if
+  // needed" is on (5A, 5B…), else the ones asked for.
+  const place = (more) => {
+    const all = [...state.rows, ...Array.from({ length: more }, () => ({ k: 's', c: [] }))];
+    const rows = all.map((r, i) => ({ kind: KIND[r.k], season: E.seasonOf(termOf(i)), codes: r.c }));
+    return { rows, res: E.arrange(rows, want, { courses: C, load: fill.load, max: SLOTS, from: fill.from, equiv, plans: planCtx, early: fill.grow }) };
+  };
+  let more = fill.grow ? 0 : fill.more;
+  let { rows, res } = place(more);
+  while (fill.grow && res.left.length && more < GROW_MAX) ({ rows, res } = place(++more));
+  return { plans, must: [...must.values()], picks, words, want, res, rows, lv: E.levels(rows), auto, more };
 }
 
 function renderFill(focus = null) {
@@ -1511,11 +1548,19 @@ function renderFill(focus = null) {
     })
     .join('');
   const n = F.res.placed.length;
+  const newLv = F.lv.slice(state.rows.length).filter(Boolean);
   const noRoom = F.res.left.length
-    ? `<div class="pw-warn"><p>No room at ${fill.load} a term for ${plural(F.res.left.length, 'course')}: ${F.res.left.map(fmt).join(', ')}.</p><p>${fill.load < SLOTS ? `<button type="button" class="pw-linkbtn" data-fill="load+">Allow ${fill.load + 1} a term</button> or ` : ''}<button type="button" class="pw-linkbtn" data-fill="more">add a term</button></p></div>`
-    : fill.more
-      ? `<p class="t">${plural(fill.more, 'term')} added at the end. <button type="button" class="pw-linkbtn" data-fill="less">Remove ${fill.more === 1 ? 'it' : 'one'}</button></p>`
+    ? `<div class="pw-warn"><p>No room at ${fill.load} a term for ${plural(F.res.left.length, 'course')}: ${F.res.left.map(fmt).join(', ')}${fill.grow ? `, even with ${plural(F.more, 'more term')}` : ''}.</p><p>${fill.load < SLOTS ? `<button type="button" class="pw-linkbtn" data-fill="load+">Allow ${fill.load + 1} a term</button>${fill.grow ? '' : ' or '}` : ''}${fill.grow ? '' : '<button type="button" class="pw-linkbtn" data-fill="more">add a term</button>'}</p></div>`
+    : F.more
+      ? `<p class="t">${plural(F.more, 'term')} added at the end (${esc(newLv.join(', '))})${fill.grow ? ` so everything fits at ${fill.load} a term${fill.load < SLOTS ? `; <button type="button" class="pw-linkbtn" data-fill="load+">allow ${fill.load + 1} a term</button> to finish sooner` : ''}` : ''}.${fill.grow ? '' : ` <button type="button" class="pw-linkbtn" data-fill="less">Remove ${fill.more === 1 ? 'it' : 'one'}</button>`}</p>`
       : '';
+  // "Optimal plan": the courses it picked, what each counts toward, and how far that goes.
+  const shared = F.auto.filter((a) => a.names.filter((nm) => !/Degree Requirements/.test(nm)).length > 1).length;
+  const short = (nm) => nm.replace(/\s*\((Bachelor|Joint)[^)]*\)$/, '').replace(/ Degree Requirements.*$/, ' degree');
+  const autoRow = (a) => `<li><span class="pw-old" title="${esc(title(a.code))}">${esc(fmt(a.code))}</span> <span class="pw-autot">${esc(C[a.code]?.[0] ?? '')}</span> <button type="button" class="pw-drop" data-drop="${esc(a.code)}" aria-label="Don’t pick ${esc(fmt(a.code))}" title="Don’t pick it (another takes its place)">×</button> <span class="t">${a.for ? `for ${esc(fmt(a.for))}’s prerequisites${a.names.length ? '; ' : ''}` : ''}${esc(a.names.map(short).join(' · '))}</span></li>`;
+  const autoBox = fill.auto
+    ? `<div class="pw-auto"><h3>Picked for the fewest courses <span class="t">${F.auto.length ? `${plural(F.auto.length, 'course')}${shared ? `, ${shared} counting toward two of your plans` : ''}` : 'nothing more to pick'}</span></h3>${F.auto.length ? `<ul class="pw-autolist">${F.auto.map(autoRow).join('')}</ul>` : ''}${fill.drop.size ? `<p class="t">Not picking ${[...fill.drop].map((c) => `<button type="button" class="pw-linkbtn" data-undrop="${esc(c)}" title="Let it be picked again">${esc(fmt(c))}</button>`).join(', ')}.</p>` : ''}</div>`
+    : '';
   // Co-op terms first, so courses land in study terms.
   const coopMajor = F.plans.find((p) => p.t === 'Major' && p.seq?.length);
   const coop = coopMajor && !state.rows.some((r) => r.k === 'c') ? `<p class="pw-hint">Doing co-op? <button type="button" class="pw-linkbtn" data-fseq="${esc(coopMajor.s)}:0">Use ${esc(seqLabel(coopMajor.s, 0))}</button>${coopMajor.seq.length > 1 ? ', or pick another under <b>Terms</b>,' : ''} so courses land in study terms.</p>` : '';
@@ -1527,20 +1572,20 @@ function renderFill(focus = null) {
   const musts = F.must.length ? `<details class="pw-musts"><summary>${plural(F.must.length, 'course')} required by name go in as they are</summary><p>${F.must.map((m) => `<span class="pw-old" title="${esc(title(m.code))}">${esc(fmt(m.code))}</span>`).join('')}</p></details>` : '';
   const empty = !F.must.length && !F.picks.length && !F.words.length;
   dlg.innerHTML = `<div class="pw-fillin">
-<div class="pw-fillhead"><h2 id="pw-fill-h">Fill in courses</h2><p class="t">From the ${esc(labelOf(calYear))} calendar, for a start in ${esc(E.termName(state.start))}. Nothing changes until you add them.</p><button type="button" class="pw-x" data-fill="close" aria-label="Close">×</button></div>
+<div class="pw-fillhead"><h2 id="pw-fill-h">${fill.auto ? 'Optimal plan' : 'Fill in courses'}</h2><p class="t">${fill.auto ? 'The fewest courses that complete these plans: where one course can count toward two of them (the most the calendar allows), it’s picked over two that count once, with its prerequisites, in terms that fit your load. ' : ''}From the ${esc(labelOf(calYear))} calendar, for a start in ${esc(E.termName(state.start))}. Nothing changes until you add them.</p><button type="button" class="pw-x" data-fill="close" aria-label="Close">×</button></div>
 ${plansBox}
 <div class="pw-fillbody">
-<section class="pw-fillpicks" aria-label="Choices">${empty ? '<p>Everything these plans name is already in your grid.</p>' : ''}${F.picks.length ? `<h3>Choose <span class="t">${open ? `${open} of ${F.picks.length} still open; ones you skip stay in the checklist` : 'all picked'}</span></h3>${F.picks.map(pickCard).join('')}` : ''}${F.words.length ? `<h3>Described in words</h3>${F.words.map(wordsCard).join('')}` : ''}${musts}</section>
+<section class="pw-fillpicks" aria-label="Choices">${autoBox}${empty && !F.auto.length ? '<p>Everything these plans name is already in your grid.</p>' : ''}${F.picks.length ? `<h3>Choose <span class="t">${open ? `${open} of ${F.picks.length} still open; ones you skip stay in the checklist` : 'all picked'}</span></h3>${F.picks.map(pickCard).join('')}` : ''}${F.words.length ? `<h3>Described in words</h3>${F.words.map(wordsCard).join('')}` : ''}${musts}</section>
 <section class="pw-fillprev" aria-label="Where they’d go"><h3>Where they’d go</h3>${past}${coop}<table class="pw-prev"><tbody>${prev}</tbody></table>${noRoom}</section>
 </div>
-<div class="pw-fillfoot"><div class="pw-fillopts"><label>From <select data-fill="from">${study.map((i) => `<option value="${i}"${i === fill.from ? ' selected' : ''}>${esc(A.lv[i])} (${esc(E.termName(termOf(i)))})</option>`).join('')}</select></label><label>Up to <select data-fill="load">${[4, 5, 6, 7].map((x) => `<option${x === fill.load ? ' selected' : ''}>${x}</option>`).join('')}</select> a term</label><label><input type="checkbox" data-fill="ph"${fill.ph ? ' checked' : ''}> Placeholders</label></div><div class="pw-fillbtns"><button type="button" data-fill="close">Cancel</button><button type="button" class="pw-primary" data-fill="add"${n ? '' : ' disabled'}>Add ${plural(n, 'course')}</button></div></div>
+<div class="pw-fillfoot"><div class="pw-fillopts"><label>From <select data-fill="from">${study.map((i) => `<option value="${i}"${i === fill.from ? ' selected' : ''}>${esc(A.lv[i])} (${esc(E.termName(termOf(i)))})</option>`).join('')}</select></label><label>Up to <select data-fill="load">${[4, 5, 6, 7].map((x) => `<option${x === fill.load ? ' selected' : ''}>${x}</option>`).join('')}</select> a term</label><label><input type="checkbox" data-fill="ph"${fill.ph ? ' checked' : ''}> Placeholders</label><label title="Pick the choices and courses described in words that count toward the most of your plans"><input type="checkbox" data-fill="auto"${fill.auto ? ' checked' : ''}> Pick for me</label><label title="Add terms after your last (5A, 5B…) when everything doesn’t fit"><input type="checkbox" data-fill="grow"${fill.grow ? ' checked' : ''}> Add terms if needed</label></div><div class="pw-fillbtns"><button type="button" data-fill="close">Cancel</button><button type="button" class="pw-primary" data-fill="add"${n ? '' : ' disabled'}>Add ${plural(n, 'course')}</button></div></div>
 </div>`;
   const picksEl = dlg.querySelector('.pw-fillpicks');
   if (picksEl) picksEl.scrollTop = scroll;
   if (active) dlg.querySelector(active)?.focus({ preventScroll: true });
 }
 const selectorOf = (el) => {
-  for (const a of ['data-pick', 'data-word', 'data-fill', 'data-fplan', 'data-fextra', 'data-unpick', 'data-skip']) {
+  for (const a of ['data-pick', 'data-word', 'data-fill', 'data-fplan', 'data-fextra', 'data-unpick', 'data-skip', 'data-undrop']) {
     if (!el.hasAttribute?.(a)) continue;
     const extra = a === 'data-pick' ? `[data-opt="${el.dataset.opt}"]` : a === 'data-word' ? `[data-code="${CSS.escape(el.dataset.code)}"]` : '';
     return `[${a}="${CSS.escape(el.getAttribute(a))}"]${extra}`;
@@ -1554,7 +1599,7 @@ function applyFill() {
   const before = JSON.parse(JSON.stringify(state.rows));
   const plansBefore = [...state.plans];
   if (fill.extra && fill.extraOn && !state.plans.includes(fill.extra)) state.plans.push(fill.extra);
-  for (let x = 0; x < fill.more; x++) state.rows.push({ k: 's', c: [] });
+  for (let x = 0; x < F.more; x++) state.rows.push({ k: 's', c: [] });
   for (const { code, row } of F.res.placed) {
     const r = state.rows[row];
     const j = Array.from({ length: slotsOf(r) }, (_, k) => k).find((k) => !r.c[k]);
@@ -1597,6 +1642,16 @@ dlg.addEventListener('click', (e) => {
     }
     fill.choice.set(key, sel);
     return renderFill(selectorOf(word));
+  }
+  const drop = t.closest('[data-drop]');
+  if (drop) {
+    fill.drop.add(drop.dataset.drop);
+    return renderFill('.pw-autolist [data-drop]');
+  }
+  const undrop = t.closest('[data-undrop]');
+  if (undrop) {
+    fill.drop.delete(undrop.dataset.undrop);
+    return renderFill();
   }
   const un = t.closest('[data-unpick]');
   if (un) {
@@ -1641,6 +1696,8 @@ dlg.addEventListener('change', (e) => {
   else if (t.dataset.fill === 'load') fill.load = Number(t.value);
   else if (t.dataset.fill === 'from') fill.from = Number(t.value);
   else if (t.dataset.fill === 'ph') fill.ph = t.checked;
+  else if (t.dataset.fill === 'auto') fill.auto = t.checked;
+  else if (t.dataset.fill === 'grow') fill.grow = t.checked;
   else return;
   renderFill(selectorOf(t));
 });

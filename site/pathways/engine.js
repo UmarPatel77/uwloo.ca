@@ -170,13 +170,25 @@ export function evaluate(program, planned, { ticked = new Set(), courses = {}, f
     if (at >= 0) Object.assign(rows[at], { need, have });
   };
   const unitsOf = (c) => courses[c]?.[1] ?? planned.get(c)?.units ?? UNIT;
+  // A cross-listed course is one course under each of its codes (courses[code][6]): SOC 327 in the grid meets
+  // "LS 327" and counts as an LS course. keyOf: the code it's planned under.
+  const aliases = (c) => courses[baseCode(c)]?.[6] ?? [];
+  const keyOf = (c) => (planned.has(c) ? c : aliases(c).find((a) => planned.has(a)) ?? null);
   const take = (codes, limit = Infinity) => {
     const got = [];
+    const keys = new Set();
     for (const c of codes) {
       if (got.length >= limit) break;
-      if (planned.has(c) && !used.has(c)) got.push(c);
+      const k = keyOf(c);
+      if (k && !used.has(k) && !keys.has(k)) {
+        got.push(c);
+        keys.add(k);
+      }
     }
     return got;
+  };
+  const markUsed = (got) => {
+    for (const c of got) used.add(keyOf(c) ?? c);
   };
   // overlay: a rule that only checks a total ("8.0 units at the 200-level or above") counts courses other rules
   // use, and uses none. perSubject: at most that many units from one subject ("no more than 1.0 unit in the
@@ -207,14 +219,20 @@ export function evaluate(program, planned, { ticked = new Set(), courses = {}, f
     const f = faculty[numbered(c)?.[0]];
     return f && f !== fac && !WORK_COURSE.test(c);
   });
+  // Lowest levels first, so a rule that takes any level ("1.0 unit of CS") leaves the 300- and 400-level courses
+  // for one that needs them ("0.5 unit of CS at the 300-level"), whatever terms they're in.
   const subjectPool = (n) =>
-    [...planned.keys()].filter((c) => {
-      const m = numbered(c);
-      if (!m) return false;
-      const [subj, num] = m;
-      if (n.rg) return num != null && n.rg.some(([s, lo, hi]) => s === subj && num >= lo && num <= hi);
-      return n.subj.includes(subj) && (!n.min || (num != null && num >= n.min * 100));
-    });
+    [...planned.keys()]
+      .filter((c) =>
+        [c, ...aliases(c)].some((x) => {
+          const m = numbered(x);
+          if (!m) return false;
+          const [subj, num] = m;
+          if (n.rg) return num != null && n.rg.some(([s, lo, hi]) => s === subj && num >= lo && num <= hi);
+          return n.subj.includes(subj) && (!n.min || (num != null && num >= n.min * 100));
+        }),
+      )
+      .sort((a, b) => (numbered(a)?.[1] ?? 999) - (numbered(b)?.[1] ?? 999));
   const electives = () => [...planned.keys()].filter((c) => baseCode(c) === 'ELECTIVE');
 
   // One requirement node → {need, have, got, unknown}. Groups take their best children.
@@ -263,22 +281,22 @@ export function evaluate(program, planned, { ticked = new Set(), courses = {}, f
       if (n.r === 'all' || n.r === 'n') {
         const want = n.r === 'all' ? n.c.length : Math.max(1, Math.round(n.n ?? 1));
         const got = take(n.c, want);
-        for (const c of got) used.add(c);
+        markUsed(got);
         emit({ key, depth, kind: n.r, want, got, codes: n.c, n: n.n });
         return { need: want, have: got.length, unknown: false };
       }
       if (n.r === 'not') {
-        const bad = n.c.filter((c) => planned.has(c));
+        const bad = n.c.filter((c) => keyOf(c));
         emit({ key, depth, kind: 'not', codes: n.c, bad });
         return { need: 0, have: 0, unknown: false };
       }
       if (n.r === 'max') {
-        const in_ = n.c.filter((c) => planned.has(c));
+        const in_ = n.c.filter((c) => keyOf(c));
         emit({ key, depth, kind: 'max', codes: n.c, n: n.n, got: in_, over: in_.length > (n.n ?? Infinity) });
         return { need: 0, have: 0, unknown: false };
       }
       // any / list: the codes others draw on (a quantity in words picks from them).
-      emit({ key, depth, kind: 'list', codes: n.c, got: n.c.filter((c) => planned.has(c)) });
+      emit({ key, depth, kind: 'list', codes: n.c, got: n.c.filter((c) => keyOf(c)) });
       return { need: 0, have: 0, unknown: false };
     }
     // Words.
@@ -304,7 +322,7 @@ export function evaluate(program, planned, { ticked = new Set(), courses = {}, f
           return { need: Math.round(n.u / UNIT), have: Math.min(Math.round(n.u / UNIT), Math.round(sum / UNIT)), unknown: false };
         }
         const got = take(codes, n.nc);
-        for (const c of got) used.add(c);
+        markUsed(got);
         emit({ key, depth, kind: 'count', text: n.t, want: n.nc, got });
         return { need: n.nc, have: got.length, unknown: false };
       }
@@ -687,7 +705,7 @@ export const WT_SLOTS = 2;
  * rows: [{kind: 'study'|'coop'|'off', season: 'F'|'W'|'S', codes: [...]}]; want: [{code, at}]; from: the first
  * row to put courses in (earlier ones are done). → {placed: [{code, row}], left: [codes with no room]}
  */
-export function arrange(rows, want, { courses = {}, load = 5, max = 7, from = 0, equiv, plans = [] } = {}) {
+export function arrange(rows, want, { courses = {}, load = 5, max = 7, from = 0, equiv, plans = [], early = false } = {}) {
   const lv = levels(rows);
   const study = rows.map((r, i) => (r.kind === 'study' && i >= from ? i : -1)).filter((i) => i >= 0);
   // PD courses and work-term reports are taken on work terms (two courses there at most).
@@ -773,14 +791,24 @@ export function arrange(rows, want, { courses = {}, load = 5, max = 7, from = 0,
   };
   // Terms a program names first, then real courses by year and prerequisites, then placeholders for a level
   // ("PMATH 4XX"), then electives in the room that's left. Each gets two strict passes (requisites, seasons,
-  // load), then one that only keeps to the load.
+  // load), then one that only keeps to the load; with early, what still has no room can go in an earlier year's
+  // term when its requisites and season allow (a 200-level course in 1B rather than an extra term).
   const generic = (c) => c === 'ELECTIVE' || /XXX$/.test(c);
   const loose = sorted.filter((w) => !w.t.exact);
   const phases = [sorted.filter((w) => w.t.exact), loose.filter((w) => !isPlaceholder(w.code)), loose.filter((w) => isPlaceholder(w.code) && !generic(w.code)), loose.filter((w) => generic(w.code))];
   for (let queue of phases) {
-    for (const strict of [true, true, false]) {
+    for (const strict of early ? [true, true, false, 'early'] : [true, true, false]) {
       const next = [];
       for (const w of queue) {
+        if (strict === 'early') {
+          // At most a year early, and only where its prerequisites are already in the terms before.
+          const y = yearOf(w.code);
+          const pre = courses[w.code]?.[2];
+          const i = WORK_COURSE.test(w.code) ? null : study.find((x) => year(x) >= y - 1 && cells[x].length < load && ok(w.code, x) && (!pre?.length || holds(pre, before(x), { level: lv[x], plans, equiv }) !== false));
+          if (i != null) put(w, i);
+          else next.push(w);
+          continue;
+        }
         if (w.t.exact) {
           if (cells[w.t.i].length < max) put(w, w.t.i);
           else next.push({ ...w, t: { i: w.t.i, exact: false } });
@@ -800,6 +828,157 @@ export function arrange(rows, want, { courses = {}, load = 5, max = 7, from = 0,
     left.push(...queue.map((w) => w.code));
   }
   return { placed, left };
+}
+
+// ---------------- the fewest courses ----------------
+
+/**
+ * Courses to add so a set of plans takes as few courses as it can. Each step takes the course that counts toward
+ * the most plans still open (two academic plans at most, under Counting of Courses; one a major and its
+ * specialization share is a single use; degree requirements always count), for what it costs: itself and the
+ * prerequisites it still needs, picked the same way. Ties go to courses that have run lately, then to lower levels.
+ * Requirements nothing in particular fits ("any course", "approved electives") are left for placeholders.
+ * plans: programs as picked (forPlans); planned: Map code → {units}; ctx: {plans: [{code, faculty, name}]} for
+ * "Enrolled in…" prerequisites; exclude: courses not to pick. Courses that aren't in this calendar, haven't run
+ * lately (when others have) or clash with planned antirequisites aren't picked.
+ * → [{code, plans: [indexes of the plans it counts toward], for: code it's a prerequisite of (if it is one)}]
+ */
+// Courses that need a supervisor or a placement first: picked only when nothing else will do.
+const ARRANGED = /\b(independent stud|directed stud|special stud|reading course|honours (?:essay|thesis)|senior (?:honours|essay|thesis)|thesis|research project|practicum|internship|field (?:placement|course|work)|exchange)/i;
+
+// Advanced and enriched versions need high marks or permission, and non-specialist ones are for students outside
+// the subject: the regular one first, when both would do.
+const ADVANCED = /\(Advanced Level\)|\bEnriched\b|\bNon-?Specialist\b|\bfor Non-(?:Majors|Math)/i;
+// "Calculus 1 for Honours Mathematics", "… for the Sciences": who a course is for, against the plans' faculties.
+const AUDIENCE = /\bfor (?:the )?(?:honours |life |physical )?(mathematics|math|sciences?|engineering|engineers|arts|environment|health)\b/i;
+const AUDIENCE_FACULTY = { mathematics: 'Mathematics', math: 'Mathematics', sciences: 'Science', science: 'Science', engineering: 'Engineering', engineers: 'Engineering', arts: 'Arts', environment: 'Environment', health: 'Health' };
+
+export function optimize(plans, planned, { courses = {}, equiv, faculty = {}, ctx = {}, exclude = new Set(), limit = 80, complete = [] } = {}) {
+  const have = new Map(planned);
+  const odd = (c) => ARRANGED.test(courses[c]?.[0] ?? '');
+  const advanced = (c) => ADVANCED.test(courses[c]?.[0] ?? '');
+  const homes = new Set(plans.map((p) => String(p.f ?? '').replace(/^Facult(?:y|ies) of /, '').split(/ (?:and|with) /)[0]));
+  // 1 for a course meant for the plans' faculty, -1 for one meant for another, 0 for one that doesn't say.
+  const fit = (c) => {
+    const m = AUDIENCE.exec(courses[c]?.[0] ?? '');
+    return m ? (homes.has(AUDIENCE_FACULTY[m[1].toLowerCase()]) ? 1 : -1) : 0;
+  };
+  const hctx = { ...ctx, equiv };
+  const runs = (c) => {
+    const s = courses[c]?.[5];
+    return s ? s[0] + s[1] + s[2] : 0;
+  };
+  const anyRuns = Object.values(courses).some((x) => x?.[5] && x[5][0] + x[5][1] + x[5][2] > 0);
+  const usable = (c, h) => {
+    const x = courses[c];
+    if (!x || x[7] || exclude.has(c) || isPlaceholder(c) || WORK_COURSE.test(c) || has(h, c, hctx)) return false;
+    if ((x[4] || []).some((o) => h.has(o))) return false;
+    for (const o of h.keys()) if ((courses[o]?.[4] || []).includes(c)) return false;
+    return true;
+  };
+  // What a course still needs for its prerequisites, one course from each list it misses (the one that costs
+  // least, counting its own prerequisites, two deep); null when nothing can meet them.
+  const prereqs = (c, base, needed, depth = 0) => {
+    const tree = courses[c]?.[2];
+    if (!tree?.length || holds(tree, base, hctx) !== false) return [];
+    if (depth > 2) return null;
+    const h = new Map(base);
+    const out = [];
+    for (let round = 0; round < 3 && holds(tree, h, hctx) === false; round++) {
+      const groups = why(tree, h, hctx).groups.filter((g) => !g.some((x) => has(h, x, hctx)));
+      if (!groups.length) return null;
+      for (const g of groups) {
+        if (g.some((x) => has(h, x, hctx))) continue;
+        let best = null;
+        for (const x of g) {
+          if (!usable(x, h)) continue;
+          const sub = prereqs(x, h, needed, depth + 1);
+          if (!sub) continue;
+          // Its own prerequisites cost less when the plans ask for them anyway.
+          const cost = sub.reduce((t, y) => t + (needed.has(y) ? 0.25 : 1), 0) + (needed.has(x) ? 0.5 : 1) + (runs(x) || !anyRuns ? 0 : 1) + (odd(x) ? 1.5 : 0) + (advanced(x) ? 0.5 : 0) - 0.2 * fit(x);
+          if (!best || cost < best.cost) best = { cost, list: [...sub, x] };
+        }
+        if (!best) return null;
+        for (const x of best.list) {
+          if (h.has(x)) continue;
+          addPlanned(h, x, { units: courses[x]?.[1] ?? UNIT });
+          out.push(x);
+        }
+      }
+    }
+    return holds(tree, h, hctx) === false ? null : out;
+  };
+  const out = [];
+  // Each course that would count toward something still open, and the plans it would count toward; a cross-listed
+  // course meets what each of its codes would (SOC 327 is LS 327 too).
+  const openNeeds = () => {
+    const { avail } = evaluateAll(plans, have, { courses, faculty });
+    const needed = new Map();
+    plans.forEach((p, k) => {
+      for (const pl of pools(p, have, { courses, equiv, avail: avail[k], faculty })) {
+        for (const c of pl.codes) {
+          for (const x of [c, ...(courses[c]?.[6] ?? [])]) {
+            const ks = needed.get(x) ?? [];
+            if (!ks.includes(k)) ks.push(k);
+            needed.set(x, ks);
+          }
+        }
+      }
+    });
+    return needed;
+  };
+  // The prerequisites of courses going in anyway (complete: a plan's required courses), picked as above.
+  if (complete.length) {
+    const needed = openNeeds();
+    for (const c of complete) {
+      const pre = prereqs(c, have, needed) ?? [];
+      for (const p of pre) {
+        addPlanned(have, p, { units: courses[p]?.[1] ?? UNIT });
+        out.push({ code: p, plans: needed.get(p) ?? [], for: c });
+      }
+    }
+  }
+  for (let step = 0; step < limit; step++) {
+    const needed = openNeeds();
+    // Courses the planned ones build on (MATH 137 before MATH 138): among equals, the one the plans lead from.
+    const leads = new Map();
+    for (const c of have.keys()) for (const x of antiCodes(courses[baseCode(c)]?.[2])) leads.set(x, (leads.get(x) ?? 0) + 1);
+    const gainOf = (ks) => {
+      const deg = ks.filter((k) => plans[k].t === 'Degree Requirements').length;
+      const pair = ks.some((k) => plans[k].t === 'Major') && ks.some((k) => plans[k].t === 'Specialization');
+      return Math.min(ks.length - deg, pair ? 3 : 2) + deg;
+    };
+    const cands = [...needed]
+      .map(([c, ks]) => ({ c, ks, gain: gainOf(ks), runs: Math.min(runs(c), 4), odd: odd(c) }))
+      .filter((x) => x.gain > 0)
+      .sort((a, b) => b.gain - a.gain || a.odd - b.odd || yearOf(a.c) - yearOf(b.c) || b.runs - a.runs || (a.c < b.c ? -1 : 1));
+    let best = null;
+    let looked = 0;
+    for (const x of cands) {
+      // A course scores its gain at most, unless prerequisites that count too come with it: stop once nothing
+      // left could beat the best by itself.
+      if (best && x.gain + 0.05 <= best.score && looked > 60) break;
+      if (++looked > 600) break;
+      if (!usable(x.c, have)) continue;
+      const pre = prereqs(x.c, have, needed);
+      if (!pre) continue;
+      // The course and the prerequisites it brings, together: what they count toward for each course they cost.
+      const gain = x.gain + pre.reduce((t, p) => t + (needed.has(p) ? gainOf(needed.get(p)) : 0), 0);
+      const cost = 1 + pre.length + (x.runs || !anyRuns ? 0 : 0.75) + (x.odd ? 1.5 : 0) + (advanced(x.c) ? 0.5 : 0);
+      // Among equals: one meant for the plans' faculty, what the plans build on, then lower levels (fewer
+      // prerequisites to come), then ones that run in more terms.
+      const score = gain / cost + 0.02 * fit(x.c) + 0.01 * Math.min(leads.get(x.c) ?? 0, 4) - 0.003 * (yearOf(x.c) - 1) + 0.002 * x.runs;
+      if (!best || score > best.score) best = { ...x, pre, score };
+    }
+    if (!best) break;
+    for (const p of best.pre) {
+      addPlanned(have, p, { units: courses[p]?.[1] ?? UNIT });
+      out.push({ code: p, plans: needed.get(p) ?? [], for: best.c });
+    }
+    addPlanned(have, best.c, { units: courses[best.c]?.[1] ?? UNIT });
+    out.push({ code: best.c, plans: best.ks });
+  }
+  return out;
 }
 
 /**
