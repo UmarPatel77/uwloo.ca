@@ -2363,6 +2363,133 @@ test('pathways: overrides — counts as, what overlaps, who to ask', () => {
   for (const f of Object.values(PE.FACULTY_OVERRIDES)) assert.match(f.url, /^https:\/\/uwaterloo\.ca\//);
 });
 
+test('pathways: antirequisites run one way (FR 152 then FR 192A is the usual sequence)', () => {
+  const one = (...c) => [{ g: 'all', i: [{ r: 'n', n: 1, c }] }];
+  const C = {
+    // The French ladder, as the calendar has it: each level lists the ones above it, none lists one below.
+    FR151: ['Basic French 1', 0.5, 0, 0, ['FR152', 'FR192A', 'FR192B'], [4, 4, 4]],
+    FR152: ['Basic French 2', 0.5, one('FR151'), 0, ['FR192A', 'FR192B'], [4, 4, 4]],
+    FR192A: ['French Language 1: Module 1', 0.5, one('FR152'), 0, ['FR192B'], [4, 4, 4]],
+    FR192B: ['French Language 1: Module 2', 0.5, one('FR192A'), 0, 0, [4, 4, 4]],
+    // CS 116 lists CS 136, which has it as a prerequisite; MSCI 240 stops CS 116 only once completed.
+    CS116: ['Introduction to Computer Science 2', 0.5, one('CS115'), 0, ['CS136', 'CS146', 'MSCI240'], [4, 4, 4], [], 0, ['MSCI240']],
+    CS136: ['Elementary Algorithm Design', 0.5, one('CS116', 'CS135'), 0, ['CS146'], [4, 4, 4]],
+    CS146: ['Elementary Algorithm Design (Advanced)', 0.5, 0, 0, ['CS136'], [0, 4, 0]],
+    MSCI240: ['Algorithms and Data Structures', 0.5, 0, 0, 0, [4, 4, 4]],
+    // Twins for two programs, listed one way and with no prerequisite between them.
+    AE104: ['Mechanics 1', 0.5, 0, 0, ['CIVE104'], [4, 0, 0]],
+    CIVE104: ['Mechanics 1', 0.5, 0, 0, 0, [4, 0, 0]],
+    // Listed both ways.
+    MATH135: ['Algebra', 0.5, 0, 0, ['MATH145'], [4, 4, 4]],
+    MATH145: ['Algebra (Advanced)', 0.5, 0, 0, ['MATH135'], [4, 0, 0]],
+    // An antirequisite named by one of its cross-listed codes.
+    AFM272: ['Corporate Finance', 0.5, 0, 0, 0, [4, 4, 4], ['ACTSC291']],
+    ACTSC291: ['Corporate Finance', 0.5, 0, 0, 0, [4, 4, 4], ['AFM272']],
+    ECON371: ['Business Finance 1', 0.5, 0, 0, ['AFM272'], [4, 4, 4]],
+  };
+  assert.ok(PE.antiLists('FR152', 'FR192A', C) && !PE.antiLists('FR192A', 'FR152', C));
+  assert.ok(PE.antiLists('ECON371', 'ACTSC291', C), 'a cross-listed code is the same course');
+  assert.ok(PE.buildsOn('FR192A', 'FR152', C) && PE.buildsOn('FR192B', 'FR151', C), 'through the courses between');
+  assert.ok(!PE.buildsOn('FR151', 'FR152', C) && !PE.buildsOn('CIVE104', 'AE104', C) && !PE.buildsOn('FR152', 'FR152', C));
+
+  // The report: FR 192A and FR 192B after FR 152 are fine; FR 152 after either isn't.
+  assert.equal(PE.antiAfter('FR152', 'FR192A', C), '');
+  assert.equal(PE.antiAfter('FR152', 'FR192B', C), '');
+  assert.equal(PE.antiAfter('FR151', 'FR192B', C), '');
+  assert.equal(PE.antiAfter('FR192A', 'FR152', C), 'bad');
+  assert.equal(PE.antiAfter('CS116', 'CS136', C), '', 'CS 116 is a prerequisite of CS 136');
+  assert.equal(PE.antiAfter('CS136', 'CS116', C), 'bad');
+  assert.equal(PE.antiAfter('AE104', 'CIVE104', C), 'check', 'allowed in this order, but they overlap');
+  assert.equal(PE.antiAfter('CIVE104', 'AE104', C), 'bad');
+  assert.deepEqual([PE.antiAfter('MATH135', 'MATH145', C), PE.antiAfter('MATH145', 'MATH135', C)], ['bad', 'bad'], 'mutual: the later one, either way');
+
+  // Where a course sits: stopped by what it lists before it or beside it, never by what comes after.
+  const at = (code, before, same = [code]) => PE.antiIssues(code, new Set(before), new Set(same), C);
+  assert.deepEqual(at('FR192A', ['FR152']), { after: [], with: [], check: [] });
+  assert.deepEqual(at('FR152', []), { after: [], with: [], check: [] }, 'FR 192A in a later term isn’t its business');
+  assert.deepEqual(at('FR152', ['FR192A']), { after: ['FR192A'], with: [], check: [] });
+  assert.deepEqual(at('FR152', [], ['FR152', 'FR192A']), { after: [], with: ['FR192A'], check: [] });
+  assert.deepEqual(at('FR192A', [], ['FR152', 'FR192A']), { after: [], with: [], check: [] }, 'in one term, the course whose list it is');
+  assert.deepEqual(at('MATH145', ['MATH135']), { after: ['MATH135'], with: [], check: [] });
+  assert.deepEqual(at('MATH135', []), { after: [], with: [], check: [] }, 'the earlier of a mutual pair is clean');
+  assert.deepEqual(at('CIVE104', ['AE104']), { after: [], with: [], check: ['AE104'] });
+  assert.deepEqual(at('ECON371', ['ACTSC291']), { after: ['ACTSC291'], with: [], check: [] });
+  // "Not completed any of the following": the same term is allowed, afterwards isn't.
+  assert.ok(PE.antiWith('CS116', 'CS136', C) && !PE.antiWith('CS116', 'MSCI240', C));
+  assert.deepEqual(at('CS116', [], ['CS116', 'MSCI240']), { after: [], with: [], check: [] });
+  assert.deepEqual(at('CS116', ['MSCI240']), { after: ['MSCI240'], with: [], check: [] });
+
+  // Adding a course next to one in the grid: -1 the other is earlier, 0 the same term, 1 later.
+  assert.equal(PE.antiClash('FR192A', 'FR152', -1, C), false);
+  assert.equal(PE.antiClash('FR151', 'FR152', 1, C), false, 'the course before it, in a term before it');
+  assert.equal(PE.antiClash('FR151', 'FR152', -1, C), true);
+  assert.equal(PE.antiClash('FR192A', 'FR152', 0, C), true);
+  assert.equal(PE.antiClash('CIVE104', 'AE104', -1, C), true, 'a twin isn’t worth suggesting');
+
+  // A sequence isn't an overlap, so no "FR 151 could stand in for FR 152" hint; a mutual pair still is.
+  assert.deepEqual(PE.overlapsOf('FR152', C), []);
+  assert.deepEqual(PE.overlapsOf('CS116', C).sort(), ['CS146', 'MSCI240']);
+  assert.deepEqual(PE.overlapsOf('MATH135', C), ['MATH145']);
+  assert.deepEqual(PE.overlapsOf('CIVE104', C), ['AE104']);
+
+  // What's ready for a term: the next level up, not the one below.
+  const need = new Map(Object.keys(C).map((k) => [k, [{ k: 0, kind: 'choice', label: '1 of these' }]]));
+  const ready = (grid, row) => {
+    const planned = new Map(grid.map(([code, r]) => [code, { units: 0.5, row: r }]));
+    const before = new Set(grid.filter(([, r]) => r < row).map(([code]) => code));
+    return PE.readyNow({ courses: C, planned, before, season: 'W', year: 1, need, row }).map((x) => x.code);
+  };
+  const afterFr152 = ready([['FR152', 0]], 1);
+  assert.ok(afterFr152.includes('FR192A'), 'FR 192A is what FR 152 leads to');
+  assert.ok(!afterFr152.includes('FR151') && !afterFr152.includes('FR192B'), 'not the level below, nor one whose prerequisite is missing');
+  assert.ok(ready([['CS116', 0]], 1).includes('CS136'));
+  assert.ok(!ready([['MATH135', 0]], 1).includes('MATH145'));
+  assert.ok(!ready([['AE104', 0]], 1).includes('CIVE104'));
+  assert.ok(ready([['FR152', 3]], 1).includes('FR151'), 'the level below, in a term before it');
+  assert.ok(!ready([['FR152', 1]], 1).includes('FR151'), 'not in the same term');
+});
+
+test('pathways: the auto-fill picks the next course of a sequence, not the level below or a twin', () => {
+  const one = (...c) => [{ g: 'all', i: [{ r: 'n', n: 1, c }] }];
+  const C = {
+    FR151: ['Basic French 1', 0.5, 0, 0, ['FR152', 'FR192A'], [4, 4, 4]],
+    FR152: ['Basic French 2', 0.5, one('FR151'), 0, ['FR192A'], [4, 4, 4]],
+    FR192A: ['French Language 1: Module 1', 0.5, one('FR152'), 0, 0, [4, 4, 4]],
+    AE104: ['Mechanics 1', 0.5, 0, 0, ['XX104'], [4, 4, 4]],
+    XX104: ['Mechanics 1', 0.5, 0, 0, 0, [4, 4, 4]],
+    MATH135: ['Algebra', 0.5, 0, 0, ['MATH145'], [4, 4, 4]],
+    MATH145: ['Algebra, the other one', 0.5, 0, 0, ['MATH135'], [4, 4, 4]],
+  };
+  const plan = (c) => ({ s: 'p', n: 'P', t: 'Minor', req: [{ h: '', r: [{ r: 'all', c }], l: [] }] });
+  const pick = (c, have) => PE.optimize([plan(c)], new Map(have.map((x) => [x, { units: 0.5 }])), { courses: C }).map((x) => x.code);
+  assert.deepEqual(pick(['FR192A'], ['FR152']), ['FR192A'], 'FR 152 lists it, but it builds on FR 152');
+  assert.deepEqual(pick(['FR151'], ['FR152']), [], 'not the level below one you hold');
+  assert.deepEqual(pick(['XX104'], ['AE104']), [], 'not a twin of one you hold');
+  assert.deepEqual(pick(['MATH145'], ['MATH135']), []);
+});
+
+test('pathways: which antirequisites count only once completed', () => {
+  const tree = [
+    { type: 'group', lead: 'Complete all of the following', items: [
+      { type: 'rule', lead: 'Not completed nor concurrently enrolled in any of the following:', courses: [{ code: 'CS114' }, { code: 'CS136' }, { code: 'NE111' }] },
+      { type: 'text', text: 'Not completed: Ontario Grade 12 French' },
+    ] },
+    { type: 'rule', lead: 'Not completed any of the following:', courses: [{ code: 'MSCI240' }, { code: 'PHYS239' }, { code: 'CS136' }] },
+  ];
+  assert.deepEqual(PW.antireqCodes(tree), { all: ['CS114', 'CS136', 'NE111', 'MSCI240', 'PHYS239'], done: ['MSCI240', 'PHYS239'] }, 'listed both ways: the stricter one');
+  assert.deepEqual(PW.antireqCodes(null), { all: [], done: [] });
+  assert.deepEqual(PW.antireqCodes([{ type: 'rule', lead: 'Some other wording:', courses: [{ code: 'X100' }] }]), { all: ['X100'], done: [] });
+  const course = (antireq, crossListed) => ({ title: 'T', units: 0.5, prereq: null, coreq: null, antireq, crossListed });
+  const catalog = { label: '2026–27', courses: new Map([['CS116', course(tree)], ['FR152', course([tree[0]], ['XX152'])], ['CS100', course(null)]]) };
+  const d = PW.pathwaysData({ programs: { list: [] }, combos: new Map(), catalog, schedules: new Map(), curTerm: '1269' });
+  assert.deepEqual(d.courses.CS116.slice(4), [['CS114', 'CS136', 'NE111', 'MSCI240', 'PHYS239'], [0, 0, 0], [], 0, ['MSCI240', 'PHYS239']]);
+  assert.deepEqual(d.courses.FR152.slice(4), [['CS114', 'CS136', 'NE111'], [0, 0, 0], ['XX152']]);
+  assert.equal(d.courses.CS100.length, 6);
+  // The build log's count of how antirequisites run.
+  const C = { A1: ['', 0.5, 0, 0, ['B1', 'C1', 'GONE1', 'OLD1'], [1, 1, 1]], B1: ['', 0.5, 0, 0, ['A1'], [1, 1, 1]], C1: ['', 0.5, 0, 0, 0, [1, 1, 1]], OLD1: ['', 0.5, 0, 0, ['A1'], [0, 0, 0], [], 1] };
+  assert.deepEqual(PW.antireqStats(C), { listings: 5, mutual: 2, oneWay: 1, gone: 2, courses: 2 });
+});
+
 test('pathways: what can go in a term next (the open nodes)', () => {
   const pre = (...c) => [{ g: 'all', i: [{ r: 'all', c }] }];
   const C = {

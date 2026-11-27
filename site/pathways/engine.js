@@ -8,7 +8,7 @@
 //                                                        or courses from the section's lists, subjects or faculties
 // A program's requirements are sections: {h: heading, u: units, r: [nodes], l: [sections]}.
 // A course is [title, units, prereq, coreq, antireq codes, [Fall, Winter, Spring] terms run lately, cross-listed,
-// gone]: gone is 1 when it isn't in the current calendar.
+// gone, antireq codes that count only once completed]: gone is 1 when it isn't in the current calendar.
 
 export const UNIT = 0.5; // a usual course, for turning units into a number of courses
 
@@ -211,11 +211,89 @@ export function aliasCourses(courses, pairs) {
   }
   return out;
 }
+// ---------------- antirequisites ----------------
+
+// An antirequisite runs one way. FR 152's "Not completed nor concurrently enrolled in FR 192A" stops FR 152 once
+// FR 192A is done or in the same term. It says nothing about taking FR 192A afterwards: only FR 192A's own list
+// could rule that out, and it doesn't (FR 152 is its prerequisite). About a third of the calendar's antirequisite
+// listings aren't returned by the other course. A course's [4] is every course its list names; [8] the ones under
+// "Not completed any of the following", which stop it only once they're done (the same term is allowed).
+
+/** Does a's antirequisite list name b, or a course cross-listed with b? */
+export function antiLists(a, b, courses) {
+  const list = courses[a]?.[4];
+  if (!list || !list.length || a === b) return false;
+  return list.includes(b) || (courses[b]?.[6] ?? []).some((x) => x !== a && list.includes(x));
+}
+
+/** Does `later` build on `earlier`: do its prerequisites name it, directly or through a course or two between? */
+export function buildsOn(later, earlier, courses, depth = 3) {
+  const seen = new Set();
+  const go = (code, d) => {
+    if (seen.has(code)) return false;
+    seen.add(code);
+    const names = antiCodes(courses[code]?.[2]); // every course its prerequisites name
+    if (names.some((x) => x === earlier || (courses[x]?.[6] ?? []).includes(earlier))) return true;
+    return d > 1 && names.some((x) => go(x, d - 1));
+  };
+  return later !== earlier && go(later, depth);
+}
+
+/**
+ * Taking `second` in a later term than `first`:
+ *   'bad'    second lists first, so it can't be taken once first is done;
+ *   'check'  only first lists second, and second doesn't build on first: the calendar allows this order, but the
+ *            two overlap (AE 104 then CIVE 104), so whether both count is worth asking;
+ *   ''       nothing to say, which includes the usual sequence (FR 152 then FR 192A, CS 116 then CS 136).
+ */
+export function antiAfter(first, second, courses) {
+  if (antiLists(second, first, courses)) return 'bad';
+  if (antiLists(first, second, courses) && !buildsOn(second, first, courses)) return 'check';
+  return '';
+}
+
+/** In the same term: does a's list stop it alongside b? ("Not completed any of the following" doesn't.) */
+export function antiWith(a, b, courses) {
+  if (!antiLists(a, b, courses)) return false;
+  const done = courses[a]?.[8];
+  if (!done?.length) return true;
+  const strict = courses[a][4].filter((x) => !done.includes(x));
+  return strict.includes(b) || (courses[b]?.[6] ?? []).some((x) => x !== a && strict.includes(x));
+}
+
+/**
+ * What antirequisites say about a course where it sits. before: the courses in earlier terms; same: its own term's.
+ * → {after: the ones that stop it because they're done, with: the ones that stop it in the same term,
+ *    check: earlier ones that list it without being listed back or built on}.
+ */
+export function antiIssues(code, before, same, courses) {
+  const out = { after: [], with: [], check: [] };
+  for (const x of before) {
+    if (x === code) continue;
+    const v = antiAfter(x, code, courses);
+    if (v === 'bad') out.after.push(x);
+    else if (v === 'check') out.check.push(x);
+  }
+  for (const x of same) if (x !== code && !before.has(x) && antiWith(code, x, courses)) out.with.push(x);
+  return out;
+}
+
+/**
+ * Would putting `code` in a term clash with a course already in the grid, either way round? where: -1 when the
+ * other course is in an earlier term, 0 the same term, 1 a later one. The next course of a sequence doesn't.
+ */
+export function antiClash(code, other, where, courses) {
+  if (where < 0) return antiAfter(other, code, courses) !== '';
+  if (where > 0) return antiAfter(code, other, courses) !== '';
+  return antiLists(code, other, courses) || antiLists(other, code, courses);
+}
+
 /** courses → Map code → the codes that stand for it (cross-listings, and "counts as" pairs from aliasCourses). */
 export const equivOf = (courses) => new Map(Object.entries(courses).filter(([, c]) => c[6]?.length).map(([k, c]) => [k, c[6]]));
 
 // Courses the calendar treats as overlapping: antirequisites, either way round ("MATH 117, antirequisite of MATH
 // 137"). Where one is asked for and you have the other is where overrides and substitutions are usually sought.
+// A sequence isn't an overlap: FR 152 lists FR 192A only because you can't go back down a level.
 const overlapIndex = new WeakMap();
 function overlapMap(courses) {
   if (!overlapIndex.has(courses)) {
@@ -226,6 +304,7 @@ function overlapMap(courses) {
     };
     for (const [k, c] of Object.entries(courses)) {
       for (const x of c[4] || []) {
+        if (!(courses[x]?.[4] || []).includes(k) && (buildsOn(x, k, courses) || buildsOn(k, x, courses))) continue;
         add(k, x);
         add(x, k);
       }
@@ -266,7 +345,7 @@ export function typicalFor(wanted, have, courses) {
  * what the terms before have opened that no plan asks for; within each, the ones the term before just opened and
  * the ones that open the most of what's still needed, at the term's level.
  */
-export function readyNow({ courses, planned, before, season, year = 1, level = null, plans = [], equiv, grades, need = new Map(), leads = () => [], fresh = new Set(), limit = 24 }) {
+export function readyNow({ courses, planned, before, season, year = 1, level = null, plans = [], equiv, grades, need = new Map(), leads = () => [], fresh = new Set(), limit = 24, row = null }) {
   const idx = 'FWS'.indexOf(season);
   const ctx = { level, plans, equiv, grades };
   const inGrid = (c) => planned.has(c) || (equiv?.get(c) ?? []).some((x) => planned.has(x));
@@ -275,6 +354,15 @@ export function readyNow({ courses, planned, before, season, year = 1, level = n
     if (isPlaceholder(baseCode(b))) continue;
     for (const k of leads(b)) by.set(k, [...(by.get(k) ?? []), b]);
   }
+  // Antirequisites, by order (row: this term's place in the grid): not a course that one before it stops, that
+  // would stop a later one, or that merely overlaps one. The next course of a sequence stays (FR 192A after FR 152).
+  const clashes = (code) => {
+    for (const [x, at] of planned) {
+      const where = before.has(x) ? -1 : row == null || at?.row == null ? 0 : Math.sign(at.row - row);
+      if (antiClash(code, x, where, courses)) return true;
+    }
+    return false;
+  };
   const KIND = { required: 3, choice: 2, words: 1 };
   // The regular version before the advanced one, the one meant for your faculty before another's ("Calculus 2
   // for Honours Mathematics" before "… for the Sciences"), and arranged courses (a thesis, a reading course) last.
@@ -289,7 +377,7 @@ export function readyNow({ courses, planned, before, season, year = 1, level = n
     if (!c || c[7] || inGrid(code) || WORK_COURSE.test(code) || isPlaceholder(code)) continue;
     const sn = c[5] ?? [0, 0, 0];
     if (!(sn[0] + sn[1] + sn[2]) || (idx >= 0 && !sn[idx])) continue;
-    if ((c[4] || []).some(inGrid) || overlapsOf(code, courses).some(inGrid)) continue;
+    if (clashes(code)) continue;
     const ok = holds(c[2], before, ctx);
     if (ok === false) continue;
     const wants = need.get(code) ?? [];
@@ -1048,8 +1136,9 @@ export function optimize(plans, planned, { courses = {}, equiv, faculty = {}, ct
   const usable = (c, h) => {
     const x = courses[c];
     if (!x || x[7] || exclude.has(c) || isPlaceholder(c) || WORK_COURSE.test(c) || has(h, c, hctx)) return false;
-    if ((x[4] || []).some((o) => h.has(o))) return false;
-    for (const o of h.keys()) if ((courses[o]?.[4] || []).includes(c)) return false;
+    // Antirequisites: nothing a held course stops or overlaps. The next course of a sequence is fine (FR 192A when
+    // FR 152 is held: only FR 152 lists the other, and FR 192A builds on it, so it lands after).
+    for (const o of h.keys()) if (antiLists(c, o, courses) || (antiLists(o, c, courses) && !buildsOn(c, o, courses))) return false;
     return true;
   };
   // What a course still needs for its prerequisites, one course from each list it misses (the one that costs

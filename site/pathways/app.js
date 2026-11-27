@@ -338,7 +338,7 @@ const termOf = (i) => {
 let A = null; // the latest analysis
 // The kinds of problem an override covers: a course's requisites (prerequisites, corequisites, its level or program),
 // an antirequisite, and a course on a work term. Not a failed grade, a course that's gone, or a season it doesn't run.
-const OVERRIDABLE = new Set(['pre', 'anti', 'wt']);
+const OVERRIDABLE = new Set(['pre', 'anti', 'overlap', 'wt']);
 function analyze() {
   const lv = E.levels(state.rows.map((r) => ({ kind: KIND[r.k] })));
   // On a work term, prerequisites go by the last study term before it.
@@ -432,7 +432,7 @@ function analyze() {
           const parts = [short.codes.length ? `${needsText(short)} in an earlier term` : '', low.length ? `at least ${low.join(', ')}` : '', w.level ? `level ${w.level} or higher (this is ${lvAt[i]})` : '', w.plans.length ? `enrolled in ${w.plans.join(' or ')}` : ''].filter(Boolean);
           issues.push(['bad', `Prerequisites: needs ${parts.join('; ') || 'more than is planned before it'}`, 'pre']);
           miss = short.codes;
-        } else if (pre === null) issues.push(['check', 'Check the prerequisites: they name a plan the grid can’t confirm', 'pre']);
+        } else if (pre === null) issues.push(['check', 'Check the prerequisites: part of them is something the grid can’t confirm (a plan, a high-school course, permission)', 'pre']);
         if (!taken && c[3] && E.holds(c[3], new Set([...before, ...same]), ctx) === false) issues.push(['bad', `Corequisites not met: ${E.missing(c[3], new Set([...before, ...same]), ctx).map(fmt).join(', ')}`, 'pre']);
         const sn = c[5];
         const total = sn[0] + sn[1] + sn[2];
@@ -441,9 +441,20 @@ function analyze() {
           // taken: nothing to warn about the season
         } else if (total && !sn['FWS'.indexOf(season)]) issues.push(['warn', `Hasn’t run in ${name} lately (last 4 years: Fall ${sn[0]}, Winter ${sn[1]}, Spring ${sn[2]})`, 'season']);
         else if (!total) issues.push(['warn', 'No sections in the last 4 years', 'season']);
-        // Antirequisites: not with a course it counts as, and not when the other one's requisites are overridden.
-        const anti = [...planned.keys()].filter((x) => x !== code && x !== o?.a && ovrOf.get(x)?.a !== code && ((c[4] || []).includes(x) || (C[x]?.[4] || []).includes(code)) && (o?.w || !waived.has(x)));
-        if (key !== null && anti.length) issues.push(['bad', `Antirequisite with ${anti.map(fmt).join(', ')}: only one counts`, 'anti']);
+        // Antirequisites run one way (engine.js): this course is stopped by the ones it lists that are done or in
+        // its own term, never by a later one. Not with a course it counts as, and not when the other one's
+        // requisites are overridden.
+        if (key !== null) {
+          const mine = (x) => x !== o?.a && ovrOf.get(x)?.a !== code && (o?.w || !waived.has(x));
+          const anti = E.antiIssues(code, before, same, C);
+          const after = anti.after.filter(mine);
+          const withIt = anti.with.filter(mine);
+          const check = anti.check.filter(mine);
+          const names = (l) => l.map(fmt).join(', ');
+          if (after.length) issues.push(['bad', `Antirequisite: ${fmt(code)} can’t be taken once you have ${names(after)}`, 'anti']);
+          if (withIt.length) issues.push(['bad', `Antirequisite: ${fmt(code)} can’t be taken in the same term as ${names(withIt)}`, 'anti']);
+          if (check.length) issues.push(['check', `${names(check)} ${check.length === 1 ? 'lists' : 'list'} ${fmt(code)} as an antirequisite, but ${fmt(code)} doesn’t list ${check.length === 1 ? 'it' : 'them'} back: the calendar allows this order. The courses overlap, so check that both count`, 'overlap']);
+        }
         if (key !== null && count.get(code) > 1) issues.push(['warn', 'Planned more than once', 'dup']);
         // The grid also holds a course you've said counts as this one.
         const stand = key !== null ? [...ovrOf].filter(([x, v]) => v.a === code && x !== code && planned.has(x)).map(([x]) => x) : [];
@@ -1059,13 +1070,15 @@ function countsAsIdeas(code) {
 /** The card's Override part for a course in the grid: mark it, say what it counts as, and who decides. */
 function overridePart(code, f) {
   const o = f?.o ?? null;
-  const kinds = [...new Set(f?.open ?? [])];
+  const asked = [...new Set(f?.open ?? [])];
+  // 'overlap' (an earlier course lists this one, one way) isn't something Quest stops: no form to point to.
+  const kinds = asked.filter((k) => k !== 'overlap');
   const lines = [];
   if (o?.w) lines.push(`<p><b class="pw-ovrtag">Override</b> Its requisites don’t count as problems. <button type="button" class="pw-linkbtn" data-ovr="w0">Take it off</button></p>`);
   else {
     const typ = (f?.typ ?? []).slice(0, 3).map((x) => `you have <b>${esc(fmt(x.have))}</b>, which the calendar treats as overlapping <b>${esc(fmt(x.for))}</b> (they’re antirequisites)`);
     lines.push(
-      `<p><button type="button" class="pw-ovrbtn" data-ovr="w1">Mark as an override</button> <span class="t">${kinds.length ? 'if you have, or will ask for, permission to take it anyway: it turns yellow and its requisites stop counting as problems' : 'if you need permission to take it (consent, a restriction the grid can’t see): it turns yellow'}.</span></p>${typ.length ? `<p class="t pw-typ">Where an override is usually asked for: ${typ.join('; ')}.</p>` : ''}`,
+      `<p><button type="button" class="pw-ovrbtn" data-ovr="w1">Mark as an override</button> <span class="t">${kinds.length ? 'if you have, or will ask for, permission to take it anyway: it turns yellow and its requisites stop counting as problems' : asked.length ? 'once an advisor has said both courses count: it turns yellow and the note stops asking' : 'if you need permission to take it (consent, a restriction the grid can’t see): it turns yellow'}.</span></p>${typ.length ? `<p class="t pw-typ">Where an override is usually asked for: ${typ.join('; ')}.</p>` : ''}`,
     );
   }
   if (kinds.length) {
@@ -1074,6 +1087,7 @@ function overridePart(code, f) {
       `<p class="t">${h.error ? `Quest’s message for this is “${esc(h.error)}”. ` : ''}Who can override it: ${esc(h.how)}. ${h.note ? `${esc(h.note)} ` : ''}${h.faculty ? `<a href="${esc(h.faculty.url)}" rel="noopener">Where ${esc(h.faculty.name)} says to ask</a> · ` : ''}<a href="${esc(h.src)}" rel="noopener">The Registrar’s list by faculty</a></p>`,
     );
   }
+  else if (asked.length && !o?.w) lines.push('<p class="t">Quest won’t stop this: the calendar allows the two in this order. Whether both count toward your degree is your academic advisor’s call.</p>');
   if (o?.a) lines.push(`<p><b class="pw-ovrtag">Override</b> Counts as <b>${esc(fmt(o.a))}</b> ${esc(C[o.a]?.[0] ?? '')}, toward your plans and as a prerequisite. <button type="button" class="pw-linkbtn" data-ovr="a0">Take it off</button></p>`);
   else {
     const ideas = countsAsIdeas(code).slice(0, 6);
@@ -1092,8 +1106,8 @@ function overridePart(code, f) {
   }
   const ruled = A.plans.flatMap((p) => (p.sub ?? []).filter((x) => x.no && x.a.includes(code)).map((x) => `${esc(E.planParts(p).name)}: ${esc(x.t)}`));
   if (ruled.length) lines.push(`<p class="pw-no">${[...new Set(ruled)].join('<br>')}</p>`);
-  const open = Boolean(o) || kinds.length > 0;
-  return `<details class="pw-ovr${o ? ' on' : ''}"${open ? ' open' : ''}><summary>Override${o ? ` <span class="pw-ovrtag">${esc(o.a ? `= ${fmt(o.a)}` : 'on')}</span>` : kinds.length ? '' : ' <span class="t">permission, or counting it as another course</span>'}</summary>${lines.join('')}</details>`;
+  const open = Boolean(o) || asked.length > 0;
+  return `<details class="pw-ovr${o ? ' on' : ''}"${open ? ' open' : ''}><summary>Override${o ? ` <span class="pw-ovrtag">${esc(o.a ? `= ${fmt(o.a)}` : 'on')}</span>` : asked.length ? '' : ' <span class="t">permission, or counting it as another course</span>'}</summary>${lines.join('')}</details>`;
 }
 
 // ---------------- what can go next ----------------
@@ -1130,7 +1144,7 @@ function readyFor(r) {
       });
     });
     if (justAdded && before.has(justAdded)) fresh.add(justAdded);
-    A.ready.set(r, E.readyNow({ courses: CE, planned: A.planned, before, season: E.seasonOf(termOf(r)), year: Number(A.lvAt[r]?.[0]) || 1, level: A.lvAt[r], plans: A.planCtx, equiv, grades, need: neededNow(), leads: leadsTo, fresh, limit: 24 }));
+    A.ready.set(r, E.readyNow({ courses: CE, planned: A.planned, before, season: E.seasonOf(termOf(r)), year: Number(A.lvAt[r]?.[0]) || 1, level: A.lvAt[r], plans: A.planCtx, equiv, grades, need: neededNow(), leads: leadsTo, fresh, limit: 24, row: r }));
   }
   return A.ready.get(r);
 }
@@ -1310,8 +1324,9 @@ ${counts ? `<p class="t">Counts toward:</p><ul class="pw-counts">${counts}</ul>`
   // A placeholder or a course from elsewhere can count as one too ("MATH 1XX = MATH 137": a transfer credit).
   else if (c) {
     const miss = E.missing(dropNot(c[2]), new Set(A.planned.keys()), { equiv });
-    const clash = (c[4] || []).filter((x) => A.planned.has(x));
-    status = `${miss.length ? `<p class="pw-dkind pw-dneed"><span class="pw-lead">Needs first</span><span class="pw-dchips">${miss.slice(0, 8).map((k) => chip(k, 'no')).join('')}</span></p>` : pre ? '<p class="t pw-ok">Your grid has what it needs first.</p>' : ''}${clash.length ? `<p class="pw-no">Your grid has ${clash.map(fmt).join(', ')}: you can’t get credit for both.</p>` : ''}`;
+    // The courses in the grid that stop this one (it lists them), wherever it would go after them.
+    const clash = [...A.planned.keys()].filter((x) => E.antiLists(code, x, C));
+    status = `${miss.length ? `<p class="pw-dkind pw-dneed"><span class="pw-lead">Needs first</span><span class="pw-dchips">${miss.slice(0, 8).map((k) => chip(k, 'no')).join('')}</span></p>` : pre ? '<p class="t pw-ok">Your grid has what it needs first.</p>' : ''}${clash.length ? `<p class="pw-no">Your grid has ${clash.map(fmt).join(', ')}: ${esc(fmt(code))} lists ${clash.length === 1 ? 'it as an antirequisite' : 'them as antirequisites'}, so it can’t be taken after or alongside.</p>` : ''}`;
   } else status = `<p class="t">Not in the ${esc(data.cat)} Undergraduate Calendar${calYear !== data.year ? ' or the one your plans follow' : ''}; its page may say why.</p>`;
   const gradeBox = at
     ? `<div class="pw-dmeta"><label class="pw-grade">Grade <input id="pw-grade" value="${esc(g ?? '')}" placeholder="e.g. 85 or CR" spellcheck="false" autocomplete="off" inputmode="text" size="7" aria-describedby="pw-gnote"></label><span class="t" id="pw-gnote">${g == null ? 'Once you have it. Kept in this browser only, never in shared links.' : failed(g) ? 'Doesn’t count toward requirements.' : notYet(g) ? 'Counts once the final grade is in.' : 'Counts toward your averages.'}</span></div>`
@@ -1331,7 +1346,7 @@ ${counts ? `<p class="t">Counts toward:</p><ul class="pw-counts">${counts}</ul>`
 <p class="pw-dsub">${c ? `${units(c[1])} units · ` : ''}<b>${esc(where)}</b> <span class="pw-seasons" aria-label="Terms with sections in the last 4 years">${seasons}</span> ${acts}${at && liveOn() ? ' <span class="t pw-linkkey">In the grid: <i style="background:var(--d1)"></i>what it needs <i style="background:var(--d2)"></i>what needs it</span>' : ''}</p></div>
 <div class="pw-dcols"><div class="pw-dmain">
 <div id="pw-dpage" data-code="${esc(code)}">${pagePart(code)}</div>
-${pre || co || anti || cross ? `<dl class="pw-reqs">${pre ? `<dt>Prerequisites</dt><dd>${esc(pre)}</dd>` : ''}${co ? `<dt>Corequisites</dt><dd>${esc(co)}</dd>` : ''}${anti ? `<dt>Antirequisites</dt><dd>${esc(anti)}</dd>` : ''}${cross ? `<dt>Cross-listed</dt><dd>${esc(cross)}</dd>` : ''}</dl>` : ''}
+${pre || co || anti || cross ? `<dl class="pw-reqs">${pre ? `<dt>Prerequisites</dt><dd>${esc(pre)}</dd>` : ''}${co ? `<dt>Corequisites</dt><dd>${esc(co)}</dd>` : ''}${anti ? `<dt title="Courses that stop this one once they’re done or in the same term. It runs one way: taking one of them afterwards is up to that course’s own list.">Antirequisites</dt><dd>${esc(anti)} <span class="t">· not after or alongside these</span></dd>` : ''}${cross ? `<dt>Cross-listed</dt><dd>${esc(cross)}</dd>` : ''}</dl>` : ''}
 ${status}${at ? overridePart(code, f) : ''}${gradeBox}</div>
 <div class="pw-dside">${c ? countsPart(code, key) : ''}${c ? leadsPart(code) : ''}</div></div></div>`;
 }
@@ -3422,7 +3437,8 @@ function renderFind() {
       const lv = levelIn(x[2]);
       if (lv) pre += ` <span class="t">· from level ${esc(lv)}</span>`;
     }
-    const anti = [...have].filter((o) => (x[4] || []).includes(o) || (C[o]?.[4] || []).includes(c));
+    // Stopped by a course in the grid, or overlapping one; the next course of a sequence is neither.
+    const anti = [...have].filter((o) => E.antiLists(c, o, C) || (E.antiLists(o, c, C) && !E.buildsOn(c, o, C)));
     const counts = (needed.get(c) ?? []).map((n) => `<span><i class="pw-dot d${n.k % 8}"></i>${esc(A.plans[n.k].n.replace(/\s*\(.*$/, ''))}: ${esc(short(poolLabel(n), 56))}${esc(placeOf(n))}</span>`).join('');
     return `<li class="pw-fr"><button type="button" class="pw-add" data-fadd="${esc(c)}" aria-label="Add ${esc(fmt(c))} to your grid">Add</button><div><p class="pw-ft"><a href="/${c.toLowerCase()}/" target="_blank" rel="noopener"><b>${esc(fmt(c))}</b></a> ${esc(x[0])} <span class="t">${units(x[1])}</span></p><p class="pw-fmeta"><span class="pw-ss">${runs}</span>${pre ? ` ${pre}` : ''}${anti.length ? ` <span class="no">Antirequisite with ${anti.map(fmt).join(', ')}</span>` : ''}</p><p class="pw-fcounts">${counts}</p></div></li>`;
   };

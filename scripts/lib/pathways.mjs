@@ -10,7 +10,9 @@
 // /pathways/programs-{year}.json: {year, label, programs} for each other calendar year: someone follows the
 //                       requirements of the year they started. 2021–22 to 2023–24 (scripts/lib/archiveprograms.mjs)
 //                       add courses (the older courses their plans name) and each plan's src (its archived page).
-//   prereq, coreq: compact requisite trees (engine.js describes the shape); antireq: the codes it rules out
+//   prereq, coreq: compact requisite trees (engine.js describes the shape); antireq: the codes its list names
+//     (they stop it once done or in the same term; it runs one way). A ninth entry holds the ones under
+//     "Not completed any of the following", which stop it only once done (antireqCodes).
 //   seasons: [Fall, Winter, Spring] terms with sections in the last 4 academic years, plus any published term
 import { FACULTY } from './opendata.mjs';
 import { shell } from './render.mjs';
@@ -173,6 +175,53 @@ export function subjectPlans(programs) {
         .sort((a, b) => b.named - a.named || b.words.length - a.words.length || a.s.localeCompare(b.s)),
     ]),
   );
+}
+
+/**
+ * The courses an antirequisite tree names, and how each stops the course: "Not completed nor concurrently enrolled
+ * in any of the following" (done, or in the same term) or "Not completed any of the following" (done only).
+ * → {all: every code, done: the ones named only under a completed-only rule}. A lead the calendar words some other
+ * way counts as the stricter kind.
+ */
+export function antireqCodes(tree) {
+  const strict = new Set();
+  const lax = new Set();
+  const walk = (nodes) => {
+    for (const n of nodes ?? []) {
+      if (n.type === 'group') walk(n.items);
+      else if (n.type === 'rule') {
+        const onlyDone = /\bnot completed\b/i.test(n.lead ?? '') && !/concurrent/i.test(n.lead ?? '');
+        for (const x of n.courses ?? []) if (x.code) (onlyDone ? lax : strict).add(x.code);
+      }
+    }
+  };
+  walk(tree);
+  return { all: [...new Set([...strict, ...lax])], done: [...lax].filter((x) => !strict.has(x)) };
+}
+
+/**
+ * How the calendar's antirequisites run, for the build log: {listings, mutual, oneWay, gone, courses}. oneWay: the
+ * other course is in the calendar and doesn't list it back (FR 152 lists FR 192A); gone: it isn't in the calendar;
+ * courses: how many courses are in a one-way pair. The grid reads each listing one way (engine.js).
+ */
+export function antireqStats(courses) {
+  const out = { listings: 0, mutual: 0, oneWay: 0, gone: 0, courses: 0 };
+  const inPair = new Set();
+  for (const [a, c] of Object.entries(courses)) {
+    if (c[7]) continue;
+    for (const b of c[4] || []) {
+      out.listings++;
+      const other = courses[b];
+      if (!other || other[7]) out.gone++;
+      else if ((other[4] || []).includes(a)) out.mutual++;
+      else {
+        out.oneWay++;
+        inPair.add(a).add(b);
+      }
+    }
+  }
+  out.courses = inPair.size;
+  return out;
 }
 
 /** kualiToTree's nodes → the compact shape engine.js reads. */
@@ -381,11 +430,10 @@ export function pathwaysData({ programs, combos, catalog, schedules, published =
     for (const term of seen) seasons[SEASONS[term.slice(-1)]]++;
     const pre = compact(c.prereq);
     const co = compact(c.coreq);
-    const anti = [...new Set(compact(c.antireq).flatMap(function codes(n) {
-      return n.g ? n.i.flatMap(codes) : n.c ?? [];
-    }))];
+    const { all: anti, done } = antireqCodes(c.antireq);
     const row = [c.title, c.units ?? 0.5, pre.length ? pre : 0, co.length ? co : 0, anti.length ? anti : 0, seasons];
-    if (c.crossListed?.length) row.push(c.crossListed);
+    if (c.crossListed?.length || done.length) row.push(c.crossListed ?? []);
+    if (done.length) row.push(0, done);
     courses[code] = row;
   }
   // Courses programs name that aren't in this calendar: a title, so the grid can say what they were.

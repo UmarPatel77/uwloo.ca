@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { archiveSubjectPage, archiveYearPage, loadArchiveText, textMap } from './lib/archive.mjs';
 import * as kuali from './lib/kuali.mjs';
 import * as programsLib from './lib/programs.mjs';
-import { pathwaysData, pathwaysPage, pathwaysPrograms, subjectPlans, wordsFits } from './lib/pathways.mjs';
+import { antireqStats, pathwaysData, pathwaysPage, pathwaysPrograms, subjectPlans, wordsFits } from './lib/pathways.mjs';
 import { gradCounts, gradPathways, gradProgramPage, gradProgramsIndexPage } from './lib/gradprograms.mjs';
 import { archivePrograms, loadArchivePrograms } from './lib/archiveprograms.mjs';
 import { searchDocs, searchIndex, searchPage } from './lib/search.mjs';
@@ -419,6 +419,8 @@ async function main() {
       pages.push(['pathways/index.html', pathwaysPage({ ...ctxBase, cat: progCat, curTerm })]);
       sitemap.push('/pathways/');
       console.log(`Pathways: ${Object.keys(pw.courses).length} courses, ${pw.programs.length} programs, ${(json.length / 1e6).toFixed(1)} MB; calendars ${years.map((y) => y.label).join(', ')}`);
+      const anti = antireqStats(pw.courses);
+      console.log(`Pathways: ${anti.listings} antirequisite listings: ${anti.mutual} returned by the other course, ${anti.oneWay} one-way (${anti.courses} courses), ${anti.gone} to courses no longer in the calendar`);
     } catch (err) {
       console.warn(`! Pathways skipped: ${err.message}`);
     }
