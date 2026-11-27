@@ -404,6 +404,7 @@ export function searchDocs({ primary, older = [], retired = new Map(), reddit = 
 
 export function searchPage({ builtAt, version, count }) {
   const body = `<div class="sx" id="search" data-v="${esc(version)}">
+<h1 class="vh">Search Waterloo courses by what they’re about</h1>
 <form class="sx-form" action="/search/" role="search">
   <label for="sx-q" class="sx-label">Search courses by what they’re about</label>
   <div class="sx-box"><input id="sx-q" name="q" type="search" placeholder="dynamic programming, latin, fourier series, game theory…" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sx-sugg"><button type="submit">Search</button></div>

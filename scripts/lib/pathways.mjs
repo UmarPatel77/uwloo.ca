@@ -16,25 +16,36 @@
 //   seasons: [Fall, Winter, Spring] terms with sections in the last 4 academic years, plus any published term
 import { FACULTY } from './opendata.mjs';
 import { shell } from './render.mjs';
-import { codesIn, esc, find, findAll, norm, parseHtml, textOf } from './requisites.mjs';
+import { codesIn, esc, find, findAll, fmtCode, norm, parseHtml, textOf } from './requisites.mjs';
 import { termName } from './terms.mjs';
 
 // ---------------- trees ----------------
 
 /** A requirement or requisite lead ("Complete 2 of the following:") → [kind, n]. */
+// Every wording in the 2026–27 calendar is in the tests (27 for courses, 17 for programs). The ones that used to fall
+// through to 'list', which nothing checks: "Completed or concurrently enrolled in:" (105 corequisites), "Must have
+// completed:", "Must have completed 1 of the following:", "…one of the following:", "Complete 1 course from the
+// following:", "Complete 2 additional courses from:".
 export function kindOf(lead) {
   const l = norm(lead).toLowerCase();
+  const num = (x) => NUMBER_WORDS[x] ?? Number(x);
   let m;
   if (/cannot be used|not completed|not open to/.test(l)) return ['not'];
   if ((m = /no more than (\d+(?:\.\d+)?)/.exec(l))) return ['max', Number(m[1])];
-  if ((m = /(?:at least|complete) (\d+(?:\.\d+)?) of the following/.exec(l))) return ['n', Number(m[1])];
-  if (/choose any of the following/.test(l)) return ['any'];
-  // "Must have completed or be concurrently enrolled in the following:" (a corequisite) is all of them too.
-  if (/\b(all|each) (of )?the following|completed the following|complete the following|enrolled in the following/.test(l)) return ['all'];
+  if ((m = new RegExp(`(?:at least|completed?) (\\d+(?:\\.\\d+)?|${NUMBER}) of the following`).exec(l))) return ['n', num(m[1])];
+  // "Complete 1 course from the following:", "Complete 2 additional courses from:", "Complete at least 1 course from:"
+  if ((m = new RegExp(`^complete (?:at least )?(\\d+|${NUMBER}) (?:additional )?courses? from(?: the following)?:?$`).exec(l))) return ['n', num(m[1])];
+  // "Complete of the following:" has lost its number in the calendar; both times it's a course and its online twin.
+  if (/^complete of the following:?$/.test(l)) return ['n', 1];
+  if (/choose any (?:courses? )?(?:of|from) the following/.test(l)) return ['any'];
+  // "Must have completed or be concurrently enrolled in the following:" (a corequisite) is all of them too, as are
+  // the short forms "Must have completed:" and "Completed or concurrently enrolled in:".
+  if (/\b(all|each) (of )?the following|completed the following|complete the following|enrolled in the following|\bcompleted:?$|\benrolled in:?$/.test(l)) return ['all'];
   return ['list'];
 }
 
 const NUMBER_WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
+const NUMBER = 'one|two|three|four|five|six|seven|eight|nine|ten';
 const SUBJ = '[A-Z]{2,8}';
 const SUBJ_LIST = `${SUBJ}(?:\\s*(?:,|or|and|, or|, and)\\s*${SUBJ})*`;
 
@@ -47,21 +58,44 @@ export function hints(text) {
   const t = norm(text);
   const h = { t };
   let m;
-  if ((m = /\blevel (\d[AB]) or (?:higher|above)\b/i.exec(t))) h.lv = m[1].toUpperCase();
+  if ((m = /\blevel (\d[AB]) or (?:higher|above)\b/i.exec(t) ?? /\bat least level (\d[AB])\b/i.exec(t))) h.lv = m[1].toUpperCase();
+  // "Students must be in level 1A": that level and no other (201 first-year and cohort courses).
+  else if ((m = /^Students must be in level (\d[AB])\.?$/i.exec(t))) h.lx = m[1].toUpperCase();
   if ((m = /^(?:Students must be )?Enrolled in (.+?)\.?$/i.exec(t))) h.en = m[1];
-  const num = (x) => (NUMBER_WORDS[x.toLowerCase()] ?? Number(x));
-  // "Complete a total of seven courses according to the requirements below": a summary of the rules after it.
-  if (/according to the requirements|as described below|as follows\b/i.test(t)) {
+  // "Corequisite is for H-Kinesiology students only", "…for students enrolled in Chemical Engineering only:": the
+  // rules beside it apply to those students alone (compact puts it on their group).
+  if ((m = /^(?:Co|Pre)requisites? (?:is|are) (?:only )?for (?:students (?:enrolled )?in )?(.+?)(?: students)? only:?$/i.exec(t))) {
+    h.only = m[1];
     h.info = 1;
     return h;
   }
-  if ((m = /\bcomplete (?:a (?:total|minimum) of |at least )?(\d+(?:\.\d+)?) (?:additional )?units?\b/i.exec(t))) h.u = Number(m[1]);
-  else if ((m = /\bcomplete (?:a (?:total|minimum) of |at least )?(\d+|one|two|three|four|five|six|seven|eight|nine|ten) (?:[A-Za-z/-]+ ){0,4}?(?:courses?|electives?|seminars?)\b/i.exec(t))) h.nc = num(m[1]);
+  const num = (x) => (NUMBER_WORDS[x.toLowerCase()] ?? Number(x));
+  // "Complete a total of seven courses according to the requirements below": a summary of the rules after it. So are
+  // "The following are the requirements to complete in Year One." and "Complete the List 1 requirement below".
+  if (/according to the requirements|as described below|as follows\b|^the following are the requirements\b|^complete the list \d+(?: and list \d+)? requirements? below\.?$/i.test(t)) {
+    h.info = 1;
+    return h;
+  }
+  // "Complete 1.5 units…", and "Complete a 0.5 unit math course from…"
+  // Also the calendar's two odd ones: "Complete 0.5 additional BIOL courses at the 200-level" (half a unit, not half
+  // a course) and "Complete one additional BIOL 0.5 unit, any level".
+  if ((m = /\bcomplete (?:a (?:total|minimum) of |at least )?(\d+(?:\.\d+)?) (?:additional )?units?\b/i.exec(t) ?? /\bcomplete an? (\d+(?:\.\d+)?)[- ]unit\b/i.exec(t) ?? /\b[Cc]omplete (\d+\.\d+) (?:additional )?(?=[A-Z]{2,8} courses?\b)/.exec(t) ?? new RegExp(`\\b[Cc]omplete (?:one|an?) additional ${SUBJ} (\\d+(?:\\.\\d+)?) units?\\b`).exec(t))) h.u = Number(m[1]);
+  // "3 additional 0.5-unit math courses": words between the number and "courses" may carry a size.
+  else if ((m = /\bcomplete (?:a (?:total|minimum) of |at least )?(\d+|one|two|three|four|five|six|seven|eight|nine|ten) (?:(?:[A-Za-z/-]+|\d+(?:\.\d+)?-units?) ){0,6}?(?:courses?|electives?|seminars?)\b/i.exec(t))) h.nc = num(m[1]);
   if (h.u || h.nc) {
+    // "(excluding CS100 and MATH103)", "(exclusive of BIOL225 and BIOL280)": courses the rule leaves out.
+    const out = /\b(?:excluding|exclusive of|except(?: for)?|other than)\b:?\s*(.+)$/i.exec(t);
+    const no = out ? codesIn(out[1]) : [];
+    if (no.length) h.no = no;
     const subj = new Set();
     const lists = [
       new RegExp(`subject codes?:?\\s*(${SUBJ_LIST})`),
       new RegExp(`\\bfrom:?\\s*(${SUBJ}(?:\\s*,\\s*(?:or\\s+|and\\s+)?${SUBJ})+)`),
+      // "1 course (at least 0.50 unit) of BIOL or KIN at the 200-level or above", "one additional BIOL 0.5 unit"
+      new RegExp(`\\) of (${SUBJ_LIST}) at the\\b`),
+      new RegExp(`\\badditional (${SUBJ}) \\d+(?:\\.\\d+)? units?\\b`),
+      // "Complete at least 1 course from: SOC", "at least 2 courses from MUSIC"
+      new RegExp(`\\bcourses? from:?\\s*(${SUBJ})\\s*[.,]?\\s*(?:\\(.*\\))?$`),
       new RegExp(`\\b(?:units?|courses?) (?:of|in|from) (${SUBJ_LIST}) courses?\\b`),
       new RegExp(`\\b(?:additional |more |senior )?(${SUBJ_LIST}) (?:elective |lecture |seminar )?(?:courses?|seminars?|electives?)\\b`),
     ];
@@ -77,7 +111,13 @@ export function hints(text) {
     if (ranges.length) h.rg = ranges;
     else if (subj.size) h.subj = [...subj];
     // "at the 300- or 400-level", "at the 200-, 300-, or 400-level", "at the 200-level or above"
-    if ((m = /\b((?:\d00-?,?\s*(?:or\s+|and\s+)?)*\d00)[- ]level\b/i.exec(t))) h.min = Math.min(...[...m[1].matchAll(/(\d)00/g)].map((x) => Number(x[1])));
+    if ((m = /\b((?:\d00-?,?\s*(?:or\s+|and\s+)?)*\d00)[- ]level\b(\s+(?:or|and) (?:above|higher))?/i.exec(t))) {
+      const levels = [...m[1].matchAll(/(\d)00/g)].map((x) => Number(x[1]));
+      h.min = Math.min(...levels);
+      // "at the 100-level", "at the 100- or 200-level": those levels and none above. Only "…or above" is open-ended
+      // (47 rules in 37 plans name a level below 400 this way: 1.0 unit of ENGL at the 100-level isn't ENGL 309).
+      if (!m[2] && Math.max(...levels) < 4) h.max = Math.max(...levels);
+    }
     // "from the Faculty of Arts", "offered by the Faculties of…": the grid can't check a faculty.
     if (/\bFacult(?:y|ies)\b/.test(t)) h.fa = 1;
     if (!h.subj && !h.rg && /\b(list|lists|following|below|approved|technical electives?)\b/i.test(t)) h.pl = 1;
@@ -96,7 +136,7 @@ export function fittingCodes(h, codes) {
     const m = /^([A-Z]{2,8})(\d{3})/.exec(c);
     if (!m || (h.no ?? []).includes(c) || (h.nos ?? []).includes(m[1])) continue;
     const num = Number(m[2]);
-    if (h.rg ? h.rg.some(([s, lo, hi]) => s === m[1] && num >= lo && num <= hi) : h.subj?.includes(m[1]) && (!h.min || num >= h.min * 100)) out.push(c);
+    if (h.rg ? h.rg.some(([s, lo, hi]) => s === m[1] && num >= lo && num <= hi) : h.subj?.includes(m[1]) && (!h.min || num >= h.min * 100) && (!h.max || num < (h.max + 1) * 100)) out.push(c);
   }
   return out.sort(byCode);
 }
@@ -190,7 +230,9 @@ export function antireqCodes(tree) {
     for (const n of nodes ?? []) {
       if (n.type === 'group') walk(n.items);
       else if (n.type === 'rule') {
-        const onlyDone = /\bnot completed\b/i.test(n.lead ?? '') && !/concurrent/i.test(n.lead ?? '');
+        // "…nor concurrently enrolled in", "…nor currently enrolled in", "…or currently enrolled in" all take in the
+        // same term; only a lead with no enrolment in it is completed-only.
+        const onlyDone = /\bnot completed\b/i.test(n.lead ?? '') && !/enrol/i.test(n.lead ?? '');
         for (const x of n.courses ?? []) if (x.code) (onlyDone ? lax : strict).add(x.code);
       }
     }
@@ -230,15 +272,32 @@ export function compact(nodes) {
     .map((n) => {
       if (n.type === 'group') {
         const [k, num] = kindOf(n.lead);
-        return { g: k === 'n' ? 'n' : 'all', ...(k === 'n' ? { n: num } : {}), i: compact(n.items) };
+        const i = compact(n.items);
+        // "Complete a total of 2 lecture courses (see Additional Constraints)" with the list right after it: from
+        // that list.
+        i.forEach((x, j) => {
+          if (!x.r && !x.g && (x.u || x.nc) && !x.info && !x.subj && !x.rg && !x.pl && !x.fa && i[j + 1]?.r === 'any') x.pl = 1;
+        });
+        // "Corequisite is for H-Kinesiology students only" beside a rule: the group is theirs alone.
+        const only = i.find((x) => x.only)?.only;
+        return { g: k === 'n' ? 'n' : 'all', ...(k === 'n' ? { n: num } : {}), ...(only ? { only } : {}), i };
       }
       if (n.type === 'rule') {
         const [k, num] = kindOf(n.lead);
         const c = [...new Set(n.courses.map((x) => x.code).filter(Boolean))];
         if (!c.length) return n.lead ? hints(n.lead) : null;
+        // "Complete at least 2 courses from MUSIC , excluding:" and a list: the list is what's left out.
+        if (/\bexclud\w*:?\s*$/i.test(n.lead ?? '')) {
+          const h = hints(norm(n.lead).replace(/[\s,]*\bexclud\w*:?\s*$/i, ''));
+          h.t = `${norm(n.lead).replace(/\s+,/g, ',')} ${c.map(fmtCode).join(', ')}`;
+          if (h.u || h.nc) h.no = c;
+          return h;
+        }
         // "Earned a minimum grade of 60% in each of the following": mg, checked against grades someone enters.
         const mg = /minimum grade of (\d+(?:\.\d+)?)\s*%/i.exec(n.lead ?? '')?.[1];
-        return { r: k, ...(num != null ? { n: num } : {}), c, ...(mg ? { mg: Number(mg) } : {}) };
+        // "Completed or concurrently enrolled in": the same term counts, wherever the rule sits (cc).
+        const cc = k !== 'not' && /concurrently enrolled/i.test(n.lead ?? '');
+        return { r: k, ...(num != null ? { n: num } : {}), c, ...(mg ? { mg: Number(mg) } : {}), ...(cc ? { cc: 1 } : {}) };
       }
       const t = norm(n.text);
       return t ? hints(t) : null;

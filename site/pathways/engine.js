@@ -69,7 +69,8 @@ const levelRank = (l) => (l ? (Number(l.slice(0, -1)) - 1) * 2 + (l.endsWith('B'
 
 /**
  * Does a requisite tree hold? → true, false, or null (can't tell: "Enrolled in…" with no matching plan, or words).
- * have: codes counted as done (earlier terms; for corequisites, this term too). ctx: {level, plans, equiv}.
+ * have: codes counted as done (earlier terms; for corequisites, this term too). ctx: {level, plans, equiv, grades,
+ * same}: same is the course's own term, for a prerequisite worded "Completed or concurrently enrolled in" (cc).
  */
 export function holds(nodes, have, ctx = {}) {
   if (!nodes?.length) return true;
@@ -84,20 +85,38 @@ const atLeast = (vals, n) => {
 const has = (have, code, ctx) => have.has(code) || (ctx.equiv?.get(code) ?? []).some((c) => have.has(c));
 const lowGrade = (n, code, ctx) => Boolean(n.mg && ctx.grades?.has(code) && ctx.grades.get(code) < n.mg);
 
+/** "Corequisite is for H-Kinesiology students only": is one of the plans that program? (Its name, with or without H-.) */
+const onlyFor = (text, plans) => {
+  const bare = (s) => String(s ?? '').toLowerCase().replace(/^(?:jh|h|\dg)-/, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  const want = bare(text);
+  return plans.some((p) => bare(p.code) === want || bare(p.name) === want) || enrolled(text, plans) === true;
+};
+
 function holdsNode(n, have, ctx) {
   if (n.g) {
+    // A group for one program's students alone: it asks nothing of anyone else. With no plans picked, there's no
+    // telling whose it is.
+    if (n.only) {
+      const plans = ctx.plans ?? [];
+      if (plans.length && !onlyFor(n.only, plans)) return true;
+      const v = all(n.i.filter((c) => !c.only).map((c) => holdsNode(c, have, ctx)));
+      return plans.length ? v : v === true ? true : null;
+    }
     const vals = n.i.map((c) => holdsNode(c, have, ctx));
     return n.g === 'n' ? atLeast(vals, n.n ?? 1) : all(vals);
   }
   if (n.r) {
+    const got = (c) => has(have, c, ctx) || Boolean(n.cc && ctx.same && has(ctx.same, c, ctx));
     // "Earned a minimum grade of 60% in CS136": a grade below that doesn't count (no grade yet: assume it will).
-    const hits = n.c.filter((c) => has(have, c, ctx) && !lowGrade(n, c, ctx)).length;
+    const hits = n.c.filter((c) => got(c) && !lowGrade(n, c, ctx)).length;
     if (n.r === 'all') return hits === n.c.length;
     if (n.r === 'n') return hits >= (n.n ?? 1);
     if (n.r === 'not') return hits === 0;
     return true; // any, max, list: nothing to fail
   }
   if (n.lv) return ctx.level ? levelRank(ctx.level) >= levelRank(n.lv) : null;
+  // "Students must be in level 1A": that level exactly.
+  if (n.lx) return ctx.level ? ctx.level === n.lx : null;
   if (n.en) return enrolled(n.en, ctx.plans ?? []);
   return null;
 }
@@ -107,6 +126,9 @@ export function enrolled(text, plans) {
   if (!plans.length) return null;
   const t = text.toLowerCase();
   if (plans.some((p) => p.code && t.includes(p.code.toLowerCase()))) return true;
+  // "Enrolled in a program offered by Faculty of Engineering"
+  const fac = /\bfaculty of ([a-z]+(?: [a-z]+)?)/.exec(t);
+  if (fac && plans.some((p) => (p.faculty ?? '').toLowerCase().includes(`faculty of ${fac[1]}`))) return true;
   const m = /\b(honours|joint honours)?\s*([a-z ]+?)\s+(program|plan|major|degree)s?\b/.exec(t.replace(/^an?\s+/, ''));
   if (m) {
     const word = m[2].trim();
@@ -116,36 +138,43 @@ export function enrolled(text, plans) {
   return null;
 }
 
+/** Courses a requisite tree asks for (not the ones a "Not completed…" rule inside it rules out). */
+export const needCodes = (nodes) => (Array.isArray(nodes) ? nodes : []).flatMap((n) => (n.g ? needCodes(n.i) : n.r && n.r !== 'not' ? n.c : []));
+
 /** Courses an antirequisite tree rules out. */
 export const antiCodes = (nodes) => (Array.isArray(nodes) ? nodes : []).flatMap((n) => (n.g ? antiCodes(n.i) : n.r ? n.c : []));
 
 /** Courses a requisite tree names that aren't done: what to add first. */
 export const missing = (nodes, have, ctx = {}) => why(nodes, have, ctx).codes;
 
-/** Why a requisite tree fails: {codes: courses to add, level: 'nX' needed, plans: ["H-Software Engineering"…]}. */
+/** Why a requisite tree fails: {codes: courses to add, level: 'nX' or higher needed, exact: levels it must be in,
+ *  plans: ["H-Software Engineering"…]}. */
 export function why(nodes, have, ctx = {}) {
   const codes = new Set();
   const groups = [];
   const low = [];
   let level = null;
+  const exact = new Set();
   const plans = new Set();
   const walk = (list) => {
     for (const n of list ?? []) {
       if (holdsNode(n, have, ctx) !== false) continue;
-      if (n.g) walk(n.i);
+      if (n.g) walk(n.only ? n.i.filter((c) => !c.only) : n.i);
       else if (n.r && n.r !== 'not') {
         // Each unmet list on its own: "one of MATH 128, 138, 148" and "one of MATH 136, 146" are both needed.
-        const miss = n.c.filter((c) => !has(have, c, ctx) || lowGrade(n, c, ctx));
+        const got = (c) => has(have, c, ctx) || Boolean(n.cc && ctx.same && has(ctx.same, c, ctx));
+        const miss = n.c.filter((c) => !got(c) || lowGrade(n, c, ctx));
         for (const c of miss) codes.add(c);
         if (miss.length) groups.push(n.r === 'all' ? miss.map((c) => [c]) : [miss]);
         for (const c of miss) if (lowGrade(n, c, ctx)) low.push({ code: c, need: n.mg, got: ctx.grades.get(c) });
       }
       if (n.lv && (!level || levelRank(n.lv) > levelRank(level))) level = n.lv;
+      if (n.lx) exact.add(n.lx);
       if (n.en) plans.add(n.en);
     }
   };
   walk(nodes);
-  return { codes: [...codes], groups: groups.flat(), level, plans: [...plans], ...(low.length ? { low } : {}) };
+  return { codes: [...codes], groups: groups.flat(), level, plans: [...plans], ...(exact.size ? { exact: [...exact] } : {}), ...(low.length ? { low } : {}) };
 }
 
 // ---------------- overrides ----------------
@@ -211,6 +240,75 @@ export function aliasCourses(courses, pairs) {
   }
   return out;
 }
+// ---------------- a saved or shared plan ----------------
+
+// A link is something people send each other, and what it carries ends up in the page. Every field is checked for
+// shape before it's used, whether it came from a link or from the browser's storage; anything the grid itself
+// wouldn't have written is dropped (a course code is letters and digits, a plan is a slug, a grade is 0–100 or one
+// of the transcript's marks…).
+const CODE_OK = /^[A-Z][A-Z0-9]{1,11}$/;
+const SLUG_OK = /^[a-z0-9][a-z0-9-]{0,119}$/;
+const TICK_OK = /^[a-z0-9-]{1,120}:[\w.:|-]{1,80}$/; // "french-minor:0.2.1": a plan and a rule's place in it
+const GRADE_MARKS = new Set(['CR', 'NCR', 'WD', 'WF', 'INC', 'AEG', 'DNW', 'FTC', 'IP', 'NMR', 'MM', 'UR']);
+const isObj = (x) => x != null && typeof x === 'object' && !Array.isArray(x);
+const cleanCode = (x) => (typeof x === 'string' && CODE_OK.test(x) ? x : '');
+const cleanGrade = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 100) || GRADE_MARKS.has(v);
+
+/** One term's cells as the grid keeps them: {k, c, g?, o?, lo?, stash?}. */
+function cleanRow(r, slots, kind = null) {
+  const k = kind ?? (['s', 'c', 'o'].includes(r?.k) ? r.k : 's');
+  const c = (Array.isArray(r?.c) ? r.c : []).slice(0, slots).map(cleanCode);
+  while (c.length && !c.at(-1)) c.pop();
+  const out = { k, c };
+  const g = {};
+  for (const [j, v] of Object.entries(isObj(r?.g) ? r.g : {})) if (/^\d$/.test(j) && c[j] && cleanGrade(v)) g[j] = v;
+  if (Object.keys(g).length) out.g = g;
+  const o = {};
+  for (const [j, v] of Object.entries(isObj(r?.o) ? r.o : {})) {
+    if (!/^\d$/.test(j) || !c[j] || !isObj(v)) continue;
+    const a = cleanCode(v.a);
+    if (v.w || a) o[j] = { ...(a ? { a } : {}), ...(v.w ? { w: 1 } : {}) };
+  }
+  if (Object.keys(o).length) out.o = o;
+  if (r?.lo) out.lo = 1;
+  // Courses set aside while the term is of another kind.
+  if (kind == null && isObj(r?.stash)) {
+    const stash = {};
+    for (const key of ['s', 'c', 'o']) {
+      if (!isObj(r.stash[key])) continue;
+      const { k: _k, ...kept } = cleanRow(r.stash[key], slots, key);
+      if (kept.c.length) stash[key] = kept;
+    }
+    if (Object.keys(stash).length) out.stash = stash;
+  }
+  return out;
+}
+
+/**
+ * A saved or shared plan, checked field by field → the plan, or null when it isn't one. start is null when the
+ * plan's isn't a term, and rows may be empty: the page fills those in. types: the kinds of plan a view can name.
+ */
+export function cleanState(s, { slots = 7, types = [] } = {}) {
+  if (!isObj(s) || s.v !== 1 || !Array.isArray(s.rows)) return null;
+  const text = (x, max = 120) => (typeof x === 'string' ? x.replace(/[<>"`]/g, '').slice(0, max) : '');
+  const out = {
+    v: 1,
+    ...(s.wt ? { wt: 1 } : {}),
+    start: /^\d{3}[159]$/.test(String(s.start)) ? String(s.start) : null,
+    rows: s.rows.slice(0, 60).map((r) => cleanRow(r, slots)),
+    plans: [...new Set((Array.isArray(s.plans) ? s.plans : []).filter((x) => typeof x === 'string' && SLUG_OK.test(x)))].slice(0, 24),
+    ticked: (Array.isArray(s.ticked) ? s.ticked : []).filter((x) => typeof x === 'string' && TICK_OK.test(x)).slice(0, 2000),
+    cut: Number.isInteger(s.cut) && s.cut >= -1 && s.cut < 60 ? s.cut : -1,
+    dir: types.includes(s.dir) ? s.dir : 'Minor',
+  };
+  if (s.exview === 'all' || s.exview === 'grad' || types.includes(s.exview)) out.exview = s.exview;
+  if (s.exorder === 'fac' || s.exorder === 'near') out.exorder = s.exorder;
+  if (text(s.exfac)) out.exfac = text(s.exfac);
+  if (text(s.goal, 200)) out.goal = text(s.goal, 200);
+  if (s.live === 0) out.live = 0;
+  return out;
+}
+
 // ---------------- antirequisites ----------------
 
 // An antirequisite runs one way. FR 152's "Not completed nor concurrently enrolled in FR 192A" stops FR 152 once
@@ -232,7 +330,7 @@ export function buildsOn(later, earlier, courses, depth = 3) {
   const go = (code, d) => {
     if (seen.has(code)) return false;
     seen.add(code);
-    const names = antiCodes(courses[code]?.[2]); // every course its prerequisites name
+    const names = needCodes(courses[code]?.[2]); // every course its prerequisites ask for
     if (names.some((x) => x === earlier || (courses[x]?.[6] ?? []).includes(earlier))) return true;
     return d > 1 && names.some((x) => go(x, d - 1));
   };
@@ -469,7 +567,7 @@ export function evaluate(program, planned, { ticked = new Set(), courses = {}, f
   const anyPool = (n) =>
     [...planned.keys()].filter((c) => {
       const num = numbered(c)?.[1];
-      return !WORK_COURSE.test(c) && (!n.min || (num != null && num >= n.min * 100));
+      return !WORK_COURSE.test(c) && (!n.min || (num != null && num >= n.min * 100)) && (!n.max || (num != null && num < (n.max + 1) * 100));
     });
   const otherFaculty = (fac) => [...planned.keys()].filter((c) => {
     const f = faculty[numbered(c)?.[0]];
@@ -485,7 +583,8 @@ export function evaluate(program, planned, { ticked = new Set(), courses = {}, f
           if (!m) return false;
           const [subj, num] = m;
           if (n.rg) return num != null && n.rg.some(([s, lo, hi]) => s === subj && num >= lo && num <= hi);
-          return n.subj.includes(subj) && (!n.min || (num != null && num >= n.min * 100));
+          // min: "at the 300-level or above"; max: "at the 100-level" names a level and none above it
+          return n.subj.includes(subj) && (!n.min || (num != null && num >= n.min * 100)) && (!n.max || (num != null && num < (n.max + 1) * 100));
         }),
       )
       .sort((a, b) => (numbered(a)?.[1] ?? 999) - (numbered(b)?.[1] ?? 999));
@@ -768,7 +867,7 @@ function fitting(n, courses) {
       if (courses[c][7]) return false;
       const [subj, num] = numbered(c) ?? [];
       if (n.rg) return n.rg.some(([s, lo, hi]) => s === subj && num >= lo && num <= hi);
-      return n.subj.includes(subj) && (!n.min || num >= n.min * 100);
+      return n.subj.includes(subj) && (!n.min || num >= n.min * 100) && (!n.max || num < (n.max + 1) * 100);
     })
     .sort((a, b) => numbered(a)[1] - numbered(b)[1] || a.localeCompare(b));
 }
@@ -990,13 +1089,17 @@ export function arrange(rows, want, { courses = {}, load = 5, max = 7, from = 0,
   const meetable = (tree) => !tree?.length || holds(tree, everything, { plans, equiv }) !== false;
   const levelNeeded = (tree) => {
     let best = null;
+    // "Students must be in level 1A" (or 1A or 1B): the first of the levels it names.
+    let exact = null;
     const walk = (ns) => {
       for (const n of Array.isArray(ns) ? ns : []) {
         if (n.g) walk(n.i);
         if (n.lv && levelRank(n.lv) > levelRank(best)) best = n.lv;
+        if (n.lx && (!exact || levelRank(n.lx) < levelRank(exact))) exact = n.lx;
       }
     };
     walk(tree);
+    if (exact && levelRank(exact) > levelRank(best)) best = exact;
     return best;
   };
   const ok = (code, i) => {

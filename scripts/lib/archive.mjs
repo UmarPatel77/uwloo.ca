@@ -139,9 +139,13 @@ ${s.courses.map((c) => entryHtml(c, s, doc, linker, today)).join('\n')}
   const link = (el) => '<a href="#' + el.id + '">' + fmt(el.id) + '</a>';
   const list = (els) => els.length < 3 ? els.map(link).join(' and ') : els.slice(0, -1).map(link).join(', ') + ' and ' + link(els.at(-1));
   const show = () => {
-    const id = decodeURIComponent(location.hash.slice(1)).toUpperCase();
+    // The part after # goes into the note below as HTML, so only what a course code can hold is kept.
+    let raw = '';
+    try { raw = decodeURIComponent(location.hash.slice(1)); } catch {}
     const box = document.getElementById('missing');
-    if (!id || document.getElementById(id)) return (box.hidden = true);
+    if (!raw || document.getElementById(raw) || document.getElementById(raw.toUpperCase())) return (box.hidden = true);
+    const id = raw.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 16);
+    if (!/^[A-Z]+[0-9]/.test(id)) return (box.hidden = true);
     const entries = [...document.querySelectorAll('section.entry[id]')];
     const num = (el) => parseInt(el.id.replace(/^[A-Z]+/, ''), 10);
     // HIST204 when the calendar has HIST204A, HIST204B…

@@ -50,6 +50,8 @@ body {
   font-size: 1.0625rem;
   line-height: 1.55;
   font-stretch: 100%;
+  /* A long address or code with nowhere to break wraps instead of widening the page on a phone. */
+  overflow-wrap: break-word;
 }
 a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.18em; }
 a:hover { text-decoration-thickness: 2px; }
@@ -390,7 +392,7 @@ footer .support { margin-top: 0.6rem; }
 .rd-head { margin: 0 0 0.35rem; }
 .rd-head time { font-variant-numeric: tabular-nums; color: var(--muted); margin-right: 0.35rem; white-space: nowrap; }
 .rd-head a { font-weight: 650; }
-.rd-q { margin: 0.25rem 0; max-width: 68ch; padding-left: 0.8rem; border-left: 2px solid var(--rule); color: var(--muted); font-size: 0.97rem; }
+.rd-q { margin: 0.25rem 0; max-width: 68ch; padding-left: 0.8rem; border-left: 2px solid var(--rule); color: var(--muted); font-size: 0.97rem; overflow-wrap: anywhere; }
 .rd-q.rd-deep { margin-left: 0.8rem; }
 .rd-q.rd-hit { color: var(--ink); border-left-color: var(--fac); }
 .rd-user { font-weight: 600; font-stretch: 87.5%; color: inherit; }

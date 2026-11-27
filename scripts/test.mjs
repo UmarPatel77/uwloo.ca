@@ -352,6 +352,22 @@ test('archive text: files are well-formed and pages render', async () => {
     assert.ok(!/<script>[\s\S]*[^\\]\(d\)[\s\S]*<\/script>/.test(html), 'no regex in the page script lost its backslash');
     assert.ok(html.includes("/^[A-Z]+$/.test(el.id.slice(id.length))"), 'suffix-variant check intact');
     assert.ok(html.includes('"CS999":360'), 'fallback page for a course the text missed');
+    // The note for a course that isn't on the page is written as HTML from the address: only a course code gets in.
+    const { runInNewContext } = await import('node:vm');
+    const script = /<script>\n\(\(\) => \{[\s\S]*?<\/script>/.exec(html)[0].replace(/^<script>|<\/script>$/g, '');
+    const note = (hash) => {
+      const box = { hidden: true, innerHTML: '' };
+      const document = { getElementById: (id) => (id === 'missing' ? box : null), querySelectorAll: () => [] };
+      runInNewContext(script, { location: { hash }, document, addEventListener() {}, decodeURIComponent, parseInt, Boolean });
+      return box;
+    };
+    assert.match(note('#CS999').innerHTML, /^CS 999 is in the 1994–95 calendar/);
+    assert.match(note('#cs998').innerHTML, /^CS 998 isn’t in the 1994–95 calendar/);
+    for (const hash of ['#<img src=x onerror=alert(1)>', '#%3Cimg%20src%3Dx%20onerror%3D%26%2397%3Blert(1)%3E', '#CS999<img src=x onerror=alert(1)>', '#%E0%A4%A', '#"><svg onload=alert(1)>']) {
+      const box = note(hash);
+      assert.ok(!/[<>"]/.test(box.innerHTML.replace(/<a href="[^"<>]*">[^<>]*<\/a>/g, '')), `nothing but the note’s own links for ${hash}: ${box.innerHTML.slice(0, 80)}`);
+    }
+    assert.equal(note('#<img src=x onerror=alert(1)>').hidden, true);
   }
 });
 
@@ -2361,6 +2377,210 @@ test('pathways: overrides — counts as, what overlaps, who to ask', () => {
   assert.equal(PE.overrideHelp('load').error, 'Term maximum exceeded');
   assert.equal(PE.overrideHelp('pre', 'XX101', 'zzz').faculty, null);
   for (const f of Object.values(PE.FACULTY_OVERRIDES)) assert.match(f.url, /^https:\/\/uwaterloo\.ca\//);
+});
+
+test('pathways: every rule wording in the 2026–27 calendar has a kind', () => {
+  // From a census of all 4,344 course pages and 505 programs (Nov 2026): [lead, kind, n].
+  const leads = [
+    // prerequisites and corequisites
+    ['Complete all of the following', 'all'],
+    ['Complete 1 of the following', 'n', 1],
+    ['Must have completed the following:', 'all'],
+    ['Must have completed at least 1 of the following:', 'n', 1],
+    ['Earned a minimum grade of 60% in each of the following:', 'all'],
+    ['Earned a minimum grade of 60% in at least 1 of the following:', 'n', 1],
+    ['Completed or concurrently enrolled in:', 'all'], // 105 corequisites that nothing used to check
+    ['Completed or concurrently enrolled in at least 1 of the following:', 'n', 1],
+    ['Completed or concurrently enrolled in the following:', 'all'],
+    ['Must have completed:', 'all'],
+    ['Must have completed 1 of the following:', 'n', 1],
+    ['Must have completed one of the following:', 'n', 1],
+    ['Must have complete the following:', 'all'],
+    ['Must have complete at least 2 of the following:', 'n', 2],
+    // antirequisites
+    ['Not completed nor concurrently enrolled in any of the following:', 'not'],
+    ['Not completed any of the following:', 'not'],
+    ['Not completed nor concurrently enrolled in:', 'not'],
+    ['Not completed nor concurrently enrolled in the following:', 'not'],
+    ['Not completed:', 'not'],
+    ['Not completed nor currently enrolled in:', 'not'],
+    ['Not completed or currently enrolled in:', 'not'],
+    ['Not completed any the following:', 'not'],
+    ['Not completed any of the of the following:', 'not'],
+    // programs
+    ['Complete 2 of the following:', 'n', 2],
+    ['Complete all the following:', 'all'],
+    ['Choose any of the following:', 'any'],
+    ['Complete no more than 2 from the following:', 'max', 2],
+    ['The following cannot be used towards this academic plan:', 'not'],
+    ['Choose any course from the following:', 'any'],
+    ['Complete 1 course from the following:', 'n', 1],
+    ['Complete 1 additional course from:', 'n', 1],
+    ['Complete 2 additional courses from:', 'n', 2],
+    ['Complete at least 1 course from:', 'n', 1],
+    ['Complete of the following:', 'n', 1],
+    ['Note:', 'list'],
+  ];
+  for (const [lead, kind, n] of leads) assert.deepEqual(PW.kindOf(lead), n == null ? [kind] : [kind, n], lead);
+  // Which antirequisite wordings take in the same term: all but the ones with no enrolment in them.
+  const anti = (lead) => PW.antireqCodes([{ type: 'rule', lead, courses: [{ code: 'X100' }] }]).done.length === 0;
+  for (const lead of ['Not completed nor concurrently enrolled in any of the following:', 'Not completed nor concurrently enrolled in:', 'Not completed nor currently enrolled in:', 'Not completed or currently enrolled in:']) assert.ok(anti(lead), lead);
+  for (const lead of ['Not completed any of the following:', 'Not completed:', 'Not completed any the following:', 'Not completed any of the of the following:']) assert.ok(!anti(lead), lead);
+});
+
+test('pathways: corequisites, exact levels and rules for one program’s students', () => {
+  const rule = (lead, ...codes) => ({ type: 'rule', lead, courses: codes.map((code) => ({ code })) });
+  const text = (t) => ({ type: 'text', text: t });
+  const group = (lead, ...items) => ({ type: 'group', lead, items });
+  const kin = { code: 'H-Kinesiology', faculty: 'Faculty of Health', name: 'Kinesiology' };
+  const cs = { code: 'H-Computer Science', faculty: 'Faculty of Mathematics', name: 'Computer Science' };
+  const che = { code: 'H-Chemical Engineering', faculty: 'Faculty of Engineering', name: 'Chemical Engineering' };
+
+  // ACTSC 232: "Completed or concurrently enrolled in: MTHEL131". Met in the same term or before, not after.
+  const co = PW.compact([rule('Completed or concurrently enrolled in:', 'MTHEL131')]);
+  assert.deepEqual(co, [{ r: 'all', c: ['MTHEL131'], cc: 1 }]);
+  assert.equal(PE.holds(co, new Set(['ACTSC232', 'MTHEL131']), {}), true);
+  assert.equal(PE.holds(co, new Set(['ACTSC232']), {}), false);
+  assert.deepEqual(PE.missing(co, new Set(['ACTSC232']), {}), ['MTHEL131']);
+  // The same wording inside prerequisites (AMATH 350): the course's own term counts.
+  assert.equal(PE.holds(co, new Set(), { same: new Set(['MTHEL131']) }), true);
+  assert.equal(PE.holds(co, new Set(), { same: new Set(['AMATH350']) }), false);
+  assert.equal(PE.holds(PW.compact([rule('Must have completed the following:', 'MTHEL131')]), new Set(), { same: new Set(['MTHEL131']) }), false, 'a plain prerequisite wants it earlier');
+  // The short and odd wordings that nothing used to check.
+  assert.equal(PE.holds(PW.compact([rule('Must have completed:', 'SYDE112')]), new Set(), {}), false);
+  assert.equal(PE.holds(PW.compact([rule('Must have completed 1 of the following:', 'BUS127W', 'BUS227W')]), new Set(['BUS227W']), {}), true);
+  assert.equal(PE.holds(PW.compact([rule('Must have completed one of the following:', 'AMATH231', 'AMATH373')]), new Set(), {}), false);
+
+  // KIN 104: "Corequisite is for H-Kinesiology students only" beside the lab.
+  const kin104 = PW.compact([group('Complete all of the following', text('Corequisite is for H-Kinesiology students only'), rule('Completed or concurrently enrolled in:', 'KIN104L'))]);
+  assert.equal(kin104[0].only, 'H-Kinesiology');
+  assert.equal(PE.holds(kin104, new Set(['KIN104']), { plans: [kin] }), false, 'a Kinesiology student needs the lab');
+  assert.equal(PE.holds(kin104, new Set(['KIN104', 'KIN104L']), { plans: [kin] }), true);
+  assert.equal(PE.holds(kin104, new Set(['KIN104']), { plans: [cs] }), true, 'nobody else does');
+  assert.equal(PE.holds(kin104, new Set(['KIN104']), {}), null, 'no plan picked: can’t tell');
+  assert.deepEqual(PE.missing(kin104, new Set(['KIN104']), { plans: [kin] }), ['KIN104L']);
+  // CHEM 262: "…for students enrolled in Chemical Engineering only:"
+  const chem262 = PW.compact([group('Complete all of the following', text('Corequisite is for students enrolled in Chemical Engineering only:'), rule('Completed or concurrently enrolled in:', 'CHEM262L'))]);
+  assert.equal(chem262[0].only, 'Chemical Engineering');
+  assert.equal(PE.holds(chem262, new Set(), { plans: [che] }), false);
+  assert.equal(PE.holds(chem262, new Set(), { plans: [cs] }), true);
+
+  // "Students must be in level 1A": that level, not a later one. "…in at least level 2A" is a floor.
+  const lx = PW.compact([text('Students must be in level 1A')]);
+  assert.deepEqual(lx, [{ t: 'Students must be in level 1A', lx: '1A' }]);
+  assert.equal(PE.holds(lx, new Set(), { level: '1A' }), true);
+  assert.equal(PE.holds(lx, new Set(), { level: '2A' }), false);
+  assert.equal(PE.holds(lx, new Set(), {}), null);
+  assert.deepEqual(PE.why(lx, new Set(), { level: '2A' }).exact, ['1A']);
+  const either = PW.compact([group('Complete 1 of the following', text('Students must be in level 1A'), text('Students must be in level 1B'))]);
+  assert.equal(PE.holds(either, new Set(), { level: '1B' }), true);
+  assert.equal(PE.holds(either, new Set(), { level: '2A' }), false);
+  assert.equal(PW.hints('Students must be in at least level 2A').lv, '2A');
+  assert.equal(PW.hints('Students must be in level 3A or higher').lv, '3A');
+  assert.equal(PW.hints('Students must be in level 3A or higher').lx, undefined);
+
+  // "Enrolled in a program offered by Faculty of Engineering": by the plan's faculty.
+  assert.equal(PE.enrolled('a program offered by Faculty of Engineering', [che]), true);
+  assert.equal(PE.enrolled('a program offered by Faculty of Engineering', [cs]), null);
+
+  // A "Not completed…" rule inside prerequisites isn't something the course builds on.
+  const C = { B200: ['', 0.5, [{ r: 'not', c: ['A100'] }, { r: 'all', c: ['Z100'] }], 0, 0, [1, 1, 1]], A100: ['', 0.5, 0, 0, 0, [1, 1, 1]], Z100: ['', 0.5, 0, 0, 0, [1, 1, 1]] };
+  assert.ok(PE.buildsOn('B200', 'Z100', C) && !PE.buildsOn('B200', 'A100', C));
+});
+
+test('pathways: a level named without "or above" is that level and none higher', () => {
+  const h = (t) => PW.hints(t);
+  assert.deepEqual([h('Complete 1.0 unit of ENGL courses at the 100-level').min, h('Complete 1.0 unit of ENGL courses at the 100-level').max], [1, 1]);
+  assert.deepEqual([h('Complete 0.5 unit of BIOL courses at the 100- or 200-level').min, h('Complete 0.5 unit of BIOL courses at the 100- or 200-level').max], [1, 2]);
+  for (const t of ['Complete 2.0 additional units of ANTH courses at the 300-level or above', 'Complete 1.5 additional units of GEOG courses at the 300-level or higher', 'Complete 3.0 units of ANTH courses at the 300-level or above, 0.5 unit of which must be at the 400-level', 'Complete 2 additional ACTSC courses at the 400-level', 'Complete 1 additional course at the 300- or 400-level from: ACTSC, AMATH', 'Complete 1 additional CS course at the 100-, 200-, 300-, or 400-level']) assert.equal(h(t).max, undefined, t);
+  // What fits, and what the checklist counts.
+  const codes = ['ENGL101A', 'ENGL109', 'ENGL210E', 'ENGL309A', 'ENGL408A'];
+  assert.deepEqual(PW.fittingCodes(h('Complete 1.0 unit of ENGL courses at the 100-level'), codes), ['ENGL101A', 'ENGL109']);
+  assert.deepEqual(PW.fittingCodes(h('Complete 1.0 unit of ENGL courses at the 300-level or above'), codes), ['ENGL309A', 'ENGL408A']);
+  const C = Object.fromEntries(codes.map((c) => [c, ['', 0.5, 0, 0, 0, [1, 1, 1]]]));
+  const plan = { s: 'p', n: 'P', t: 'Major', req: [{ h: '', r: [h('Complete 1.0 unit of ENGL courses at the 100-level')], l: [] }] };
+  const done = (have) => { const e = PE.evaluate(plan, new Map(have.map((c) => [c, { units: 0.5 }])), { courses: C }); return [e.have, e.need]; };
+  assert.deepEqual(done(['ENGL309A', 'ENGL408A']), [0, 2], 'upper-year English isn’t 100-level English');
+  assert.deepEqual(done(['ENGL101A', 'ENGL309A']), [1, 2]);
+  assert.deepEqual(done(['ENGL101A', 'ENGL109']), [2, 2]);
+  // The same in what's still open for the plan.
+  const open = PE.pools(plan, new Map(), { courses: C }).flatMap((x) => x.codes);
+  assert.deepEqual(open.sort(), ['ENGL101A', 'ENGL109']);
+});
+
+test('pathways: rules in words that used to be a tick box', () => {
+  const h = (t) => PW.hints(t);
+  // Pointers and headings ask for nothing themselves.
+  for (const t of ['The following are the requirements to complete in Year One.', 'The following are the requirements to complete in Year Three. Year Three begins in the spring term immediately after Year Two.', 'Complete the List 1 requirement below', 'Complete the List 1 and List 2 requirements below']) assert.equal(h(t).info, 1, t);
+  assert.equal(h('Complete 1.0 unit from the following list of courses').info, undefined);
+  // The calendar's odd phrasings.
+  assert.deepEqual(h('Complete 1 additional 0.5-unit BUS or COMM course at the 300- or 400-level'), { t: 'Complete 1 additional 0.5-unit BUS or COMM course at the 300- or 400-level', nc: 1, subj: ['BUS', 'COMM'], min: 3 });
+  assert.deepEqual(h('Complete 0.5 additional BIOL courses at the 200-level'), { t: 'Complete 0.5 additional BIOL courses at the 200-level', u: 0.5, subj: ['BIOL'], min: 2, max: 2 });
+  assert.deepEqual(h('Complete one additional BIOL 0.5 unit, any level'), { t: 'Complete one additional BIOL 0.5 unit, any level', u: 0.5, subj: ['BIOL'] });
+  assert.deepEqual(h('Complete 1 course (at least 0.50 unit) of BIOL or KIN at the 200-level or above').subj, ['BIOL', 'KIN']);
+  assert.equal(h('Complete 2 additional BIOL courses at the 200-level').nc, 2, 'a whole number of courses is still a count');
+  // "Complete a total of 2 lecture courses (see Additional Constraints)" with its list right after: from that list.
+  const group = PW.compact([{ type: 'group', lead: 'Complete all of the following', items: [{ type: 'text', text: 'Complete a total of 2 lecture courses (see Additional Constraints)' }, { type: 'rule', lead: 'Choose any of the following:', courses: [{ code: 'BIOL110' }, { code: 'CHEM123' }] }] }]);
+  assert.equal(group[0].i[0].pl, 1);
+  const alone = PW.compact([{ type: 'group', lead: 'Complete all of the following', items: [{ type: 'text', text: 'Complete 3 additional courses' }, { type: 'rule', lead: 'Complete all the following:', courses: [{ code: 'BIOL110' }] }] }]);
+  assert.equal(alone[0].i[0].pl, undefined, 'only a list to choose from is a pool');
+});
+
+test('pathways: a rule that names what it leaves out isn’t a list of those courses', () => {
+  const li = (inner) => `<ul><li><div data-test="ruleView-A-result"><div>${inner}</div></div></li></ul>`;
+  // Honours Science: the two courses in brackets are the exceptions, not the choices.
+  const sci = 'Complete 2 math courses from the following subject codes: ACTSC, AMATH, CO, CS, MATH, PMATH, STAT (excluding CS100 and MATH103)';
+  const tree = kualiToTree(li(sci));
+  assert.deepEqual(tree, [{ type: 'text', text: sci }]);
+  assert.deepEqual(PW.compact(tree), [{ t: sci, nc: 2, no: ['CS100', 'MATH103'], subj: ['ACTSC', 'AMATH', 'CO', 'CS', 'MATH', 'PMATH', 'STAT'] }]);
+  assert.deepEqual(PW.fittingCodes(PW.compact(tree)[0], ['CS100', 'CS115', 'MATH103', 'MATH127', 'BIOL130']), ['CS115', 'MATH127']);
+  // An inactive course after a colon is still a list ("Must have completed the following: BUS127W").
+  assert.deepEqual(kualiToTree(li('Must have completed the following: BUS127W')), [{ type: 'rule', lead: 'Must have completed the following:', courses: [{ code: 'BUS127W', title: '', units: null }] }]);
+  assert.equal(kualiToTree(li('Complete at least 1 course from: PSYCH (excluding PSYCH101/PSYCH101R)'))[0].type, 'text');
+  // The other shapes of the same thing.
+  assert.deepEqual(PW.hints('Complete at least 1 course from: PSYCH (excluding PSYCH101/PSYCH101R)'), { t: 'Complete at least 1 course from: PSYCH (excluding PSYCH101/PSYCH101R)', nc: 1, no: ['PSYCH101', 'PSYCH101R'], subj: ['PSYCH'] });
+  assert.deepEqual(PW.hints('Complete at least 1 course from: SOC').subj, ['SOC']);
+  assert.deepEqual(PW.hints('Complete 0.5 unit of BIOL courses at the 100- or 200-level (exclusive of BIOL225 and BIOL280)').no, ['BIOL225', 'BIOL280']);
+  const av = PW.hints('Complete a 0.5 unit math course from the following subject codes: ACTSC, AMATH, CO, CS, MATH, PMATH, STAT (excluding CS100)');
+  assert.deepEqual([av.u, av.no, av.subj.length], [0.5, ['CS100'], 7]);
+  const bba = PW.hints('Complete 3 additional 0.5-unit math courses from the following subject codes: ACTSC, AMATH, CO, CS, MATBUS, MATH, PMATH, STAT');
+  assert.deepEqual([bba.nc, bba.subj.length], [3, 8]);
+  // Church Music: "…from MUSIC , excluding:" and a list of what's excluded.
+  const music = PW.compact([{ type: 'rule', lead: 'Complete at least 2 courses from MUSIC , excluding:', courses: [{ code: 'MUSIC216' }, { code: 'MUSIC217' }] }]);
+  assert.deepEqual(music, [{ t: 'Complete at least 2 courses from MUSIC, excluding: MUSIC 216, MUSIC 217', nc: 2, subj: ['MUSIC'], no: ['MUSIC216', 'MUSIC217'] }]);
+});
+
+test('pathways: a shared link is checked field by field before it’s used', () => {
+  const types = ['Major', 'Minor', 'Option'];
+  const X = '"><img src=x onerror=alert(1)>';
+  const clean = (s) => PE.cleanState(s, { slots: 7, types });
+  // A plan the grid wrote comes through as it was.
+  const good = {
+    v: 1, wt: 1, start: '1269',
+    rows: [{ k: 's', c: ['FR152', '', 'MATH1XX', 'ELECTIVE'], g: { 0: 85, 2: 'CR' }, o: { 0: { w: 1 }, 2: { a: 'MATH137' } }, lo: 1 }, { k: 'c', c: ['PD1'] }, { k: 'o', c: [], stash: { s: { c: ['CS135'], g: { 0: 49 } } } }],
+    plans: ['french-minor', 'h-computer-science-bcs'], ticked: ['french-minor:0.2.1', 'h-computer-science-bcs:1.l0.3'], cut: -1, dir: 'Minor', exview: 'grad', exorder: 'near', exfac: 'Arts', goal: 'data science', live: 0,
+  };
+  assert.deepEqual(clean(structuredClone(good)), good);
+  // Not a plan at all.
+  for (const bad of [null, 5, 'x', [], {}, { v: 2, rows: [] }, { v: 1 }, { v: 1, rows: 'nope' }]) assert.equal(clean(bad), null);
+  // Markup anywhere a string can go: dropped, never passed on.
+  const hostile = clean({
+    v: 1, start: X, cut: X, dir: X, exview: X, exorder: X, exfac: `Arts${X}`, goal: `ai${X}`, live: X, wt: X,
+    rows: [
+      { k: X, c: [`CS135${X}`, 'CS136', X, 5, null, { a: 1 }, ['CS135']], g: { 1: X, 0: 85, [X]: 90 }, o: { 1: { a: X, w: 1 }, [X]: { w: 1 }, 0: { w: 1 } }, lo: X, stash: { s: { c: [X, 'CS246'], g: { 1: X } }, [X]: { c: ['CS135'] } } },
+      null, 5, 'x', { k: 's', c: 'x' }, { k: 's' },
+    ],
+    plans: [X, 'french-minor', 'french-minor', 5, null], ticked: [X, `french-minor:${X}`, 'french-minor:0.1', {}],
+  });
+  // No angle bracket or quote survives; what's left of the free-text fields is plain words, and the page escapes them.
+  assert.ok(!/[<>`]|\\"/.test(JSON.stringify(hostile)), JSON.stringify(hostile));
+  assert.deepEqual(hostile.rows[0], { k: 's', c: ['', 'CS136'], o: { 1: { w: 1 } }, lo: 1, stash: { s: { c: ['', 'CS246'] } } });
+  assert.deepEqual(hostile.rows.slice(1), [{ k: 's', c: [] }, { k: 's', c: [] }, { k: 's', c: [] }, { k: 's', c: [] }, { k: 's', c: [] }]);
+  assert.deepEqual([hostile.start, hostile.cut, hostile.dir, hostile.exview, hostile.exorder, hostile.live], [null, -1, 'Minor', undefined, undefined, undefined]);
+  assert.deepEqual([hostile.plans, hostile.ticked, hostile.exfac, hostile.goal], [['french-minor'], ['french-minor:0.1'], 'Artsimg src=x onerror=alert(1)', 'aiimg src=x onerror=alert(1)']);
+  // Size is bounded: a link can't make the page lay out thousands of terms.
+  const big = clean({ v: 1, rows: Array.from({ length: 500 }, () => ({ k: 's', c: Array(50).fill('CS135') })), plans: Array.from({ length: 100 }, (_, i) => `p-${i}`) });
+  assert.deepEqual([big.rows.length, big.rows[0].c.length, big.plans.length], [60, 7, 24]);
 });
 
 test('pathways: antirequisites run one way (FR 152 then FR 192A is the usual sequence)', () => {

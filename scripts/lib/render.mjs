@@ -535,7 +535,9 @@ ${subjectList(`/${cat.term}/`, subjects)}`;
 }
 
 export function homePage({ current, catalogs, gradCatalogs, groups, courseCount, builtAt, version, planner = null, programCount = 0 }) {
-  const body = `<form class="go" action="/" role="search">
+  // The page opens on its search box; the heading is there for screen readers and for anything that reads outlines.
+  const body = `<h1 class="vh">uwloo: Waterloo courses, what they need and when they run</h1>
+<form class="go" action="/" role="search">
   <label for="home-q">Type a course code or title</label>
   <div class="url"><span aria-hidden="true">uwloo.ca/</span><input id="home-q" name="q" placeholder="cs135" autocomplete="off" autocapitalize="none" spellcheck="false" role="combobox" aria-controls="results" aria-expanded="true" autofocus></div>
 </form>

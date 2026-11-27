@@ -193,8 +193,13 @@ function liToNode(li) {
   if (!courses.length) {
     // Inactive courses are listed as plain text: "Must have completed the following: BUS127W".
     const [head, ...rest] = full.split(':');
-    const tail = rest.join(':');
-    for (const code of codesIn(tail)) {
+    const tail = norm(rest.join(':'));
+    // Only when what follows the colon is a list of courses. "Complete 2 math courses from the following subject
+    // codes: ACTSC, AMATH, CO, CS, MATH, PMATH, STAT (excluding CS100 and MATH103)" names the two courses it leaves
+    // out: read as a list, the rule became "pick from CS 100 and MATH 103" and lost its subjects.
+    const found = codesIn(tail);
+    const listed = found.length && tail.replace(/\s+/g, '').toUpperCase().startsWith(found[0]) && !/\b(?:exclud|exclusive|except|other than)/i.test(tail);
+    for (const code of listed ? found : []) {
       if (!seen.has(code)) {
         seen.add(code);
         courses.push({ code, title: '', units: null });

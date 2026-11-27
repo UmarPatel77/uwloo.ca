@@ -220,10 +220,19 @@ function freshRows(start, years = 4) {
 }
 const blank = () => ({ v: 1, wt: 1, start: fallOf(data.term), rows: freshRows(fallOf(data.term)), plans: [], ticked: [], cut: -1, dir: 'Minor' });
 
+// A link is something people send each other, and what it carries ends up in the page: engine.js's cleanState checks
+// every field for shape, whether it came from a link or from this browser's storage.
+function cleanState(raw) {
+  const s = E.cleanState(raw, { slots: SLOTS, types: TYPE_ORDER });
+  if (!s) return null;
+  s.start ??= fallOf(data.term);
+  if (!s.rows.length) s.rows = freshRows(s.start);
+  return s;
+}
+
 function decode(text) {
   try {
-    const s = JSON.parse(decodeURIComponent(escape(atob(text.replace(/-/g, '+').replace(/_/g, '/')))));
-    return s && s.v === 1 && Array.isArray(s.rows) ? s : null;
+    return cleanState(JSON.parse(decodeURIComponent(escape(atob(text.replace(/-/g, '+').replace(/_/g, '/'))))));
   } catch {
     return null;
   }
@@ -238,9 +247,9 @@ const fromHash = hash && !/^(?:add|show|course|grad)=|^(?:browse|grad)$/.test(ha
 if (fromHash) state = fromHash;
 else {
   try {
-    state = JSON.parse(localStorage.getItem(KEY) ?? 'null');
+    state = cleanState(JSON.parse(localStorage.getItem(KEY) ?? 'null'));
   } catch {}
-  if (!state || state.v !== 1) state = blank();
+  if (!state) state = blank();
 }
 // Work terms have cells of their own (PD courses, an online course). Before, courses on a work or off term were a
 // study term's, hidden while it wasn't one: they wait in the row's stash until it's a study term again.
@@ -422,18 +431,18 @@ function analyze() {
       else if (!c) issues.push([taken || o?.a ? 'check' : 'bad', taken ? 'Not in the current calendar: check how it counts' : o?.a ? 'Not in the current calendar (a transfer credit, or another university’s course)' : 'Not in the current calendar', 'gone']);
       else {
         if (c[7]) issues.push([taken ? 'check' : 'bad', taken ? 'No longer in the calendar: check how it counts' : 'No longer in the calendar', 'gone']);
-        const ctx = { level: lvAt[i], plans: planCtx, equiv, grades: gradesBefore };
+        const ctx = { level: lvAt[i], plans: planCtx, equiv, grades: gradesBefore, same };
         const pre = taken || !c[2] ? true : E.holds(c[2], before, ctx);
         if (pre === false) {
           const w = E.why(c[2], before, ctx);
           const low = w.low?.map((x) => `${x.need}% in ${fmt(x.code)} (you have ${x.got})`) ?? [];
           const lowSet = new Set(w.low?.map((x) => x.code));
           const short = { ...w, groups: (w.groups ?? []).filter((gr) => !gr.every((x) => lowSet.has(x))), codes: w.codes.filter((x) => !lowSet.has(x)) };
-          const parts = [short.codes.length ? `${needsText(short)} in an earlier term` : '', low.length ? `at least ${low.join(', ')}` : '', w.level ? `level ${w.level} or higher (this is ${lvAt[i]})` : '', w.plans.length ? `enrolled in ${w.plans.join(' or ')}` : ''].filter(Boolean);
+          const parts = [short.codes.length ? `${needsText(short)} in an earlier term` : '', low.length ? `at least ${low.join(', ')}` : '', w.level ? `level ${w.level} or higher (this is ${lvAt[i]})` : '', w.exact?.length ? `level ${w.exact.join(' or ')} (this is ${lvAt[i]})` : '', w.plans.length ? `enrolled in ${w.plans.join(' or ')}` : ''].filter(Boolean);
           issues.push(['bad', `Prerequisites: needs ${parts.join('; ') || 'more than is planned before it'}`, 'pre']);
           miss = short.codes;
         } else if (pre === null) issues.push(['check', 'Check the prerequisites: part of them is something the grid can’t confirm (a plan, a high-school course, permission)', 'pre']);
-        if (!taken && c[3] && E.holds(c[3], new Set([...before, ...same]), ctx) === false) issues.push(['bad', `Corequisites not met: ${E.missing(c[3], new Set([...before, ...same]), ctx).map(fmt).join(', ')}`, 'pre']);
+        if (!taken && c[3] && E.holds(c[3], new Set([...before, ...same]), ctx) === false) issues.push(['bad', `Corequisite: needs ${E.missing(c[3], new Set([...before, ...same]), ctx).map(fmt).join(', ') || 'more than is planned'} in the same term or earlier`, 'pre']);
         const sn = c[5];
         const total = sn[0] + sn[1] + sn[2];
         const name = { F: 'Fall', W: 'Winter', S: 'Spring' }[season];
@@ -457,6 +466,9 @@ function analyze() {
         }
         if (key !== null && count.get(code) > 1) issues.push(['warn', 'Planned more than once', 'dup']);
         // The grid also holds a course you've said counts as this one.
+        // Cross-listed codes are one course under two names (SOC 306 and LS 306).
+        const twins = key !== null ? (c?.[6] ?? []).filter((x) => x !== code && planned.has(x)) : [];
+        if (twins.length) issues.push(['warn', `Cross-listed with ${twins.map(fmt).join(', ')}, also in your grid: the same course under another code, so only one counts`, 'dup']);
         const stand = key !== null ? [...ovrOf].filter(([x, v]) => v.a === code && x !== code && planned.has(x)).map(([x]) => x) : [];
         if (stand.length) issues.push(['warn', `${stand.map(fmt).join(', ')} already counts as ${fmt(code)} in your grid: only one of them counts`, 'dup']);
         if (r.k === 'c' && !E.WORK_COURSE.test(code) && !taken) issues.push(['check', 'On a work term: check that it’s offered online that term and that your faculty allows a course while you work', 'wt']);
@@ -708,7 +720,7 @@ function gridHtml() {
       const term = termOf(i);
       const label = r.k === 's' ? A.lv[i] : r.k === 'c' ? 'WT' : 'Off';
       const next = { s: 'co-op', c: 'off', o: 'study' }[r.k];
-      const kind = `<button type="button" class="pw-kind ${r.k}" data-kind="${i}" aria-label="${esc(`${E.termName(term)}: ${{ s: `study term ${A.lv[i]}`, c: 'co-op work term', o: 'off' }[r.k]}. Make it ${next}`)}" title="Click to make it ${next}">${esc(label)}</button>`;
+      const kind = `<button type="button" class="pw-kind ${esc(r.k)}" data-kind="${i}" aria-label="${esc(`${E.termName(term)}: ${{ s: `study term ${A.lv[i]}`, c: 'co-op work term', o: 'off' }[r.k]}. Make it ${next}`)}" title="Click to make it ${next}">${esc(label)}</button>`;
       const n = r.c.filter(Boolean).length;
       const u = r.c.filter(Boolean).reduce((sum, c) => sum + (C[c]?.[1] ?? 0.5), 0);
       const avg = average(A.graded.filter((x) => x.row === i));
@@ -865,7 +877,7 @@ function wordsFit(codes) {
     const num = Number(m[2]);
     for (const { p, n } of WORDY.rules) {
       if (out.has(p) || (n.no ?? []).includes(code) || (n.nos ?? []).includes(subj)) continue;
-      if (n.rg ? n.rg.some(([s, lo, hi]) => s === subj && num >= lo && num <= hi) : n.subj.includes(subj) && (!n.min || num >= n.min * 100)) out.set(p, n.t);
+      if (n.rg ? n.rg.some(([s, lo, hi]) => s === subj && num >= lo && num <= hi) : n.subj.includes(subj) && (!n.min || num >= n.min * 100) && (!n.max || num < (n.max + 1) * 100)) out.set(p, n.t);
     }
   }
   return out;
@@ -1850,7 +1862,7 @@ function planPanel(p, key) {
   });
   // Rules in words the grid can't list courses for ("1.0 unit from the Faculty of Arts").
   const words = [];
-  const walk = (nodes) => nodes.forEach((n) => (n.g ? walk(n.i) : !n.r && n.t && !n.info && !n.subj && !n.rg && !n.pl && (n.u || n.nc || n.lv || n.en) && words.push(n.t)));
+  const walk = (nodes) => nodes.forEach((n) => (n.g ? walk(n.i) : !n.r && n.t && !n.info && !n.subj && !n.rg && !n.pl && (n.u || n.nc || n.lv || n.lx || n.en) && words.push(n.t)));
   const sec = (x) => (walk(x.r), x.l.forEach(sec));
   p.req.forEach(sec);
   const progress = ev.need ? `${ev.have} of ${ev.need}${ev.unknown ? '+' : ''} courses it names are in your grid${ev.need > ev.have ? ` · ${ev.need - ev.have} to go` : ' · all planned'}` : 'It names no courses: its rules are in words';
@@ -1953,7 +1965,7 @@ function renderDirections() {
     .map((x) => ({ ...x, shut: x.blocked.length > 0 || !x.who.ok }))
     .sort((a, b) => a.shut - b.shut || a.other - b.other || a.i - b.i);
   // Closed, the summary still says which are closest: what someone would come looking for.
-  const kinds = view === 'Specialization' ? 'specializations' : `${view.toLowerCase()}s`;
+  const kinds = esc(view === 'Specialization' ? 'specializations' : `${view.toLowerCase()}s`);
   const near = every.filter((x) => !x.shut && !x.other && x.have > 0 && x.need).slice(0, 2);
   tease.textContent = teaseYours.length ? `With your plans: ${teaseYours.slice(0, 2).join(' · ')}` : near.length ? `${every.length} ${kinds}; closest: ${near.map((x) => `${E.planParts(x.p).name} (${x.left ? `${x.left} to go` : 'done'})`).join(', ')}` : `${every.length} ${kinds} by faculty, with how much of each your grid already covers`;
   const row = ({ p, need, have, left, unknown, blocked, other, who, shut }) => {
@@ -1995,7 +2007,8 @@ function renderDirections() {
 function parseCode(text) {
   const t = String(text).trim();
   if (/^(?:free\s+)?elec(?:tive)?s?$/i.test(t)) return 'ELECTIVE';
-  const ph = /^([A-Za-z]{2,8}?)\s*([0-9xX])\s*[xX]{2}$/.exec(t);
+  // "PMATH 4XX", and with a grade after it ("MATH 1XX 85", a transfer credit)
+  const ph = /^([A-Za-z]{2,8}?)\s*([0-9xX])\s*[xX]{2}(?![A-Za-z0-9])/.exec(t);
   if (ph) return `${ph[1]}${ph[2]}XX`.toUpperCase();
   // PD courses and work-term reports have shorter numbers: PD 1, PD 20, WKRPT 200, COOP 3.
   const w = /\b(PD|COOP|WKRPT)\s*(\d{1,3})\b/i.exec(t);
@@ -2117,7 +2130,9 @@ function showSugg(input) {
   if (q.length >= 3 && 'ELECTIVE'.startsWith(q)) phs.push('ELECTIVE');
   const need = neededNow();
   const found = [...codes.filter((k) => k.startsWith(q)), ...(q.length > 2 ? codes.filter((k) => !k.startsWith(q) && words.every((w) => C[k][0].toLowerCase().includes(w))) : [])].sort((a, b) => need.has(b) - need.has(a));
-  const hits = [...found.slice(0, 8 - phs.length), ...phs];
+  // Typed in full ("elective"), the placeholder is what's meant: first, ahead of "BME 499 Elective Research Project".
+  const meant = phs.filter((p) => p === 'ELECTIVE' && /^(?:FREE)?ELECTIVES?$/.test(q));
+  const hits = [...meant, ...found.slice(0, 8 - phs.length), ...phs.filter((p) => !meant.includes(p))];
   if (!hits.length || (hits.length === 1 && hits[0] === q)) return;
   const el = document.createElement('ul');
   el.className = 'pw-sugg pw-csugg';
@@ -3452,13 +3467,16 @@ function renderFind() {
 /** The level a course's requisites ask for ("Students must be in level 3A or higher"), if any. */
 function levelIn(nodes) {
   let best = null;
+  let exact = null;
   const walk = (list) => {
     for (const n of Array.isArray(list) ? list : []) {
       if (n.g) walk(n.i);
       if (n.lv && (!best || n.lv > best)) best = n.lv;
+      if (n.lx && (!exact || n.lx < exact)) exact = n.lx;
     }
   };
   walk(nodes);
+  if (exact && (!best || exact > best)) best = exact;
   return best;
 }
 
