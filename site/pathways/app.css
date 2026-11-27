@@ -3,12 +3,14 @@
   --d0: #c60078; --d1: #0033be; --d2: #b83700; --d3: #00707c;
   --d4: #57058b; --d5: #4c5d00; --d6: #a8102f; --d7: #6b5000;
   --bad: #b3261e; --warn: #8a5a00;
+  --ovr: color-mix(in srgb, var(--gold) 62%, var(--paper)); /* an override: highlighter yellow */
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --d0: #ff5cb0; --d1: #8aa6ff; --d2: #ff8c52; --d3: #4fcad6;
     --d4: #c49bff; --d5: #bccd52; --d6: #ff7a8a; --d7: #f3c93f;
     --bad: #ff8a80; --warn: #f3c93f;
+    --ovr: color-mix(in srgb, var(--gold) 30%, var(--paper));
   }
 }
 main:has(.pw) { max-width: 84rem; }
@@ -68,7 +70,7 @@ main:has(.pw) { max-width: 84rem; }
 .pw-app { position: relative; }
 
 /* the grid */
-.pw-gridwrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 10px; }
+.pw-gridwrap { position: relative; overflow-x: auto; border: 1px solid var(--rule); border-radius: 10px; }
 .pw-grid { border-collapse: collapse; width: 100%; min-width: 46rem; font-variant-numeric: tabular-nums; font-size: 0.9rem; }
 .pw-grid th, .pw-grid td { border-bottom: 1px solid var(--rule); padding: 0; }
 .pw-grid thead th { font-size: 0.78rem; color: var(--muted); font-weight: 600; padding: 0.35rem 0.4rem; text-align: left; background: var(--soft); position: sticky; top: 0; }
@@ -98,6 +100,74 @@ main:has(.pw) { max-width: 84rem; }
 .pw-load { white-space: nowrap; padding: 0 0.6rem !important; font-weight: 700; border-left: 1px solid var(--rule); }
 .pw-load small { display: block; font-size: 0.72rem; color: var(--warn); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
 .pw-load.heavy small { color: var(--bad); }
+/* An overload's label is a switch: marked approved (a unit-load override), it's yellow. */
+.pw .pw-lo { display: block; border: 0; background: none; padding: 0; margin: 0; font: inherit; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--warn); cursor: pointer; }
+.pw-load.heavy .pw-lo { color: var(--bad); }
+.pw .pw-lo:hover { text-decoration: underline; }
+.pw .pw-lo.on { color: var(--ink); background: var(--ovr); border-radius: 3px; padding: 0 0.25rem; }
+
+/* Overrides: a course marked by hand, yellow wherever it shows. */
+.pw-c.ovr { background: var(--ovr); }
+.pw-c.ovr.bad { background: linear-gradient(135deg, var(--ovr) 60%, color-mix(in srgb, var(--bad) 22%, var(--paper))); }
+.pw-as { position: absolute; left: 0.3rem; bottom: 0.1rem; max-width: calc(100% - 2.2rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.62rem; font-weight: 700; line-height: 1; letter-spacing: 0.01em; color: var(--ink); opacity: 0.8; pointer-events: none; }
+.pw-c.ovr .pw-dots { left: auto; right: 0.3rem; bottom: 0.2rem; }
+.pw-c.ovr.graded .pw-dots { right: 2rem; }
+.pw-ovrtag { display: inline-block; font-size: 0.72rem; font-weight: 700; line-height: 1.4; color: #1d1f22; background: var(--gold); border-radius: 4px; padding: 0 0.35rem; vertical-align: 0.08em; }
+.pw-issues .ovr { color: var(--ink); list-style-type: "✓ "; }
+.pw-ovr { margin: 0.5rem 0; padding: 0.35rem 0.6rem; border: 1px solid var(--rule); border-radius: 8px; font-size: 0.9rem; }
+.pw-ovr[open], .pw-ovr.on { border-color: color-mix(in srgb, var(--gold) 70%, var(--rule)); background: color-mix(in srgb, var(--gold) 9%, var(--paper)); }
+.pw-ovr > summary { cursor: pointer; font-weight: 700; }
+.pw-ovr > summary .t { font-weight: 400; font-size: 0.84rem; }
+.pw-ovr p { margin: 0.35rem 0; max-width: none; }
+.pw-ovr p.t { font-size: 0.84rem; }
+.pw .pw-ovrbtn { font: inherit; font-weight: 700; font-size: 0.86rem; color: #1d1f22; background: var(--gold); border: 2px solid var(--gold); border-radius: 999px; padding: 0.08rem 0.75rem; cursor: pointer; }
+.pw .pw-ovrbtn:hover { border-color: var(--ink); }
+.pw-asrow label { font-weight: 650; }
+.pw-asrow input { width: 7rem; border: 1px solid var(--rule); border-radius: 6px; padding: 0.15rem 0.4rem; background: var(--paper); text-transform: uppercase; }
+.pw-asrow input[aria-invalid="true"] { border-color: var(--bad); }
+.pw-asrow button { border: 1px solid var(--rule); background: none; border-radius: 6px; padding: 0.12rem 0.55rem; cursor: pointer; }
+.pw-chip small { font-weight: 500; font-size: 0.7rem; margin-left: 0.25rem; color: var(--muted); }
+.pw-chip.ovr, .pw-chip.ok.ovr { background: var(--ovr); border-color: transparent; color: var(--ink); }
+span.pw-chip { cursor: default; }
+.pw-ovrsum { display: flex; flex-wrap: wrap; gap: 0.25rem 0.35rem; align-items: baseline; }
+.pw-ovrsum .t { flex-basis: 100%; font-size: 0.8rem; }
+.pw-subs { margin: 0.5rem 0 0.2rem; font-size: 0.84rem; }
+.pw-subs > summary { cursor: pointer; font-weight: 650; }
+.pw-subs ul { margin: 0.3rem 0; padding-left: 1.1rem; }
+.pw-subs li { margin: 0 0 0.3rem; max-width: none; }
+.pw-subs li.no { color: var(--muted); }
+.pw-subs .pw-linkbtn { font-weight: 700; background: var(--ovr); border-radius: 4px; padding: 0 0.3rem; text-decoration: none; }
+
+/* What can go next: the list under an empty cell, its card, and a picked course's lines in the grid. */
+.pw-ready { width: 25rem; }
+.pw-ready li { flex-wrap: nowrap; }
+.pw-ready li b { flex: none; }
+.pw-ready li em { margin-left: auto; flex: none; font-style: normal; font-size: 0.74rem; font-weight: 650; color: var(--muted); white-space: nowrap; }
+.pw-ready li .pw-dot { margin: 0 0 0 0.35rem; flex: none; }
+.pw-ready li.pw-shead { border-top: 0; padding-top: 0.3rem; }
+.pw-next { border-style: dashed; }
+.pw-next .pw-dkind { grid-template-columns: 10.5rem minmax(0, 1fr); }
+.pw-rchip { display: inline-flex; align-items: baseline; }
+.pw-rchip .pw-dot { width: 0.5rem; height: 0.5rem; margin-right: 0.3rem; align-self: center; }
+.pw-rchip.unsure { border-style: dashed; }
+.pw-rowtools [data-act="live"][aria-pressed="true"] { border-color: var(--ink); }
+.pw-links { position: absolute; z-index: 1; pointer-events: none; overflow: visible; }
+.pw-links path { fill: none; stroke-width: 2; stroke-linecap: round; opacity: 0.6; }
+.pw-links .pre { stroke: var(--d1); fill: var(--d1); }
+.pw-links .post { stroke: var(--d2); fill: var(--d2); }
+.pw-links path.pre, .pw-links path.post { fill: none; }
+.pw-links circle { opacity: 0.85; }
+.pw-c.lk-pre { box-shadow: inset 0 0 0 2px var(--d1); }
+.pw-c.lk-post { box-shadow: inset 0 0 0 2px var(--d2); }
+.pw-c.lk-at { box-shadow: inset 0 0 0 2px var(--ink); }
+.pw-linkkey { font-size: 0.8rem; }
+.pw-linkkey i { display: inline-block; width: 1.1rem; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 0.25rem; }
+@keyframes pw-pulse { 0% { box-shadow: inset 0 0 0 3px var(--d5); background-color: color-mix(in srgb, var(--d5) 30%, transparent); } 100% { box-shadow: inset 0 0 0 0 transparent; background-color: transparent; } }
+@keyframes pw-placed { 0% { box-shadow: inset 0 0 0 3px var(--gold); } 100% { box-shadow: inset 0 0 0 0 transparent; } }
+.pw-c.pw-pulse { animation: pw-pulse 1.4s ease-out 1; }
+.pw-c.pw-placed { animation: pw-placed 1.1s ease-out 1; }
+@media (prefers-reduced-motion: reduce) { .pw-c.pw-pulse, .pw-c.pw-placed { animation: none; } }
+@media (max-width: 40rem) { .pw-ready { width: min(22rem, 92vw); } .pw-next .pw-dkind { grid-template-columns: minmax(0, 1fr); } }
 .pw-rowtools { display: flex; flex-wrap: wrap; gap: 0.5rem 0.8rem; align-items: center; margin: 0.6rem 0 0; }
 .pw-rowtools .t { font-size: 0.86rem; }
 
@@ -443,7 +513,9 @@ ol.pw-exitems { list-style: decimal; padding-left: 1.4rem; }
 
 /* printing, or saving as a PDF: the grid and the checklists, without the controls */
 @media print {
-  .bar, footer, .pw-head .lede, .pw-tools, .pw-from, .pw-addplan, .pw-acts, .pw-offer, .pw-hint, .pw-rowtools, .pw-dir, .pw-explore, .pw-detail, .pw-sugg, dialog, .pw-plan button, .pw-browse, .pw-more summary { display: none !important; }
+  .bar, footer, .pw-head .lede, .pw-tools, .pw-from, .pw-addplan, .pw-acts, .pw-offer, .pw-hint, .pw-rowtools, .pw-dir, .pw-explore, .pw-detail, .pw-sugg, .pw-links, dialog, .pw-plan button, .pw-browse, .pw-more summary { display: none !important; }
+  .pw-c.ovr, .pw-chip.ovr, .pw-ovrtag, .pw .pw-lo.on { -webkit-print-color-adjust: exact; print-color-adjust: exact; outline: 1px solid #b38f00; }
+  .pw-c.lk-pre, .pw-c.lk-post, .pw-c.lk-at { box-shadow: none; }
   .pw-plans > ul { flex-wrap: wrap !important; overflow: visible !important; }
   .pw-plan a { max-width: none !important; white-space: normal !important; overflow: visible !important; }
   main:has(.pw) { max-width: none; padding: 0; }

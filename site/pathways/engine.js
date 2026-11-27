@@ -148,6 +148,174 @@ export function why(nodes, have, ctx = {}) {
   return { codes: [...codes], groups: groups.flat(), level, plans: [...plans], ...(low.length ? { low } : {}) };
 }
 
+// ---------------- overrides ----------------
+// A planner can't know what an advisor or instructor has agreed to, so a course can be marked as an override (shown
+// yellow): its requisites stop counting as problems, and it can count as another course, toward plans and as a
+// prerequisite ("MATH 117 counts as MATH 137"). What follows is what the university's own pages say about them:
+// what each kind is called, who decides, and where each faculty says to ask. Only the stable parts are here (the
+// pages change their contacts and dates), each with its page.
+
+export const OVERRIDE_SRC = 'https://uwaterloo.ca/registrar/registering-courses/enrolment-error-messages';
+export const OVERRIDE_FORM = 'https://uwaterloo.ca/the-centre/forms-and-official-documents/forms-undergraduate-students/course-override-form';
+export const OVERRIDE_SELECTION_FORM = 'https://uwaterloo.ca/forms/undergraduate-studies/course-selection-override';
+/** Where each faculty says to ask about overrides into its courses (linked from the Registrar's page), by data.sf's keys. */
+export const FACULTY_OVERRIDES = {
+  art: { name: 'Arts', url: 'https://uwaterloo.ca/arts/undergraduate/student-support/course-selection/enrolment-problems-and-course-overrides' },
+  eng: { name: 'Engineering', url: 'https://uwaterloo.ca/engineering/undergraduate-students/getting-support/course-selection-enrolment' },
+  env: { name: 'Environment', url: 'https://uwaterloo.ca/environment/undergraduate/current-students/env-academic-advising' },
+  hea: { name: 'Health', url: OVERRIDE_SRC },
+  mat: { name: 'Mathematics', url: 'https://uwaterloo.ca/math/undergraduate-studies/academics/course-selection-enrolment' },
+  sci: { name: 'Science', url: 'https://uwaterloo.ca/science-undergraduate-office/academic-information/course-enrolment-resources/enrolment-problems-and-course-overrides' },
+};
+/**
+ * The Registrar's enrolment errors a degree plan can run into, by the kind of problem a cell (or a term) has:
+ * what Quest says, and who can override it. (Class limits, reserved seats, consent and time conflicts are a term's
+ * business, not a degree plan's.)
+ */
+export const OVERRIDE_KINDS = {
+  pre: { error: 'Requisites have not been met', how: 'the Course Override Form’s “Override Requisites” (the Course Selection Override Form during course selection), approved by the department or instructor offering the course' },
+  anti: { error: 'Requisites have not been met', how: 'your academic advisor: an antirequisite has no box on the form' },
+  load: { error: 'Term maximum exceeded', how: 'your academic advisor or faculty, who can override the unit load' },
+  wt: { error: '', how: 'your academic advisor, who can say what your faculty allows on a work term' },
+};
+/**
+ * Who to ask about overriding a problem with a course: {error, how, faculty: {name, url}, note}. kind: 'pre' (its
+ * prerequisites, corequisites, level or program), 'anti', 'load' or 'wt'; fac: its subject's faculty (data.sf).
+ */
+export function overrideHelp(kind, code = '', fac = '') {
+  const k = OVERRIDE_KINDS[kind] ?? OVERRIDE_KINDS.pre;
+  const subject = /^[A-Z]+/.exec(code)?.[0] ?? '';
+  // "Normally, requisite and capacity overrides for math courses are not permitted" (the Math faculty's page).
+  const note = subject === 'MATH' && kind === 'pre' ? 'The Faculty of Mathematics says requisite overrides for MATH courses aren’t normally given.' : '';
+  return { ...k, faculty: FACULTY_OVERRIDES[fac] ?? null, note, src: OVERRIDE_SRC };
+}
+
+/**
+ * Courses as the engine sees them with "counts as" overrides: each pair [x, y] (x counts as y) makes the two one
+ * course under either code, the way a cross-listing does (courses[code][6]), so x meets a requirement or a
+ * prerequisite that names y. A code that isn't in the calendar (a transfer credit, another university's course) gets
+ * a bare entry, marked gone so nothing offers it. The same object back when there are no pairs.
+ */
+export function aliasCourses(courses, pairs) {
+  if (!pairs?.length) return courses;
+  const out = { ...courses };
+  const add = (a, b) => {
+    const c = out[a] ? [...out[a]] : ['', UNIT, 0, 0, 0, [0, 0, 0], [], 1];
+    c[6] = [...new Set([...(c[6] || []), b])];
+    out[a] = c;
+  };
+  for (const [x, y] of pairs) {
+    if (!x || !y || x === y) continue;
+    add(baseCode(x), y);
+    add(y, x); // under its own key in the grid ("MATH1XX#2", a second placeholder)
+  }
+  return out;
+}
+/** courses → Map code → the codes that stand for it (cross-listings, and "counts as" pairs from aliasCourses). */
+export const equivOf = (courses) => new Map(Object.entries(courses).filter(([, c]) => c[6]?.length).map(([k, c]) => [k, c[6]]));
+
+// Courses the calendar treats as overlapping: antirequisites, either way round ("MATH 117, antirequisite of MATH
+// 137"). Where one is asked for and you have the other is where overrides and substitutions are usually sought.
+const overlapIndex = new WeakMap();
+function overlapMap(courses) {
+  if (!overlapIndex.has(courses)) {
+    const m = new Map();
+    const add = (a, b) => {
+      if (!m.has(a)) m.set(a, new Set());
+      m.get(a).add(b);
+    };
+    for (const [k, c] of Object.entries(courses)) {
+      for (const x of c[4] || []) {
+        add(k, x);
+        add(x, k);
+      }
+    }
+    overlapIndex.set(courses, m);
+  }
+  return overlapIndex.get(courses);
+}
+export const overlapsOf = (code, courses) => [...(overlapMap(courses).get(code) ?? [])];
+export const overlap = (a, b, courses) => Boolean(overlapMap(courses).get(a)?.has(b));
+
+/**
+ * Where an override is usually sought: a course asked for (a prerequisite, a plan's requirement) that you don't have,
+ * next to one you do have that overlaps it. wanted: codes asked for; have: codes you have (a Set or Map's keys).
+ * → [{have, for}], each pair once.
+ */
+export function typicalFor(wanted, have, courses) {
+  const mine = have instanceof Map ? [...have.keys()] : [...have];
+  const out = [];
+  for (const y of new Set(wanted)) {
+    for (const x of overlapsOf(y, courses)) if (mine.includes(x) && !mine.includes(y)) out.push({ have: x, for: y });
+  }
+  return out;
+}
+
+// ---------------- what can go next ----------------
+
+/**
+ * What could go in a term, like the open nodes of a skill tree: courses not in the grid yet whose prerequisites the
+ * terms before it meet, that run in its season, the most useful first. They come from what your plans still need
+ * (need: Map code → [{k, kind, label}], kind 'required', 'choice' or 'words') and from what the courses before it
+ * lead to (leads: code → codes that name it as a prerequisite).
+ *   before: Set of codes in earlier terms; planned: Map of everything in the grid; season: 'F' | 'W' | 'S';
+ *   year: the term's year (1 for 1A and 1B); fresh: codes from the study term just before, or just added.
+ * → [{code, kind, k, label, opens: [needed courses it's a prerequisite of], by: [earlier courses it builds on],
+ *     sure: false when a prerequisite names a plan the grid can't confirm}], best first.
+ * Order: what a plan requires by name, then its choices, then courses that fit one of its rules in words, then
+ * what the terms before have opened that no plan asks for; within each, the ones the term before just opened and
+ * the ones that open the most of what's still needed, at the term's level.
+ */
+export function readyNow({ courses, planned, before, season, year = 1, level = null, plans = [], equiv, grades, need = new Map(), leads = () => [], fresh = new Set(), limit = 24 }) {
+  const idx = 'FWS'.indexOf(season);
+  const ctx = { level, plans, equiv, grades };
+  const inGrid = (c) => planned.has(c) || (equiv?.get(c) ?? []).some((x) => planned.has(x));
+  const by = new Map();
+  for (const b of before) {
+    if (isPlaceholder(baseCode(b))) continue;
+    for (const k of leads(b)) by.set(k, [...(by.get(k) ?? []), b]);
+  }
+  const KIND = { required: 3, choice: 2, words: 1 };
+  // The regular version before the advanced one, the one meant for your faculty before another's ("Calculus 2
+  // for Honours Mathematics" before "… for the Sciences"), and arranged courses (a thesis, a reading course) last.
+  const homes = new Set(plans.map((p) => String(p.faculty ?? '').replace(/^Facult(?:y|ies) of /, '').split(/ (?:and|with) /)[0]));
+  const fit = (title) => {
+    const m = AUDIENCE.exec(title);
+    return m && homes.size ? (homes.has(AUDIENCE_FACULTY[m[1].toLowerCase()]) ? 1 : -1) : 0;
+  };
+  const out = [];
+  for (const code of new Set([...need.keys(), ...by.keys()])) {
+    const c = courses[code];
+    if (!c || c[7] || inGrid(code) || WORK_COURSE.test(code) || isPlaceholder(code)) continue;
+    const sn = c[5] ?? [0, 0, 0];
+    if (!(sn[0] + sn[1] + sn[2]) || (idx >= 0 && !sn[idx])) continue;
+    if ((c[4] || []).some(inGrid) || overlapsOf(code, courses).some(inGrid)) continue;
+    const ok = holds(c[2], before, ctx);
+    if (ok === false) continue;
+    const wants = need.get(code) ?? [];
+    const top = [...wants].sort((a, b) => (KIND[b.kind] ?? 0) - (KIND[a.kind] ?? 0))[0];
+    const kind = top?.kind ?? '';
+    const cy = yearOf(code);
+    // A course well past the term's year with nothing asking for it by name isn't "next".
+    if (kind !== 'required' && cy > year + 1) continue;
+    const built = (by.get(code) ?? []).filter((b) => !isPlaceholder(b));
+    const opens = leads(code).filter((k) => need.has(k) && !inGrid(k) && courses[k] && !courses[k][7]);
+    const score =
+      (kind === 'required' ? 100 : kind === 'choice' ? 60 : kind === 'words' ? 35 : 0) +
+      (built.some((b) => fresh.has(b)) ? 18 : built.length ? 8 : 0) +
+      8 * Math.min(opens.length, 5) -
+      14 * Math.max(0, cy - year) -
+      5 * Math.max(0, year - cy) -
+      (ok === null ? 6 : 0) -
+      (ADVANCED.test(c[0] ?? '') ? 30 : 0) -
+      (ARRANGED.test(c[0] ?? '') ? 40 : 0) +
+      10 * fit(c[0] ?? '');
+    out.push({ code, kind, k: top?.k ?? null, label: top?.label ?? '', opens, by: built, sure: ok === true, score });
+  }
+  out.sort((a, b) => b.score - a.score || a.code.localeCompare(b.code, 'en', { numeric: true }));
+  return out.slice(0, limit);
+}
+
 // ---------------- programs ----------------
 
 /**

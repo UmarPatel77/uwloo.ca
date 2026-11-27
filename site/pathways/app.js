@@ -16,6 +16,8 @@ try {
 const C = data.courses;
 /** Subject → faculty ('mat', 'art'…), for "a course from another faculty" and faculty averages. */
 const SF = data.sf ?? {};
+// Where students ask about overrides on r/uwaterloo: { CODE: [mentions, [[title, post id, time], …]] }.
+const OV = data.ov ?? {};
 // Programs come from the calendar of the year someone started (2021–22 on); the current one is in data.json. The
 // years before 2024–25 are read from the archived calendars, with the courses they name that this one doesn't have.
 let P;
@@ -80,7 +82,12 @@ async function loadYear() {
   calYear = sets.get(y) === data.programs ? data.year : y;
 }
 const labelOf = (y) => yearList.find((x) => x.year === y)?.label ?? data.cat;
-const equiv = new Map(Object.entries(C).filter(([, c]) => c[6]?.length).map(([k, c]) => [k, c[6]]));
+// Courses as the engine sees them: C, plus the "counts as" overrides in the grid (MATH 117 = MATH 137), which make
+// two courses one the way a cross-listing does. equiv: code → the codes that stand for it. Both redone in analyze()
+// when the overrides change.
+let CE = C;
+let CEsig = '';
+let equiv = E.equivOf(C);
 const SLOTS = 7; // columns: 5 is a usual load, 6 an overload, 7 heavy
 let NORMAL = 5; // a usual load; a term-by-term major (engineering) can set more, from its calendar terms
 const KEY = 'uwloo.pathways';
@@ -145,22 +152,47 @@ function average(list) {
   return u ? { avg: sum / u, n, u } : null;
 }
 const pct = (a) => (Math.round(a * 10) / 10).toFixed(1);
-/** "CS 135 85" → {code: 'CS135', grade: 85}. */
+// Overrides: a course marked by hand as one (row.o[column], yellow in the grid, kept in shared links). {w: 1}: you
+// have, or will ask for, permission to take it, so its requisites don't count as problems. {a: 'MATH137'}: it
+// counts as that course, toward your plans and as a prerequisite (an advisor's substitution, a transfer credit).
+// Typed after the course: "MATH 146 !", "MATH 117 = MATH 137" (or "as MATH 137"), with a grade if there is one.
+const AS_MARK = /(?:=|\bas\b)\s*([A-Za-z]{2,8}\s*\d{3}[A-Za-z]?)/i;
+const W_MARK = /!|\b(?:ovr|override|overridden)\b/i;
+/** The marks in what follows a course: {o: {w?, a?} or null, rest: what's left (a grade)}. */
+function parseOverride(rest, code = '') {
+  let t = String(rest ?? '');
+  const o = {};
+  const as = AS_MARK.exec(t);
+  if (as) {
+    const a = parseCode(as[1]);
+    if (a && a !== code) o.a = a;
+    t = t.replace(as[0], ' ');
+  }
+  if (W_MARK.test(t)) {
+    o.w = 1;
+    t = t.replace(new RegExp(W_MARK.source, 'gi'), ' ');
+  }
+  return { o: o.w || o.a ? o : null, rest: t };
+}
+/** "CS 135 85" → {code: 'CS135', grade: 85, o: null}; "MATH 117 = MATH 137" → o: {a: 'MATH137'}; "MATH 146 !" → o: {w: 1}. */
 function parseCell(text) {
   const t = String(text ?? '');
   const code = parseCode(t);
-  if (!code) return { code: '', grade: null };
+  if (!code) return { code: '', grade: null, o: null };
   const m = /\b(?:PD|COOP|WKRPT)\s*\d{1,3}\b/i.exec(t) ?? /([A-Za-z]{2,8})\s*(\d{3}[A-Za-z]?|[\dxX][xX]{2})/.exec(t) ?? /elec(?:tive)?s?/i.exec(t);
-  const rest = m ? t.slice(m.index + m[0].length) : '';
-  return { code, grade: parseGrade(rest) ?? null };
+  const { o, rest } = parseOverride(m ? t.slice(m.index + m[0].length) : '', code);
+  return { code, grade: parseGrade(rest) ?? null, o };
 }
 const gradeAt = (r, c) => state.rows[r]?.g?.[c] ?? null;
-/** What a cell shows while you edit it: the code, then its grade. */
+const ovrAt = (r, c) => state.rows[r]?.o?.[c] ?? null;
+/** An override in a few words: "= MATH 137", "override". */
+const ovrMark = (o) => [o?.a ? `= ${fmt(o.a)}` : '', o?.w ? '!' : ''].filter(Boolean).join(' ');
+/** What a cell shows while you edit it: the code, then its grade and override marks. */
 const cellText = (r, c) => {
   const code = state.rows[r]?.c[c];
   if (!code) return '';
   const g = gradeAt(r, c);
-  return g == null ? fmt(code) : `${fmt(code)} ${g}`;
+  return [fmt(code), g == null ? '' : String(g), ovrMark(ovrAt(r, c))].filter(Boolean).join(' ');
 };
 const hasCells = (row) => row?.k === 's' || row?.k === 'c';
 /** Cells a row has: a study term's seven, a work term's two, none when off. */
@@ -304,6 +336,9 @@ const termOf = (i) => {
 // ---------------- analysis ----------------
 
 let A = null; // the latest analysis
+// The kinds of problem an override covers: a course's requisites (prerequisites, corequisites, its level or program),
+// an antirequisite, and a course on a work term. Not a failed grade, a course that's gone, or a season it doesn't run.
+const OVERRIDABLE = new Set(['pre', 'anti', 'wt']);
 function analyze() {
   const lv = E.levels(state.rows.map((r) => ({ kind: KIND[r.k] })));
   // On a work term, prerequisites go by the last study term before it.
@@ -327,6 +362,28 @@ function analyze() {
       }
     });
   });
+  // Overrides. "Counts as" pairs change what the engine takes each course for (CE, equiv); asFor: the course each
+  // stands for → its key in the grid; waived: courses whose requisites are overridden.
+  const pairs = [];
+  const asFor = new Map();
+  const waived = new Set();
+  state.rows.forEach((r, i) => {
+    for (const [j, o] of Object.entries(r.o ?? {})) {
+      const key = keys[i]?.[j];
+      if (!key || !hasCells(r)) continue;
+      if (o.w) waived.add(r.c[j]);
+      if (o.a && C[o.a] && o.a !== r.c[j]) {
+        pairs.push([key, o.a]);
+        if (!planned.has(o.a) && !asFor.has(o.a)) asFor.set(o.a, key);
+      }
+    }
+  });
+  const sig = pairs.map((x) => x.join('=')).sort().join('|');
+  if (sig !== CEsig) {
+    CE = E.aliasCourses(C, pairs);
+    equiv = E.equivOf(CE);
+    CEsig = sig;
+  }
   const plans = state.plans.map((s) => bySlug.get(s)).filter(Boolean);
   const absent = state.plans.filter((s) => !bySlug.has(s));
   NORMAL = Math.min(SLOTS, Math.max(5, ...plans.filter((p) => p.t === 'Major').map((p) => p.ld ?? 5)));
@@ -335,7 +392,11 @@ function analyze() {
   // A course counts toward two academic plans at most (Counting of Courses): engine.js's evaluateAll. Each plan
   // is read as it applies next to the others (BMath's List A isn't for Math/CPA).
   const asPicked = plans.map((p) => E.forPlans(p, plans));
-  const { evals, capped, avail } = E.evaluateAll(asPicked, planned, { ticked, courses: C, faculty: SF });
+  const { evals, capped, avail } = E.evaluateAll(asPicked, planned, { ticked, courses: CE, faculty: SF });
+  const ovrOf = new Map();
+  state.rows.forEach((r) => {
+    for (const [j, o] of Object.entries(r.o ?? {})) if (r.c[j]) ovrOf.set(r.c[j], o);
+  });
   const before = new Set();
   // The latest grade in each course from earlier terms, for prerequisites like "a minimum grade of 60% in CS136".
   const gradesBefore = new Map();
@@ -351,12 +412,16 @@ function analyze() {
       const g = r.g?.[j] ?? null;
       // A grade means it's been taken: prerequisites and seasons are behind it.
       const taken = g != null;
+      // Each issue: [how bad, in words, what kind]. An override takes the requisite kinds (OVERRIDABLE) off the list
+      // of problems: they stay, in yellow.
       const issues = [];
-      if (key === null) issues.push([notYet(g) ? 'warn' : 'bad', gradeNote(g)]);
-      if (E.isPlaceholder(code)) issues.push(['ph', `A placeholder for ${phText(code)}. Type the course here once you pick it.`]);
-      else if (!c) issues.push([taken ? 'check' : 'bad', taken ? 'Not in the current calendar: check how it counts' : 'Not in the current calendar']);
+      const o = r.o?.[j] ?? null;
+      let miss = [];
+      if (key === null) issues.push([notYet(g) ? 'warn' : 'bad', gradeNote(g), 'grade']);
+      if (E.isPlaceholder(code)) issues.push(['ph', `A placeholder for ${phText(code)}. Type the course here once you pick it.`, 'ph']);
+      else if (!c) issues.push([taken || o?.a ? 'check' : 'bad', taken ? 'Not in the current calendar: check how it counts' : o?.a ? 'Not in the current calendar (a transfer credit, or another university’s course)' : 'Not in the current calendar', 'gone']);
       else {
-        if (c[7]) issues.push([taken ? 'check' : 'bad', taken ? 'No longer in the calendar: check how it counts' : 'No longer in the calendar']);
+        if (c[7]) issues.push([taken ? 'check' : 'bad', taken ? 'No longer in the calendar: check how it counts' : 'No longer in the calendar', 'gone']);
         const ctx = { level: lvAt[i], plans: planCtx, equiv, grades: gradesBefore };
         const pre = taken || !c[2] ? true : E.holds(c[2], before, ctx);
         if (pre === false) {
@@ -365,29 +430,39 @@ function analyze() {
           const lowSet = new Set(w.low?.map((x) => x.code));
           const short = { ...w, groups: (w.groups ?? []).filter((gr) => !gr.every((x) => lowSet.has(x))), codes: w.codes.filter((x) => !lowSet.has(x)) };
           const parts = [short.codes.length ? `${needsText(short)} in an earlier term` : '', low.length ? `at least ${low.join(', ')}` : '', w.level ? `level ${w.level} or higher (this is ${lvAt[i]})` : '', w.plans.length ? `enrolled in ${w.plans.join(' or ')}` : ''].filter(Boolean);
-          issues.push(['bad', `Prerequisites: needs ${parts.join('; ') || 'more than is planned before it'}`]);
-        } else if (pre === null) issues.push(['check', 'Check the prerequisites: they name a plan the grid can’t confirm']);
-        if (!taken && c[3] && E.holds(c[3], new Set([...before, ...same]), ctx) === false) issues.push(['bad', `Corequisites not met: ${E.missing(c[3], new Set([...before, ...same]), ctx).map(fmt).join(', ')}`]);
+          issues.push(['bad', `Prerequisites: needs ${parts.join('; ') || 'more than is planned before it'}`, 'pre']);
+          miss = short.codes;
+        } else if (pre === null) issues.push(['check', 'Check the prerequisites: they name a plan the grid can’t confirm', 'pre']);
+        if (!taken && c[3] && E.holds(c[3], new Set([...before, ...same]), ctx) === false) issues.push(['bad', `Corequisites not met: ${E.missing(c[3], new Set([...before, ...same]), ctx).map(fmt).join(', ')}`, 'pre']);
         const sn = c[5];
         const total = sn[0] + sn[1] + sn[2];
         const name = { F: 'Fall', W: 'Winter', S: 'Spring' }[season];
         if (taken) {
           // taken: nothing to warn about the season
-        } else if (total && !sn['FWS'.indexOf(season)]) issues.push(['warn', `Hasn’t run in ${name} lately (last 4 years: Fall ${sn[0]}, Winter ${sn[1]}, Spring ${sn[2]})`]);
-        else if (!total) issues.push(['warn', 'No sections in the last 4 years']);
-        const anti = [...planned.keys()].filter((o) => o !== code && ((c[4] || []).includes(o) || (C[o]?.[4] || []).includes(code)));
-        if (key !== null && anti.length) issues.push(['bad', `Antirequisite with ${anti.map(fmt).join(', ')}: only one counts`]);
-        if (key !== null && count.get(code) > 1) issues.push(['warn', 'Planned more than once']);
-        if (r.k === 'c' && !E.WORK_COURSE.test(code) && !taken) issues.push(['check', 'On a work term: check that it’s offered online that term and that your faculty allows a course while you work']);
+        } else if (total && !sn['FWS'.indexOf(season)]) issues.push(['warn', `Hasn’t run in ${name} lately (last 4 years: Fall ${sn[0]}, Winter ${sn[1]}, Spring ${sn[2]})`, 'season']);
+        else if (!total) issues.push(['warn', 'No sections in the last 4 years', 'season']);
+        // Antirequisites: not with a course it counts as, and not when the other one's requisites are overridden.
+        const anti = [...planned.keys()].filter((x) => x !== code && x !== o?.a && ovrOf.get(x)?.a !== code && ((c[4] || []).includes(x) || (C[x]?.[4] || []).includes(code)) && (o?.w || !waived.has(x)));
+        if (key !== null && anti.length) issues.push(['bad', `Antirequisite with ${anti.map(fmt).join(', ')}: only one counts`, 'anti']);
+        if (key !== null && count.get(code) > 1) issues.push(['warn', 'Planned more than once', 'dup']);
+        // The grid also holds a course you've said counts as this one.
+        const stand = key !== null ? [...ovrOf].filter(([x, v]) => v.a === code && x !== code && planned.has(x)).map(([x]) => x) : [];
+        if (stand.length) issues.push(['warn', `${stand.map(fmt).join(', ')} already counts as ${fmt(code)} in your grid: only one of them counts`, 'dup']);
+        if (r.k === 'c' && !E.WORK_COURSE.test(code) && !taken) issues.push(['check', 'On a work term: check that it’s offered online that term and that your faculty allows a course while you work', 'wt']);
       }
-      if (capped.has(key)) issues.push(['warn', `Already counts toward two plans, so not toward ${capped.get(key).join(' or ')} (a course counts toward two plans at most)`]);
+      if (o?.a && !C[o.a]) issues.push(['warn', `Counts as ${fmt(o.a)}: that isn’t in the calendar, so it changes nothing`, 'as']);
+      if (capped.has(key)) issues.push(['warn', `Already counts toward two plans, so not toward ${capped.get(key).join(' or ')} (a course counts toward two plans at most)`, 'cap']);
       evals.forEach((ev, k) => {
         if (key === null) return;
-        if (ev.rows.some((x) => x.kind === 'not' && x.bad.includes(code))) issues.push(['warn', `Can’t count toward ${plans[k].n}`]);
-        if (ev.rows.some((x) => x.kind === 'max' && x.over && x.got.includes(code))) issues.push(['warn', `Over the limit ${plans[k].n} sets for one of its lists`]);
+        if (ev.rows.some((x) => x.kind === 'not' && x.bad.includes(code))) issues.push(['warn', `Can’t count toward ${plans[k].n}`, 'cant']);
+        if (ev.rows.some((x) => x.kind === 'max' && x.over && x.got.includes(code))) issues.push(['warn', `Over the limit ${plans[k].n} sets for one of its lists`, 'max']);
       });
+      // Where an override is usually asked for: a prerequisite you don't have, next to one you do that overlaps it.
+      const typ = miss.length ? E.typicalFor(miss, before, C) : [];
+      const open = issues.filter((x) => OVERRIDABLE.has(x[2]) && x[0] !== 'ovr').map((x) => x[2]);
+      if (o?.w) for (const x of issues) if (OVERRIDABLE.has(x[2])) x[0] = 'ovr';
       const dots = evals.map((ev, k) => (key !== null && ev.used.has(key) ? k : -1)).filter((k) => k >= 0);
-      flags[i][j] = { code, issues, dots };
+      flags[i][j] = { code, issues, dots, o, miss, typ, open };
     });
     for (const code of same) before.add(code);
     r.c.forEach((code, j) => {
@@ -405,7 +480,7 @@ function analyze() {
       if (code && g != null && !E.isPlaceholder(code) && !E.WORK_COURSE.test(code)) graded.push({ code, g, v: avgValue(g), u: C[code]?.[1] ?? 0.5, row: i });
     });
   });
-  A = { lv, lvAt, planned, plans, asPicked, avail, evals, flags, capped, absent, keys, graded, pools: null, needed: null };
+  A = { lv, lvAt, planned, plans, planCtx, asPicked, avail, evals, flags, capped, absent, keys, graded, asFor, waived, pools: null, needed: null, ready: null };
   return A;
 }
 const subjectOf = (code) => /^[A-Z]+/.exec(code)?.[0] ?? '';
@@ -443,7 +518,7 @@ function averageFor(a, p, k) {
 }
 /** Each plan's open requirements and the courses that could still meet them (engine.js's pools). */
 function poolsNow() {
-  A.pools ??= A.asPicked.map((p, k) => E.pools(p, A.planned, { courses: C, equiv, avail: A.avail[k], faculty: SF }));
+  A.pools ??= A.asPicked.map((p, k) => E.pools(p, A.planned, { courses: CE, equiv, avail: A.avail[k], faculty: SF }));
   return A.pools;
 }
 /** Courses that would count toward something still open: code → [{k, key, label, where}]. */
@@ -461,6 +536,10 @@ function neededNow() {
 // The cell someone is typing in and hasn't entered yet: its text survives a redraw.
 let pending = null;
 function render() {
+  closeSugg();
+  // Cells whose prerequisites weren't met, to flash the ones the change settles (a course added before them).
+  const unmet = new Set();
+  (A?.flags ?? []).forEach((row, i) => row?.forEach((f, j) => f?.issues.some((x) => x[2] === 'pre' && x[0] === 'bad') && unmet.add(`${i},${j},${f.code}`)));
   analyze();
   const focus = document.activeElement?.closest?.('[data-r]');
   const keep = focus ? { r: focus.dataset.r, c: focus.dataset.c, sel: [focus.selectionStart, focus.selectionEnd], value: focus.value } : null;
@@ -483,6 +562,17 @@ function render() {
     el.setSelectionRange(pq.sel, pq.sel);
     planSuggest(el);
   }
+  if (liveOn()) {
+    const tdAt = (i, j) => app.querySelector(`.pw-in[data-r="${i}"][data-c="${j}"]`)?.closest('td');
+    for (const key of unmet) {
+      const [i, j, code] = key.split(',');
+      const f = A.flags[i]?.[j];
+      if (f?.code === code && !f.issues.some((x) => x[2] === 'pre' && x[0] === 'bad')) tdAt(i, j)?.classList.add('pw-pulse');
+    }
+    if (justPlaced) tdAt(justPlaced.r, justPlaced.c)?.classList.add('pw-placed');
+  }
+  justPlaced = null;
+  drawLinks();
   save();
   scheduleDirections();
 }
@@ -588,13 +678,16 @@ function cellHtml(r, i, j, term) {
   const f = A.flags[i]?.[j];
   const g = code ? r.g?.[j] ?? null : null;
   const ph = Boolean(code) && E.isPlaceholder(code);
-  const real = f?.issues.filter((x) => x[0] !== 'ph') ?? [];
+  const o = code ? f?.o : null;
+  const real = f?.issues.filter((x) => x[0] !== 'ph' && x[0] !== 'ovr') ?? [];
   const worst = real.some((x) => x[0] === 'bad') ? 'bad' : real.some((x) => x[0] === 'warn') ? 'warn' : real.length ? 'check' : '';
   const dots = f?.dots.map((k) => `<i class="d${k % 8}"></i>`).join('') ?? '';
-  const tip = f ? [ph ? '' : C[code]?.[0], g != null ? `Grade: ${g}` : '', ...f.issues.map((x) => x[1])].filter(Boolean).join(' · ') : '';
+  const ovrTip = o ? [o.w ? 'Override: its requisites don’t count as problems' : '', o.a ? `Override: counts as ${fmt(o.a)}` : ''].filter(Boolean) : [];
+  const tip = f ? [ph ? '' : C[code]?.[0], g != null ? `Grade: ${g}` : '', ...ovrTip, ...f.issues.map((x) => (x[0] === 'ovr' ? `Overridden: ${x[1]}` : x[1]))].filter(Boolean).join(' · ') : '';
   const badge = g != null ? `<span class="pw-gr${failed(g) ? ' fail' : notYet(g) ? ' wait' : ''}" aria-hidden="true">${esc(String(g))}</span>` : '';
-  const label = `${E.termName(term)} ${r.k === 'c' ? 'work term ' : ''}course ${j + 1}${g != null ? `, grade ${g}` : ''}`;
-  return `<td class="pw-c${r.k === 's' && j >= NORMAL ? ' pw-extra' : ''}${worst ? ` ${worst}` : ''}${ph ? ' ph' : ''}${badge ? ' graded' : ''}"><input class="pw-in" data-r="${i}" data-c="${j}" value="${esc(code ? fmt(code) : '')}" aria-label="${esc(label)}" title="${esc(tip)}" spellcheck="false" autocomplete="off">${dots ? `<span class="pw-dots" aria-hidden="true">${dots}</span>` : ''}${badge}</td>`;
+  const as = o ? `<span class="pw-as" aria-hidden="true">${esc(o.a ? `= ${fmt(o.a)}` : 'override')}</span>` : '';
+  const label = `${E.termName(term)} ${r.k === 'c' ? 'work term ' : ''}course ${j + 1}${g != null ? `, grade ${g}` : ''}${o ? `, override${o.a ? `: counts as ${fmt(o.a)}` : ''}` : ''}`;
+  return `<td class="pw-c${r.k === 's' && j >= NORMAL ? ' pw-extra' : ''}${worst ? ` ${worst}` : ''}${ph ? ' ph' : ''}${badge ? ' graded' : ''}${o ? ' ovr' : ''}"><input class="pw-in" data-r="${i}" data-c="${j}" value="${esc(code ? fmt(code) : '')}" aria-label="${esc(label)}" title="${esc(tip)}" spellcheck="false" autocomplete="off">${dots ? `<span class="pw-dots" aria-hidden="true">${dots}</span>` : ''}${as}${badge}</td>`;
 }
 
 function gridHtml() {
@@ -617,11 +710,14 @@ function gridHtml() {
       }
       const cells = Array.from({ length: SLOTS }, (_, j) => cellHtml(r, i, j, term)).join('');
       const load = n > NORMAL ? (n > NORMAL + 1 ? 'heavy' : 'over') : '';
-      return `<tr class="pw-row"><th scope="row">${esc(E.termName(term))}</th><td class="pw-lv">${kind}</td>${cells}<td class="pw-load ${load}">${n ? `${n} <span class="t">· ${units(u)}u</span>${avgHtml}${load ? `<small>${load === 'heavy' ? 'heavy' : 'overload'}</small>` : ''}` : ''}</td></tr>`;
+      // An overload needs a unit-load override (your advisor or faculty): click its label to mark it approved.
+      const loHelp = E.overrideHelp('load');
+      const loTag = load ? `<button type="button" class="pw-lo${r.lo ? ' on' : ''}" data-lo="${i}" aria-pressed="${Boolean(r.lo)}" title="${esc(r.lo ? 'Marked as an approved overload (a unit-load override). Click to take that off.' : `Over a usual load. Quest’s message is “${loHelp.error}”: ask ${loHelp.how}. Click to mark it as approved.`)}">${r.lo ? 'overload ok' : load === 'heavy' ? 'heavy' : 'overload'}</button>` : '';
+      return `<tr class="pw-row"><th scope="row">${esc(E.termName(term))}</th><td class="pw-lv">${kind}</td>${cells}<td class="pw-load ${r.lo ? 'ok' : load}">${n ? `${n} <span class="t">· ${units(u)}u</span>${avgHtml}${loTag}` : ''}</td></tr>`;
     })
     .join('');
   return `<div class="pw-gridwrap"><table class="pw-grid"><thead>${head}</thead><tbody>${body}</tbody></table></div>
-<div class="pw-rowtools"><button type="button" data-act="addrow">+ Add a term</button>${state.rows.length > 1 ? '<button type="button" data-act="droprow">Remove the last term</button>' : ''}<span class="t">Type a course code into any cell, and a grade after it once you have one (“CS 135 85”, “ECON 101 CR”). Enter goes down, arrows move, and a pasted list fills down the column.</span></div>`;
+<div class="pw-rowtools"><button type="button" data-act="addrow">+ Add a term</button>${state.rows.length > 1 ? '<button type="button" data-act="droprow">Remove the last term</button>' : ''}<button type="button" data-act="live" aria-pressed="${liveOn()}" title="An empty cell lists what’s ready for its term, and a picked course shows its lines: what it needs, and what needs it">Suggest as I go: ${liveOn() ? 'on' : 'off'}</button><span class="t">Type a course code into any cell, and a grade after it once you have one (“CS 135 85”, “ECON 101 CR”). Enter goes down, arrows move, and a pasted list fills down the column. For an override, add “!” (“MATH 146 !”), or what it counts as (“MATH 117 = MATH 137”): the cell turns yellow.</span></div>`;
 }
 
 let selected = null; // {r, c}
@@ -932,24 +1028,274 @@ function leadsPart(code) {
 ${line('In your grid', inGrid, 'ok', 16)}${line('For your plans', forPlans, 'no', 12)}${line(inGrid.length || forPlans.length ? 'Others' : 'Courses', rest, 'no', 12)}</div>`;
 }
 
-/** The course card: the selected cell's course, or one shown without being in the grid (peek). */
+// ---------------- overrides on the card ----------------
+
+/** Courses asked for that aren't in the grid: what your plans name, and prerequisites the grid is missing. */
+function wantedNow() {
+  if (A.wanted) return A.wanted;
+  const w = new Set();
+  for (const [c, list] of neededNow()) if (list.some((x) => x.kind === 'required' || x.kind === 'choice')) w.add(c);
+  for (const row of A.flags) for (const f of row ?? []) for (const c of f?.miss ?? []) w.add(c);
+  return (A.wanted = w);
+}
+/**
+ * What a course might count as: the substitutions your plans' own calendar text allows ("may substitute: STAT371 for
+ * STAT331"), then courses asked for that it overlaps (antirequisites: MATH 117 for MATH 137).
+ */
+function countsAsIdeas(code) {
+  const out = new Map();
+  for (const p of A.plans) {
+    for (const sub of p.sub ?? []) {
+      if (sub.no || !sub.a.includes(code)) continue;
+      for (const y of sub.b) if (C[y] && !A.planned.has(y) && !out.has(y)) out.set(y, { code: y, why: `${E.planParts(p).name}, in the calendar: ${sub.t}`, cal: true });
+    }
+  }
+  const wanted = wantedNow();
+  for (const y of E.overlapsOf(code, C)) {
+    if (wanted.has(y) && !A.planned.has(y) && !out.has(y)) out.set(y, { code: y, why: `${fmt(y)} is asked for and isn’t in your grid; the calendar treats ${fmt(code)} as overlapping it (they’re antirequisites)`, cal: false });
+  }
+  return [...out.values()];
+}
+/** The card's Override part for a course in the grid: mark it, say what it counts as, and who decides. */
+function overridePart(code, f) {
+  const o = f?.o ?? null;
+  const kinds = [...new Set(f?.open ?? [])];
+  const lines = [];
+  if (o?.w) lines.push(`<p><b class="pw-ovrtag">Override</b> Its requisites don’t count as problems. <button type="button" class="pw-linkbtn" data-ovr="w0">Take it off</button></p>`);
+  else {
+    const typ = (f?.typ ?? []).slice(0, 3).map((x) => `you have <b>${esc(fmt(x.have))}</b>, which the calendar treats as overlapping <b>${esc(fmt(x.for))}</b> (they’re antirequisites)`);
+    lines.push(
+      `<p><button type="button" class="pw-ovrbtn" data-ovr="w1">Mark as an override</button> <span class="t">${kinds.length ? 'if you have, or will ask for, permission to take it anyway: it turns yellow and its requisites stop counting as problems' : 'if you need permission to take it (consent, a restriction the grid can’t see): it turns yellow'}.</span></p>${typ.length ? `<p class="t pw-typ">Where an override is usually asked for: ${typ.join('; ')}.</p>` : ''}`,
+    );
+  }
+  if (kinds.length) {
+    const h = E.overrideHelp(kinds.includes('pre') ? 'pre' : kinds.includes('anti') ? 'anti' : 'wt', code, SF[subjectOf(code)] ?? '');
+    lines.push(
+      `<p class="t">${h.error ? `Quest’s message for this is “${esc(h.error)}”. ` : ''}Who can override it: ${esc(h.how)}. ${h.note ? `${esc(h.note)} ` : ''}${h.faculty ? `<a href="${esc(h.faculty.url)}" rel="noopener">Where ${esc(h.faculty.name)} says to ask</a> · ` : ''}<a href="${esc(h.src)}" rel="noopener">The Registrar’s list by faculty</a></p>`,
+    );
+  }
+  if (o?.a) lines.push(`<p><b class="pw-ovrtag">Override</b> Counts as <b>${esc(fmt(o.a))}</b> ${esc(C[o.a]?.[0] ?? '')}, toward your plans and as a prerequisite. <button type="button" class="pw-linkbtn" data-ovr="a0">Take it off</button></p>`);
+  else {
+    const ideas = countsAsIdeas(code).slice(0, 6);
+    lines.push(
+      `<p class="pw-asrow"><label for="pw-as">Counts as</label> <input id="pw-as" size="9" placeholder="MATH 137" spellcheck="false" autocomplete="off" aria-describedby="pw-asnote"> <button type="button" data-ovr="a1">Set</button> <span class="t" id="pw-asnote">when an advisor counts it in place of another course (a substitution, a transfer credit).</span></p>${ideas.length ? `<p class="pw-dkind"><span class="pw-lead">Could be</span><span class="pw-dchips">${ideas.map((x) => `<button type="button" class="pw-chip no" data-as="${esc(x.code)}" title="${esc(x.why)}">${esc(fmt(x.code))}${x.cal ? ' <small>calendar</small>' : ''}</button>`).join('')}</span></p>` : ''}`,
+    );
+  }
+  // What students have said: threads where this course and an override come up together. Their accounts, not rules.
+  const talk = OV[code];
+  if (talk) {
+    const when = (t) => new Date(t * 1000).toLocaleDateString('en-CA', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+    const th = talk[1].map(([title, post, t]) => `<a href="https://www.reddit.com/r/uwaterloo/comments/${esc(post)}/" rel="noopener">${esc(title)}</a> <span class="t">(${esc(when(t))})</span>`);
+    lines.push(
+      `<p class="t pw-ovtalk">On r/uwaterloo, ${talk[0] === 1 ? 'one post or comment that mentions' : `${talk[0]} posts and comments that mention`} ${esc(fmt(code))} talk about an override${th.length ? `. Start with ${th.join(' · ')}` : ''}. <a href="/${esc(code.toLowerCase())}/#reddit-h">All of them</a> are on its page: students’ accounts, not the rules.</p>`,
+    );
+  }
+  const ruled = A.plans.flatMap((p) => (p.sub ?? []).filter((x) => x.no && x.a.includes(code)).map((x) => `${esc(E.planParts(p).name)}: ${esc(x.t)}`));
+  if (ruled.length) lines.push(`<p class="pw-no">${[...new Set(ruled)].join('<br>')}</p>`);
+  const open = Boolean(o) || kinds.length > 0;
+  return `<details class="pw-ovr${o ? ' on' : ''}"${open ? ' open' : ''}><summary>Override${o ? ` <span class="pw-ovrtag">${esc(o.a ? `= ${fmt(o.a)}` : 'on')}</span>` : kinds.length ? '' : ' <span class="t">permission, or counting it as another course</span>'}</summary>${lines.join('')}</details>`;
+}
+
+// ---------------- what can go next ----------------
+// The grid as a tree you grow: an empty cell says what's ready for its term (prerequisites met by the terms before,
+// runs that season, what your plans need first, with what each opens), in a list under the cell and on the card; a
+// course picked shows its lines in the grid, from what it needs to what needs it.
+
+const liveOn = () => state.live !== 0;
+/** A list under a cell, pulled left when it would run off the screen (a phone, or the grid's last columns). */
+function keepInView(el, host) {
+  const over = el.getBoundingClientRect().right - (document.documentElement.clientWidth - 6);
+  if (over > 0) el.style.left = `${Math.max(6 - host.left, parseFloat(el.style.left) - over)}px`;
+}
+let justAdded = null; // the course put in last, so the next term's list leads with what it opened
+let justPlaced = null; // {r, c}: its cell, to flash once
+let readyTimer = 0;
+let readyHidden = ''; // "r,c": the cell Escape hid the list on
+
+/** What's ready for a row's term (engine.js's readyNow), kept until the grid changes. */
+function readyFor(r) {
+  A.ready ??= new Map();
+  if (!A.ready.has(r)) {
+    const before = new Set();
+    const grades = new Map();
+    let fresh = new Set();
+    state.rows.forEach((row, i) => {
+      if (i >= r || !hasCells(row)) return;
+      const mine = row.c.filter((code, j) => code && A.keys[i][j] !== null);
+      for (const code of mine) before.add(code);
+      if (row.k === 's' && mine.length) fresh = new Set(mine);
+      row.c.forEach((code, j) => {
+        const g = row.g?.[j];
+        if (code && numeric(g) && A.keys[i][j] !== null) grades.set(code, g);
+      });
+    });
+    if (justAdded && before.has(justAdded)) fresh.add(justAdded);
+    A.ready.set(r, E.readyNow({ courses: CE, planned: A.planned, before, season: E.seasonOf(termOf(r)), year: Number(A.lvAt[r]?.[0]) || 1, level: A.lvAt[r], plans: A.planCtx, equiv, grades, need: neededNow(), leads: leadsTo, fresh, limit: 24 }));
+  }
+  return A.ready.get(r);
+}
+/** Why a course is on the list, in a few words: "Required · opens 3". */
+const readyWhy = (x) => [x.kind === 'required' ? 'Required' : x.kind === 'choice' ? 'A choice' : x.kind === 'words' ? 'Fits a rule' : x.by.length ? `After ${fmt(x.by[0])}` : '', x.opens.length ? `opens ${x.opens.length}` : ''].filter(Boolean).join(' · ');
+const readyTitle = (x) =>
+  [C[x.code]?.[0], x.k != null && A.plans[x.k] ? `${E.planParts(A.plans[x.k]).name}: ${x.label}` : '', x.by.length ? `builds on ${x.by.slice(0, 3).map(fmt).join(', ')}` : '', x.opens.length ? `opens ${x.opens.slice(0, 4).map(fmt).join(', ')}${x.opens.length > 4 ? '…' : ''} for your plans` : '', x.sure ? '' : 'check its prerequisites: they name a plan'].filter(Boolean).join(' · ');
+
+/** The card for an empty cell: what can go in its term. */
+function nextHtml() {
+  if (!selected || !liveOn()) return '';
+  const row = state.rows[selected.r];
+  if (row?.k !== 's' || row.c[selected.c]) return '';
+  const r = selected.r;
+  const lv = A.lv[r];
+  const term = E.termName(termOf(r));
+  const season = term.split(' ')[0];
+  const close = `<button type="button" class="pw-pdx" data-dclose aria-label="Close">×</button>`;
+  const list = readyFor(r);
+  const head = `<div class="pw-dhead"><h3>What can go in ${esc(lv)} <span class="t">${esc(term)}</span></h3>${close}</div>`;
+  if (!list.length) {
+    const some = A.planned.size || A.plans.length;
+    return `<div class="pw-dcard pw-next">${head}<p class="t">${some ? `Nothing new is ready for ${esc(season)}: what your plans still need either waits on a prerequisite or doesn’t run then. <button type="button" class="pw-linkbtn" data-act="find">Find courses</button> has everything that would count.` : 'Add your major above, or type a course code in the cell. As the grid fills in, this shows what each term’s courses open up next.'}</p></div>`;
+  }
+  const prev = state.rows.slice(0, r).map((x, i) => (x.k === 's' && x.c.some(Boolean) ? A.lv[i] : null)).filter(Boolean).at(-1);
+  const groups = [
+    ['Your plans require', list.filter((x) => x.kind === 'required')],
+    ['A choice for your plans', list.filter((x) => x.kind === 'choice')],
+    ['Fits one of their rules', list.filter((x) => x.kind === 'words')],
+    [prev ? `Opened by ${prev} and before` : 'Opened by what’s before', list.filter((x) => !x.kind)],
+  ].filter(([, xs]) => xs.length);
+  const chipOf = (x) => `<button type="button" class="pw-chip no pw-rchip${x.sure ? '' : ' unsure'}" data-ready="${esc(x.code)}" title="${esc(readyTitle(x))}">${x.k != null ? `<i class="pw-dot d${x.k % 8}"></i>` : ''}${esc(fmt(x.code))}${x.opens.length ? `<small>opens ${x.opens.length}</small>` : ''}</button>`;
+  return `<div class="pw-dcard pw-next">${head}
+<p class="t">Ready for this term: their prerequisites are in the terms before it and they run in ${esc(season)}. Tap one to put it in this cell; “opens” counts the courses your plans still need that it leads to.</p>
+${groups.map(([label, xs]) => `<p class="pw-dkind"><span class="pw-lead">${esc(label)}</span><span class="pw-dchips">${xs.slice(0, 12).map(chipOf).join('')}</span></p>`).join('')}
+<p class="t">Or type a code in the cell. <button type="button" class="pw-linkbtn" data-act="find">Find courses</button> has everything that would count.</p></div>`;
+}
+
+/** The list under an empty cell: the best few of what's ready for its term. Arrows still move between cells;
+ *  Alt+↓ goes into the list. */
+function showReady(input) {
+  if (!liveOn() || !input.isConnected || document.activeElement !== input || input.value.trim()) return;
+  const r = Number(input.dataset.r);
+  const c = Number(input.dataset.c);
+  if (state.rows[r]?.k !== 's' || state.rows[r].c[c] || readyHidden === `${r},${c}`) return;
+  const list = readyFor(r).slice(0, 6);
+  closeSugg();
+  if (!list.length) return;
+  const el = document.createElement('ul');
+  el.className = 'pw-sugg pw-csugg pw-ready';
+  el.setAttribute('role', 'listbox');
+  el.setAttribute('aria-label', `Ready for ${A.lv[r]}`);
+  el.innerHTML = `<li class="pw-shead" aria-hidden="true">Ready for ${esc(A.lv[r])} · ${esc(E.termName(termOf(r)))}</li>${list
+    .map((x) => `<li role="option" data-code="${esc(x.code)}" aria-selected="false" title="${esc(readyTitle(x))}"><b>${esc(fmt(x.code))}</b> <span>${esc(C[x.code]?.[0] ?? '')}</span><em>${esc(readyWhy(x))}</em>${x.k != null ? `<i class="pw-dot d${x.k % 8}"></i>` : ''}</li>`)
+    .join('')}<li class="pw-smore" aria-hidden="true">Click one, or Alt+↓ to choose · type to search · Esc hides</li>`;
+  const box = input.getBoundingClientRect();
+  const host = app.getBoundingClientRect();
+  el.style.left = `${box.left - host.left}px`;
+  el.style.top = `${box.bottom - host.top + 2}px`;
+  app.append(el);
+  keepInView(el, host);
+  sugg = { el, hits: list.map((x) => x.code), active: -1, input, ready: true };
+  el.addEventListener('mousedown', (e) => {
+    const li = e.target.closest('li[data-code]');
+    if (!li) return;
+    e.preventDefault();
+    pickReady(r, c, li.dataset.code);
+  });
+}
+const queueReady = (input) => {
+  clearTimeout(readyTimer);
+  readyTimer = setTimeout(() => showReady(input), 260);
+};
+/** A course from the ready list goes in the cell, and the next empty cell of the term takes over, for the next one. */
+function pickReady(r, c, code) {
+  closeSugg();
+  setCell(r, c, code);
+  justAdded = code;
+  justPlaced = { r, c };
+  const free = Array.from({ length: slotsOf(state.rows[r]) }, (_, k) => k).find((k) => !state.rows[r].c[k]);
+  selected = { r, c: free ?? c };
+  shutCard = false;
+  peek = null;
+  render();
+  app.querySelector(`.pw-in[data-r="${r}"][data-c="${free ?? c}"]`)?.focus({ preventScroll: true });
+}
+
+/** The courses a requisite tree names (not the ones it rules out). */
+function reqNames(nodes, out = new Set()) {
+  for (const n of Array.isArray(nodes) ? nodes : []) {
+    if (n.r && n.r !== 'not') for (const x of n.c) out.add(x);
+    if (n.i) reqNames(n.i, out);
+  }
+  return out;
+}
+/**
+ * The picked course's lines in the grid: from the courses it needs, in earlier terms, and to the ones that need it,
+ * in later terms. Drawn over the table (no clicks land on them); the cells at their ends are marked too.
+ */
+function drawLinks() {
+  const wrap = app.querySelector('.pw-gridwrap');
+  if (!wrap) return;
+  wrap.querySelector('.pw-links')?.remove();
+  for (const td of wrap.querySelectorAll('.lk-pre, .lk-post, .lk-at')) td.classList.remove('lk-pre', 'lk-post', 'lk-at');
+  if (!liveOn() || !selected || shutCard) return;
+  const code = state.rows[selected.r]?.c[selected.c];
+  if (!code || E.isPlaceholder(code)) return;
+  const cellAt = new Map();
+  state.rows.forEach((row, i) => {
+    if (hasCells(row)) row.c.forEach((k, j) => k && A.keys[i]?.[j] != null && !cellAt.has(k) && cellAt.set(k, { r: i, c: j }));
+  });
+  const stands = (x) => [x, ...(equiv.get(x) ?? [])];
+  const links = [];
+  for (const x of reqNames(CE[code]?.[2])) {
+    for (const y of stands(x)) {
+      const at = cellAt.get(y);
+      if (at && at.r < selected.r) links.push({ from: at, to: selected, kind: 'pre' });
+    }
+  }
+  for (const [k, at] of cellAt) {
+    if (at.r > selected.r && [...reqNames(CE[k]?.[2])].some((x) => stands(x).includes(code))) links.push({ from: selected, to: at, kind: 'post' });
+  }
+  const td = (at) => wrap.querySelector(`.pw-in[data-r="${at.r}"][data-c="${at.c}"]`)?.closest('td');
+  td(selected)?.classList.add('lk-at');
+  if (!links.length) return;
+  const table = wrap.querySelector('table');
+  const base = table.getBoundingClientRect();
+  const paths = [];
+  for (const l of links) {
+    const a = td(l.from);
+    const b = td(l.to);
+    if (!a || !b) continue;
+    (l.kind === 'pre' ? a : b).classList.add(l.kind === 'pre' ? 'lk-pre' : 'lk-post');
+    const ra = a.getBoundingClientRect();
+    const rb = b.getBoundingClientRect();
+    const x1 = ra.left + ra.width / 2 - base.left;
+    const y1 = ra.bottom - base.top - 3;
+    const x2 = rb.left + rb.width / 2 - base.left;
+    const y2 = rb.top - base.top + 3;
+    const bend = Math.max(10, Math.min(46, (y2 - y1) / 2));
+    paths.push(`<path class="${l.kind}" d="M${x1.toFixed(1)} ${y1.toFixed(1)} C${x1.toFixed(1)} ${(y1 + bend).toFixed(1)}, ${x2.toFixed(1)} ${(y2 - bend).toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}"/><circle class="${l.kind}" cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="2.6"/><circle class="${l.kind}" cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="2.6"/>`);
+  }
+  wrap.insertAdjacentHTML('beforeend', `<svg class="pw-links" aria-hidden="true" width="${table.offsetWidth}" height="${table.offsetHeight}" style="left:${table.offsetLeft}px;top:${table.offsetTop}px" viewBox="0 0 ${table.offsetWidth} ${table.offsetHeight}">${paths.join('')}</svg>`);
+}
+addEventListener('resize', () => drawLinks());
+
+/** The course card: the selected cell's course, one shown without being in the grid (peek), or, for an empty cell,
+ *  what can go in its term. */
 function detailHtml() {
   if (shutCard) return '';
   const inCell = selected && state.rows[selected.r]?.c[selected.c];
   if (inCell) peek = null; // looking at a course in the grid now
   const code = inCell || peek;
-  if (!code) return '';
+  if (!code) return nextHtml();
   const c = C[code];
   const at = inCell ? selected : null;
   const f = at ? A.flags[at.r]?.[at.c] : null;
   const key = at ? A.keys[at.r]?.[at.c] : null;
   const g = at ? gradeAt(at.r, at.c) : null;
-  const issues = f?.issues.filter(([k]) => k !== 'ph').map(([k, t]) => `<li class="${k}">${esc(t)}</li>`).join('') ?? '';
+  const issues = f?.issues.filter(([k]) => k !== 'ph').map(([k, t]) => `<li class="${k}">${k === 'ovr' ? '<b class="pw-ovrtag">Overridden</b> ' : ''}${esc(t)}</li>`).join('') ?? '';
   const where = at ? `${state.rows[at.r].k === 's' ? `${A.lv[at.r]} · ` : ''}${E.termName(termOf(at.r))}` : 'not in your grid';
   const close = `<button type="button" class="pw-pdx" data-dclose aria-label="Close ${esc(fmt(code))}">×</button>`;
   if (E.isPlaceholder(code)) {
     const counts = A.evals.map((ev, k) => (key != null && ev.used.has(key) ? `<li><i class="pw-dot d${k % 8}"></i>${esc(A.plans[k].n)}</li>` : '')).join('');
-    return `<div class="pw-dcard"><div class="pw-dhead"><h3>${esc(fmt(code))} <span class="t">placeholder · ${esc(where)}</span></h3>${close}</div><p>For ${esc(phText(code))}. Type the course here once you pick it; until then it holds the slot and counts toward requirements described in words.</p>${issues ? `<ul class="pw-issues">${issues}</ul>` : ''}
+    return `<div class="pw-dcard"><div class="pw-dhead"><h3>${esc(fmt(code))} <span class="t">placeholder · ${esc(where)}</span></h3>${close}</div><p>For ${esc(phText(code))}. Type the course here once you pick it; until then it holds the slot and counts toward requirements described in words.</p>${issues ? `<ul class="pw-issues">${issues}</ul>` : ''}${at ? overridePart(code, f) : ''}
 ${counts ? `<p class="t">Counts toward:</p><ul class="pw-counts">${counts}</ul>` : ''}</div>`;
   }
   const sn = c?.[5] ?? [0, 0, 0];
@@ -961,6 +1307,7 @@ ${counts ? `<p class="t">Counts toward:</p><ul class="pw-counts">${counts}</ul>`
   // Not in the grid: does the grid have what it needs?
   let status = '';
   if (at) status = issues ? `<ul class="pw-issues">${issues}</ul>` : g != null ? '' : '<p class="t pw-ok">No problems found: its prerequisites are in earlier terms and it runs in this season.</p>';
+  // A placeholder or a course from elsewhere can count as one too ("MATH 1XX = MATH 137": a transfer credit).
   else if (c) {
     const miss = E.missing(dropNot(c[2]), new Set(A.planned.keys()), { equiv });
     const clash = (c[4] || []).filter((x) => A.planned.has(x));
@@ -981,11 +1328,11 @@ ${counts ? `<p class="t">Counts toward:</p><ul class="pw-counts">${counts}</ul>`
       if (box?.dataset.code === code) box.innerHTML = pagePart(code);
     });
   return `<div class="pw-dcard" data-code="${esc(code)}"><div class="pw-dhead"><h3><a href="/${code.toLowerCase()}/">${esc(fmt(code))}</a> ${esc(c?.[0] ?? '')}</h3>${close}
-<p class="pw-dsub">${c ? `${units(c[1])} units · ` : ''}<b>${esc(where)}</b> <span class="pw-seasons" aria-label="Terms with sections in the last 4 years">${seasons}</span> ${acts}</p></div>
+<p class="pw-dsub">${c ? `${units(c[1])} units · ` : ''}<b>${esc(where)}</b> <span class="pw-seasons" aria-label="Terms with sections in the last 4 years">${seasons}</span> ${acts}${at && liveOn() ? ' <span class="t pw-linkkey">In the grid: <i style="background:var(--d1)"></i>what it needs <i style="background:var(--d2)"></i>what needs it</span>' : ''}</p></div>
 <div class="pw-dcols"><div class="pw-dmain">
 <div id="pw-dpage" data-code="${esc(code)}">${pagePart(code)}</div>
 ${pre || co || anti || cross ? `<dl class="pw-reqs">${pre ? `<dt>Prerequisites</dt><dd>${esc(pre)}</dd>` : ''}${co ? `<dt>Corequisites</dt><dd>${esc(co)}</dd>` : ''}${anti ? `<dt>Antirequisites</dt><dd>${esc(anti)}</dd>` : ''}${cross ? `<dt>Cross-listed</dt><dd>${esc(cross)}</dd>` : ''}</dl>` : ''}
-${status}${gradeBox}</div>
+${status}${at ? overridePart(code, f) : ''}${gradeBox}</div>
 <div class="pw-dside">${c ? countsPart(code, key) : ''}${c ? leadsPart(code) : ''}</div></div></div>`;
 }
 
@@ -1042,7 +1389,14 @@ function sideHtml() {
   const span = len.terms ? ` ${esc(E.termName(state.start))} to ${esc(E.termName(len.end))}: <b>${esc(yearsText(len.terms))}</b>.` : '';
   const all = average(A.graded);
   const avgLine = all ? `<p>Cumulative average <b>${pct(all.avg)}</b> <span class="t">over ${plural(all.n, 'graded course')}${A.graded.some((x) => x.v == null) ? ' (CR and the like aren’t in it)' : ''}</span></p>` : '';
-  const summary = `<section class="pw-box"><h2>Your degree</h2>${unitLine}${avgLine}<p>${plural(study.length, 'study term')}${len.work ? ` and ${plural(len.work, 'work term')}` : ''}${over ? `, ${plural(over, 'with an overload', 'with overloads')}` : ''}.${span}</p>${fit}${gaps ? `<p class="t">Counted from requirements that name courses; ones in words that the grid can’t check are ticked by hand below.</p>` : ''}</section>`;
+  // Overrides are yours to confirm: listed, each a way back to its cell.
+  const ovs = [];
+  state.rows.forEach((r, i) => {
+    for (const [j, o] of Object.entries(r.o ?? {})) if (r.c[j] && hasCells(r)) ovs.push(`<button type="button" class="pw-chip ovr" data-goto="${i},${j}" title="${esc(`${E.termName(termOf(i))}: ${o.a ? `counts as ${fmt(o.a)}` : 'requisites overridden'}`)}">${esc(fmt(r.c[j]))}${o.a ? ` = ${esc(fmt(o.a))}` : ''}</button>`);
+    if (r.lo && r.k === 's' && r.c.filter(Boolean).length > NORMAL) ovs.push(`<span class="pw-chip ovr" title="A unit-load override">${esc(A.lv[i])} overload</span>`);
+  });
+  const ovLine = ovs.length ? `<p class="pw-ovrsum"><b class="pw-ovrtag">${plural(ovs.length, 'override')}</b> ${ovs.join(' ')} <span class="t">The grid takes your word for these: confirm each with an advisor.</span></p>` : '';
+  const summary = `<section class="pw-box"><h2>Your degree</h2>${unitLine}${avgLine}<p>${plural(study.length, 'study term')}${len.work ? ` and ${plural(len.work, 'work term')}` : ''}${over ? `, ${plural(over, 'with an overload', 'with overloads')}` : ''}.${span}</p>${ovLine}${fit}${gaps ? `<p class="t">Counted from requirements that name courses; ones in words that the grid can’t check are ticked by hand below.</p>` : ''}</section>`;
   const checklists = A.plans.map((p, k) => checklistHtml(p, A.evals[k], k)).join('');
   return `${summary}${checklists}`;
 }
@@ -1052,6 +1406,20 @@ function chip(code, state_, mark = null) {
   return `<button type="button" class="pw-chip ${state_}${E.isPlaceholder(E.baseCode(code)) ? ' ph' : ''}${mark ? ` ${mark.cls}` : ''}" data-add="${esc(code)}" title="${esc(`${title}${mark ? ` · ${mark.why}` : ''}${state_ === 'no' ? ' · click to put it in the grid' : state_ === 'ok' ? ' · in your grid' : ''}`)}">${esc(fmt(code))}</button>`;
 }
 
+/** A course's override in the grid, by its code. */
+function ovrOfCode(code) {
+  for (const r of state.rows) for (const [j, o] of Object.entries(r.o ?? {})) if (r.c[j] === code) return o;
+  return null;
+}
+/** Where a course is in the grid: {r, c}, or null. */
+function cellOf(code) {
+  for (const [i, r] of state.rows.entries()) {
+    if (!hasCells(r)) continue;
+    const j = r.c.findIndex((x, k) => x === code && A.keys[i]?.[k] != null);
+    if (j >= 0) return { r: i, c: j };
+  }
+  return null;
+}
 function checklistHtml(p, ev, k) {
   const done = ev.need ? Math.round((ev.have / ev.need) * 100) : 0;
   const open = new Map(poolsNow()[k].map((pl) => [pl.key, pl]));
@@ -1063,9 +1431,12 @@ function checklistHtml(p, ev, k) {
     .map((row) => {
       const pad = `style="--d:${row.depth}"`;
       const st = (code) => (row.got?.includes(code) ? 'ok' : A.planned.has(code) ? 'el' : 'no');
+      // Met by a course that counts as it (an override): yellow, and a click goes to that course.
+      const via = (code) => (row.got?.includes(code) && !A.planned.has(code) && A.asFor.has(code) ? { cls: 'ovr', why: `met by ${fmt(A.asFor.get(code))}, which counts as it (an override)` } : null);
+      const one = (c) => chip(c, st(c), via(c));
       const codes = (list, max = 24) => {
-        const shown = list.slice(0, max).map((c) => chip(c, st(c))).join('');
-        return list.length > max ? `${shown}<details class="pw-more"><summary>${list.length - max} more</summary>${list.slice(max).map((c) => chip(c, st(c))).join('')}</details>` : shown;
+        const shown = list.slice(0, max).map(one).join('');
+        return list.length > max ? `${shown}<details class="pw-more"><summary>${list.length - max} more</summary>${list.slice(max).map(one).join('')}</details>` : shown;
       };
       if (row.kind === 'heading') return row.text ? `<h4 ${pad}>${esc(row.text)}${row.need ? ` <span class="t">${row.have} of ${row.need}</span>` : ''}</h4>` : '';
       if (row.kind === 'group') return `<p class="pw-g" ${pad}>${esc(row.text)}${row.need ? ` <span class="t">${row.have} of ${row.need}</span>` : ''}${browse(row)}</p>`;
@@ -1083,7 +1454,16 @@ function checklistHtml(p, ev, k) {
     })
     .join('');
   const tu = p.tu ? `<p class="t">The calendar asks for ${units(p.tu)} units in all.</p>` : '';
-  return `<details class="pw-box pw-check" open><summary><i class="pw-dot d${k % 8}"></i><b>${esc(p.n)}</b><span class="pw-prog"><span style="width:${done}%"></span></span><span class="t">${ev.have} of ${ev.need}${ev.unknown ? '+' : ''}</span></summary>${tu}${rows || '<p class="t">The calendar lists no courses by name for this one; see its page.</p>'}${averagesHtml(p, k)}<p class="t">${p.src ? `<a href="${esc(p.src)}" rel="noopener">All of its rules</a>, in the ${esc(labelOf(calYear))} calendar` : `<a href="/programs/${esc(p.s)}/">All of its rules</a>`}</p></details>`;
+  // The substitutions its own text allows or rules out; one you have the course for can be set from here.
+  const subs = (p.sub ?? []).map((x) => {
+    const mine = x.no ? [] : x.a.filter((c) => A.planned.has(c) && !ovrOfCode(c)?.a);
+    const open = x.b.filter((c) => C[c] && !A.planned.has(c) && !A.asFor.has(c));
+    const ready = mine.length && open.length && (!x.all || x.a.every((c) => A.planned.has(c)));
+    const acts = ready ? mine.slice(0, 2).flatMap((a) => open.slice(0, 2).map((b) => `<button type="button" class="pw-linkbtn" data-subas="${esc(a)}=${esc(b)}">Count ${esc(fmt(a))} as ${esc(fmt(b))}</button>`)).join(' ') : '';
+    return `<li${x.no ? ' class="no"' : ''}>${esc(x.t)}${acts ? ` ${acts}` : ''}</li>`;
+  });
+  const subHtml = subs.length ? `<details class="pw-subs"><summary>Substitutions the calendar names <span class="t">${subs.length}</span></summary><ul>${subs.join('')}</ul><p class="t">Each says who it’s for. Marking one is an override (yellow): confirm it with your advisor.</p></details>` : '';
+  return `<details class="pw-box pw-check" open><summary><i class="pw-dot d${k % 8}"></i><b>${esc(p.n)}</b><span class="pw-prog"><span style="width:${done}%"></span></span><span class="t">${ev.have} of ${ev.need}${ev.unknown ? '+' : ''}</span></summary>${tu}${rows || '<p class="t">The calendar lists no courses by name for this one; see its page.</p>'}${subHtml}${averagesHtml(p, k)}<p class="t">${p.src ? `<a href="${esc(p.src)}" rel="noopener">All of its rules</a>, in the ${esc(labelOf(calYear))} calendar` : `<a href="/programs/${esc(p.s)}/">All of its rules</a>`}</p></details>`;
 }
 
 /** A plan's minimum averages against the grades in the grid, and the degree's limit on failed courses. */
@@ -1416,7 +1796,7 @@ function planPanel(p, key) {
   const mine = state.plans.includes(p.s);
   const { name, kind } = E.planParts(p);
   const { college } = E.facultyOf(p);
-  const ev = E.evaluate(p, planned, { courses: C, faculty: SF });
+  const ev = E.evaluate(p, planned, { courses: CE, faculty: SF });
   const no = mine ? [] : clashes(p.s);
   const who = E.whoFor(p, myMajors());
   const tw = E.takenWith(p, P);
@@ -1438,7 +1818,7 @@ function planPanel(p, key) {
   };
   // In the grid already: the courses it names that are planned.
   const got = [...new Set(ev.rows.flatMap((r) => r.got ?? []).map((k) => E.baseCode(k)))].filter((c) => C[c]);
-  const pools = E.pools(p, planned, { courses: C, equiv, faculty: SF });
+  const pools = E.pools(p, planned, { courses: CE, equiv, faculty: SF });
   const above = new Set();
   const rules = pools.map((pl, i) => {
     // A rule in words lists what else fits: the courses named by the rules above it are there already.
@@ -1550,7 +1930,7 @@ function renderDirections() {
   const forOthers = (p) => Boolean(p.open?.length && !p.open.some((s) => majors.includes(s)));
   const inFac = (p) => (entry ? entry.has(p) : !fac || facKey(p) === fac);
   const mine = myMajors();
-  const found = E.directions(P.filter(inFac), planned, { chosen: state.plans, clash, courses: C, types: [view] });
+  const found = E.directions(P.filter(inFac), planned, { chosen: state.plans, clash, courses: CE, types: [view] });
   // Every one, with ones whose rules are all in words (no courses to count) after.
   const inWords = P.filter((p) => p.t === view && inFac(p) && !state.plans.includes(p.s) && !found.some((x) => x.p === p)).map((p) => ({ p, need: 0, have: 0, left: 0, unknown: true, blocked: clashes(p.s) }));
   const every = [...found, ...inWords]
@@ -1610,25 +1990,60 @@ function parseCode(text) {
 }
 
 /** Puts a course in a cell. grade: a grade to keep with it, null to clear it, or left out (kept unless the
- *  course changes). */
-function setCell(r, c, code, grade) {
+ *  course changes). o: its override ({w, a}), null to clear it, or left out (kept unless the course changes). */
+function setCell(r, c, code, grade, o) {
   if (pending?.r === r && pending?.c === c) pending = null;
   undo = null;
   const row = state.rows[r];
   if (!hasCells(row)) return;
   while (row.c.length <= c) row.c.push('');
-  if (row.c[c] !== code && row.g) delete row.g[c];
+  if (row.c[c] !== code) {
+    if (row.g) delete row.g[c];
+    if (row.o) delete row.o[c];
+  }
   row.c[c] = code;
   if (grade !== undefined) {
     row.g ??= {};
     if (grade == null || !code) delete row.g[c];
     else row.g[c] = grade;
   }
+  if (o !== undefined) {
+    row.o ??= {};
+    if (!o || !code || !(o.w || o.a)) delete row.o[c];
+    else row.o[c] = { ...(o.a ? { a: o.a } : {}), ...(o.w ? { w: 1 } : {}) };
+  }
   while (row.c.length && !row.c.at(-1)) {
     if (row.g) delete row.g[row.c.length - 1];
+    if (row.o) delete row.o[row.c.length - 1];
     row.c.pop();
   }
   if (row.g && !Object.keys(row.g).length) delete row.g;
+  if (row.o && !Object.keys(row.o).length) delete row.o;
+}
+/** Changes a cell's override: patch {w} or {a}, a null value taking that part off. */
+function setOverride(r, c, patch) {
+  const code = state.rows[r]?.c[c];
+  if (!code) return;
+  const o = { ...(ovrAt(r, c) ?? {}), ...patch };
+  for (const k of Object.keys(o)) if (!o[k]) delete o[k];
+  setCell(r, c, code, undefined, o);
+}
+
+/** "Counts as", from the card's box: a course in the calendar, other than the cell's own. */
+function setAs(input) {
+  if (!input || !selected) return;
+  const mine = state.rows[selected.r]?.c[selected.c];
+  const a = parseCode(input.value);
+  if (!input.value.trim()) return;
+  if (!a || !C[a] || a === mine) {
+    input.setAttribute('aria-invalid', 'true');
+    const note = document.getElementById('pw-asnote');
+    if (note) note.textContent = !a ? 'A course code, like MATH 137.' : a === mine ? 'That’s this course.' : `${fmt(a)} isn’t in the calendar.`;
+    return;
+  }
+  setOverride(selected.r, selected.c, { a });
+  render();
+  document.querySelector('#pw-detail .pw-ovr [data-ovr]')?.focus({ preventScroll: true });
 }
 
 /** The next row up or down with a cell in column c (a work term has two). */
@@ -1658,7 +2073,7 @@ function place(code) {
   const now = study.find((i) => Number(termOf(i)) >= Number(data.term)) ?? study[0] ?? 0;
   const rows = state.rows.map((r, i) => ({ kind: KIND[r.k], season: E.seasonOf(termOf(i)), codes: r.c }));
   const plans = A.plans.map((p) => ({ code: p.c, faculty: p.f, name: p.n }));
-  const at = E.arrange(rows, [{ code }], { courses: C, load: NORMAL, max: SLOTS, from: now, equiv, plans }).placed[0]?.row;
+  const at = E.arrange(rows, [{ code }], { courses: CE, load: NORMAL, max: SLOTS, from: now, equiv, plans }).placed[0]?.row;
   if (at != null) {
     const j = Array.from({ length: slotsOf(state.rows[at]) }, (_, k) => k).find((k) => !state.rows[at].c[k]);
     setCell(at, j, code);
@@ -1702,6 +2117,7 @@ function showSugg(input) {
   el.style.left = `${box.left - host.left}px`;
   el.style.top = `${box.bottom - host.top + 2}px`;
   app.append(el);
+  keepInView(el, host);
   sugg = { el, hits, active: 0, input };
   el.addEventListener('mousedown', (e) => {
     const li = e.target.closest('li[data-code]');
@@ -1715,9 +2131,15 @@ function commit(input, code = null, move = 0) {
   const r = Number(input.dataset.r);
   const c = Number(input.dataset.c);
   // A course picked from the suggestions keeps a grade typed after it.
-  const cell = code != null ? { code, grade: code ? parseCell(input.value).grade : null } : parseCell(input.value);
+  const typed = parseCell(input.value);
+  const cell = code != null ? { code, grade: code ? typed.grade : null, o: code ? typed.o : null } : typed;
   closeSugg();
-  setCell(r, c, cell.code, cell.grade);
+  const was = state.rows[r]?.c[c] ?? '';
+  setCell(r, c, cell.code, cell.grade, cell.o);
+  if (cell.code && cell.code !== was) {
+    justAdded = cell.code;
+    justPlaced = { r, c };
+  }
   selected = { r, c };
   render();
   if (move) {
@@ -1739,13 +2161,19 @@ app.addEventListener('focusin', (e) => {
     shutCard = false;
     const d = document.getElementById('pw-detail');
     if (d) d.innerHTML = detailHtml();
+    drawLinks();
   }
+  // An empty cell: what's ready for its term, in a moment (not while you're passing through).
+  if (readyHidden !== `${r},${c}`) readyHidden = '';
+  if (!input.value.trim()) queueReady(input);
 });
 app.addEventListener('input', (e) => {
   const input = e.target.closest('.pw-in');
   if (input) {
     pending = { r: Number(input.dataset.r), c: Number(input.dataset.c) };
     showSugg(input);
+    if (!input.value.trim()) queueReady(input);
+    else clearTimeout(readyTimer);
   }
   const pq = e.target.closest('#pw-pq');
   if (pq) planSuggest(pq);
@@ -1755,15 +2183,28 @@ app.addEventListener('keydown', (e) => {
   if (!input) return;
   const r = Number(input.dataset.r);
   const c = Number(input.dataset.c);
-  if (sugg && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+  // The ready list doesn't take the arrows (they move between cells) until Alt+↓ goes into it.
+  const inList = sugg && (!sugg.ready || sugg.active >= 0);
+  if (sugg?.ready && !inList && e.altKey && e.key === 'ArrowDown') {
+    e.preventDefault();
+    sugg.active = 0;
+    sugg.el.querySelectorAll('li[data-code]').forEach((li, i) => li.setAttribute('aria-selected', String(i === 0)));
+    return;
+  }
+  if (inList && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
     e.preventDefault();
     sugg.active = (sugg.active + (e.key === 'ArrowDown' ? 1 : -1) + sugg.hits.length) % sugg.hits.length;
-    [...sugg.el.children].forEach((li, i) => li.setAttribute('aria-selected', String(i === sugg.active)));
+    sugg.el.querySelectorAll('li[data-code]').forEach((li, i) => li.setAttribute('aria-selected', String(i === sugg.active)));
+    return;
+  }
+  if (sugg?.ready && inList && (e.key === 'Enter' || e.key === 'Tab')) {
+    e.preventDefault();
+    pickReady(r, c, sugg.hits[sugg.active]);
     return;
   }
   if (e.key === 'Enter') {
     e.preventDefault();
-    commit(input, sugg ? sugg.hits[sugg.active] : null, e.shiftKey ? -1 : 1);
+    commit(input, inList ? sugg.hits[sugg.active] : null, e.shiftKey ? -1 : 1);
   } else if (e.key === 'Tab') {
     e.preventDefault();
     const back = e.shiftKey;
@@ -1776,9 +2217,11 @@ app.addEventListener('keydown', (e) => {
         nc = back ? slotsOf(state.rows[next]) - 1 : 0;
       } else nc = c;
     }
-    commit(input, sugg ? sugg.hits[sugg.active] : null, 0);
+    commit(input, inList ? sugg.hits[sugg.active] : null, 0);
     focusCell(nr, nc);
   } else if (e.key === 'Escape') {
+    if (sugg?.ready) readyHidden = `${r},${c}`;
+    clearTimeout(readyTimer);
     closeSugg();
     input.value = cellText(r, c);
   } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -1826,10 +2269,13 @@ function cellsOfLine(line) {
     const lead = /^(Fall|Winter|Spring) \d{4}$/.test(parts[0]?.trim() ?? '') ? 2 : 0;
     return parts.slice(lead).map((x) => parseCell(x));
   }
-  const hits = [...line.matchAll(CODE_IN)];
+  // "MATH 117 = MATH 137": the second code is what the first counts as, not a course of its own.
+  const all = [...line.matchAll(CODE_IN)];
+  const hits = all.filter((m, k) => !(k > 0 && /(?:=|\bas)\s*$/i.test(line.slice(all[k - 1].index + all[k - 1][0].length, m.index))));
   return hits.map((m, k) => {
-    const rest = line.slice(m.index + m[0].length, hits[k + 1]?.index ?? line.length);
-    return { code: parseCode(m[0]), grade: parseGrade(rest) ?? null };
+    const code = parseCode(m[0]);
+    const { o, rest } = parseOverride(line.slice(m.index + m[0].length, hits[k + 1]?.index ?? line.length), code);
+    return { code, grade: parseGrade(rest) ?? null, o };
   });
 }
 app.addEventListener('paste', (e) => {
@@ -1838,7 +2284,7 @@ app.addEventListener('paste', (e) => {
   const text = e.clipboardData?.getData('text') ?? '';
   const lines = text.split(/\r?\n/).filter((l) => l.trim() && !/^Term\tLevel\t/.test(l));
   const cells = lines.map(cellsOfLine);
-  if (lines.length <= 1 && (cells[0]?.length ?? 0) <= 1 && !cells[0]?.[0]?.grade) return;
+  if (lines.length <= 1 && (cells[0]?.length ?? 0) <= 1 && !cells[0]?.[0]?.grade && !cells[0]?.[0]?.o) return;
   e.preventDefault();
   let r = Number(input.dataset.r);
   const c0 = Number(input.dataset.c);
@@ -1851,7 +2297,7 @@ app.addEventListener('paste', (e) => {
       } else r = next;
     }
     line.forEach((cell, j) => {
-      if (c0 + j < slotsOf(state.rows[r])) setCell(r, c0 + j, cell.code, cell.code ? cell.grade : null);
+      if (c0 + j < slotsOf(state.rows[r])) setCell(r, c0 + j, cell.code, cell.code ? cell.grade : null, cell.code ? cell.o : null);
     });
   }
   render();
@@ -1860,11 +2306,65 @@ app.addEventListener('paste', (e) => {
 // Buttons, chips and selects.
 app.addEventListener('click', async (e) => {
   const t = e.target;
+  // Overrides: on the card, from a checklist's substitutions, the summary's list, a term's overload.
+  const ovrBtn = t.closest('[data-ovr], [data-as]');
+  if (ovrBtn && selected) {
+    const act = ovrBtn.dataset.ovr;
+    if (act === 'a1') {
+      setAs(document.getElementById('pw-as'));
+      return;
+    }
+    setOverride(selected.r, selected.c, ovrBtn.dataset.as ? { a: ovrBtn.dataset.as } : act === 'w1' ? { w: 1 } : act === 'w0' ? { w: null } : { a: null });
+    render();
+    document.querySelector('#pw-detail .pw-ovr :is([data-ovr], input)')?.focus({ preventScroll: true });
+    return;
+  }
+  const subas = t.closest('[data-subas]');
+  if (subas) {
+    const [a, b] = subas.dataset.subas.split('=');
+    const at = cellOf(a);
+    if (at) {
+      setOverride(at.r, at.c, { a: b });
+      selected = at;
+      shutCard = false;
+      peek = null;
+      render();
+    }
+    return;
+  }
+  const goto_ = t.closest('[data-goto]');
+  if (goto_) {
+    const [r, c] = goto_.dataset.goto.split(',').map(Number);
+    selected = { r, c };
+    shutCard = false;
+    peek = null;
+    render();
+    app.querySelector(`.pw-in[data-r="${r}"][data-c="${c}"]`)?.focus({ preventScroll: true });
+    revealCard(r);
+    return;
+  }
+  const lo = t.closest('[data-lo]');
+  if (lo) {
+    const row = state.rows[Number(lo.dataset.lo)];
+    if (row.lo) delete row.lo;
+    else row.lo = 1;
+    render();
+    app.querySelector(`[data-lo="${lo.dataset.lo}"]`)?.focus({ preventScroll: true });
+    return;
+  }
+  // A course from "what can go here": into the empty cell, and on to the term's next one.
+  const rdy = t.closest('[data-ready]');
+  if (rdy && selected && !state.rows[selected.r]?.c[selected.c]) {
+    pickReady(selected.r, selected.c, rdy.dataset.ready);
+    return;
+  }
   const add = t.closest('[data-add]');
   if (add) {
-    const code = add.dataset.add;
+    let code = add.dataset.add;
     peek = null;
     shutCard = false;
+    // Met by a course that counts as it: to that course.
+    if (!A.planned.has(code) && A.asFor.has(code)) code = A.asFor.get(code);
     if (A.planned.has(code)) {
       const at = A.planned.get(code).row;
       const j = A.keys[at].indexOf(code);
@@ -1876,6 +2376,8 @@ app.addEventListener('click', async (e) => {
     }
     const at = place(code);
     selected = at;
+    justAdded = code;
+    justPlaced = at;
     render();
     app.querySelector(`.pw-in[data-r="${at.r}"][data-c="${at.c}"]`)?.focus({ preventScroll: true });
     revealCard(at.r);
@@ -1889,6 +2391,7 @@ app.addEventListener('click', async (e) => {
     const d = document.getElementById('pw-detail');
     if (d) d.innerHTML = '';
     if (r != null) app.querySelector(`.pw-in[data-r="${r}"]`)?.closest('tr')?.scrollIntoView({ block: 'nearest' });
+    drawLinks();
     return;
   }
   if (t.closest('[data-dout]') && selected) {
@@ -2015,12 +2518,15 @@ app.addEventListener('click', async (e) => {
     const next = { s: 'c', c: 'o', o: 's' }[row.k];
     // Each kind keeps its own courses: a study term's wait while it's a work term, and come back with it.
     row.stash ??= {};
-    if (row.c.some(Boolean)) row.stash[row.k] = { c: row.c, ...(row.g ? { g: row.g } : {}) };
+    if (row.c.some(Boolean)) row.stash[row.k] = { c: row.c, ...(row.g ? { g: row.g } : {}), ...(row.o ? { o: row.o } : {}) };
     const back = row.stash[next];
     delete row.stash[next];
     row.c = back?.c ?? [];
     if (back?.g) row.g = back.g;
     else delete row.g;
+    if (back?.o) row.o = back.o;
+    else delete row.o;
+    delete row.lo;
     if (!Object.keys(row.stash).length) delete row.stash;
     row.k = next;
     if (selected?.r === Number(kindBtn.dataset.kind)) selected = null;
@@ -2127,6 +2633,10 @@ app.addEventListener('click', async (e) => {
     undo = null;
     selected = null;
     render();
+  } else if (act === 'live') {
+    state.live = liveOn() ? 0 : 1;
+    render();
+    app.querySelector('[data-act="live"]')?.focus({ preventScroll: true });
   } else if (act === 'addrow') {
     state.rows.push({ k: 's', c: [] });
     undo = null;
@@ -2149,7 +2659,7 @@ app.addEventListener('click', async (e) => {
     window.print();
   } else if (act === 'tsv') {
     const lines = [['Term', 'Level', ...Array.from({ length: SLOTS }, (_, j) => `Course ${j + 1}`)].join('\t')];
-    state.rows.forEach((r, i) => lines.push([E.termName(termOf(i)), r.k === 's' ? A.lv[i] : { c: 'Work term', o: 'Off' }[r.k], ...r.c.map((c, j) => (c ? `${fmt(c)}${r.g?.[j] != null ? ` (${r.g[j]})` : ''}` : ''))].join('\t')));
+    state.rows.forEach((r, i) => lines.push([E.termName(termOf(i)), r.k === 's' ? A.lv[i] : { c: 'Work term', o: 'Off' }[r.k], ...r.c.map((c, j) => (c ? `${fmt(c)}${r.g?.[j] != null ? ` (${r.g[j]})` : ''}${r.o?.[j] ? ` ${ovrMark(r.o[j])}` : ''}` : ''))].join('\t')));
     done((await copy(lines.join('\n'))) ? 'Copied: paste it into Excel or Google Sheets.' : 'Couldn’t copy.');
   }
 });
@@ -2169,6 +2679,8 @@ app.addEventListener('change', async (e) => {
     seqFrom = Number(t.value);
     render();
     document.getElementById('pw-seq')?.focus();
+  } else if (t.id === 'pw-as' && selected) {
+    setAs(t);
   } else if (t.id === 'pw-grade' && selected) {
     const g = parseGrade(t.value);
     const code = state.rows[selected.r]?.c[selected.c];
@@ -2294,7 +2806,7 @@ function resequence(value, from = 0) {
   const p = patternFor(value, from);
   if (!p) return;
   const rest = state.rows.slice(from);
-  const take = (r) => ({ c: r.c, ...(r.g ? { g: r.g } : {}) });
+  const take = (r) => ({ c: r.c, ...(r.g ? { g: r.g } : {}), ...(r.o ? { o: r.o } : {}), ...(r.lo ? { lo: 1 } : {}) });
   const studies = rest.filter((r) => r.k === 's').map(take);
   const works = rest.filter((r) => r.k === 'c' && r.c.some(Boolean)).map(take);
   if (!from) state.start = p.start;
@@ -2302,7 +2814,7 @@ function resequence(value, from = 0) {
   let w = 0;
   const made = p.kinds.slice(from).map((k) => {
     const x = k === 's' ? studies[s++] : k === 'c' ? works[w++] : null;
-    return { k, c: x?.c ?? [], ...(x?.g ? { g: x.g } : {}) };
+    return { k, c: x?.c ?? [], ...(x?.g ? { g: x.g } : {}), ...(x?.o ? { o: x.o } : {}), ...(x?.lo ? { lo: 1 } : {}) };
   });
   state.rows = [...state.rows.slice(0, from), ...made];
   selected = null;
@@ -2310,7 +2822,7 @@ function resequence(value, from = 0) {
     x.c.forEach((code, j) => {
       if (!code) return;
       const at = place(code);
-      if (x.g?.[j] != null) setCell(at.r, at.c, code, x.g[j]);
+      if (x.g?.[j] != null || x.o?.[j]) setCell(at.r, at.c, code, x.g?.[j], x.o?.[j]);
     });
   seqFrom = Math.min(seqFrom, state.rows.length - 1);
   undo = null;
@@ -2481,8 +2993,8 @@ function fillPlan() {
     for (const plan of plans) {
       const k = A.plans.indexOf(plan);
       const p = E.forPlans(plan, everyPlan);
-      const { avail } = E.evaluateAll(asPicked, have, { courses: C, faculty: SF });
-      for (const m of E.fillItems(p, have, { courses: C, equiv, avail: avail[k], faculty: SF }).must) {
+      const { avail } = E.evaluateAll(asPicked, have, { courses: CE, faculty: SF });
+      for (const m of E.fillItems(p, have, { courses: CE, equiv, avail: avail[k], faculty: SF }).must) {
         if (must.has(m.code)) continue;
         must.set(m.code, { ...m, from: p.n });
         take(m.code, m.at);
@@ -2493,7 +3005,7 @@ function fillPlan() {
     const goal = fill.rel;
     const degreeUnits = goal && plans.some((p) => p.t === 'Major' || p.t === 'Degree Requirements') ? degreeTotalOf(everyPlan) : null;
     const sig = JSON.stringify([plans.map((x) => x.s), [...have.keys()].sort(), [...fill.drop].sort(), goal ? fill.relQ : '', degreeUnits]);
-    if (fill.best?.sig !== sig) fill.best = { sig, add: E.optimize(progs, have, { courses: C, equiv, faculty: SF, ctx: { plans: planCtx }, exclude: fill.drop, complete: [...must.keys()], goal, total: degreeUnits }) };
+    if (fill.best?.sig !== sig) fill.best = { sig, add: E.optimize(progs, have, { courses: CE, equiv, faculty: SF, ctx: { plans: planCtx }, exclude: fill.drop, complete: [...must.keys()], goal, total: degreeUnits }) };
     for (const a of fill.best.add) {
       if (have.has(a.code)) continue;
       take(a.code, null);
@@ -2503,8 +3015,8 @@ function fillPlan() {
   for (const plan of plans) {
     const k = A.plans.indexOf(plan);
     const p = E.forPlans(plan, everyPlan);
-    const { avail } = E.evaluateAll(asPicked, have, { courses: C, faculty: SF });
-    const it = E.fillItems(p, have, { courses: C, equiv, avail: avail[k], faculty: SF });
+    const { avail } = E.evaluateAll(asPicked, have, { courses: CE, faculty: SF });
+    const it = E.fillItems(p, have, { courses: CE, equiv, avail: avail[k], faculty: SF });
     for (const m of it.must) {
       if (must.has(m.code)) continue;
       must.set(m.code, { ...m, from: p.n });
@@ -2553,7 +3065,7 @@ function fillPlan() {
     }
     totals.push(() => {
       // A whole degree's electives come last: the other plans' courses count toward them first.
-      const again = E.fillItems(p, have, { courses: C, equiv, faculty: SF });
+      const again = E.fillItems(p, have, { courses: CE, equiv, faculty: SF });
       for (const w of again.words) if (w.key === 'total') addWords(w);
     });
   }
@@ -2574,7 +3086,7 @@ function fillPlan() {
   const place = (more) => {
     const all = [...state.rows, ...Array.from({ length: more }, () => ({ k: 's', c: [] }))];
     const rows = all.map((r, i) => ({ kind: KIND[r.k], season: E.seasonOf(termOf(i)), codes: r.c }));
-    return { rows, res: E.arrange(rows, want, { courses: C, load: fill.load, max: SLOTS, from: fill.from, equiv, plans: planCtx, early: fill.grow }) };
+    return { rows, res: E.arrange(rows, want, { courses: CE, load: fill.load, max: SLOTS, from: fill.from, equiv, plans: planCtx, early: fill.grow }) };
   };
   let more = fill.grow ? 0 : fill.more;
   let { rows, res } = place(more);

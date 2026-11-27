@@ -11,7 +11,7 @@ import { pathwaysData, pathwaysPage, pathwaysPrograms, subjectPlans, wordsFits }
 import { gradCounts, gradPathways, gradProgramPage, gradProgramsIndexPage } from './lib/gradprograms.mjs';
 import { archivePrograms, loadArchivePrograms } from './lib/archiveprograms.mjs';
 import { searchDocs, searchIndex, searchPage } from './lib/search.mjs';
-import { loadReddit, redditSection, SHOWN } from './lib/reddit.mjs';
+import { loadReddit, overrideTalk, redditSection, SHOWN } from './lib/reddit.mjs';
 import { flowSection, loadFlow } from './lib/uwflow.mjs';
 import { available, entryPages, linksAboutPage, loadResources, publishFiles, resourcePage, resourcesSection, syncFiles } from './lib/resources.mjs';
 import { loadHistory } from './lib/history.mjs';
@@ -371,6 +371,8 @@ async function main() {
         }
       }
       const pw = pathwaysData({ programs, combos: byProgram, catalog: progCat, schedules, published, curTerm, retired, years, faculty: offerings?.faculty ?? new Map() });
+      // Where students ask about overrides on r/uwaterloo, for the override box (removals already applied).
+      pw.ov = Object.fromEntries(Object.entries(overrideTalk(reddit.map)).filter(([c]) => pw.courses[c]));
       const withPlan = (x) => ({ ...x, p: programs.bySlug.get(x.s) });
       fitsByCode = new Map([...wordsFits(pw.programs, progCat.courses.keys())].map(([c, xs]) => [c, xs.map((x) => ({ p: programs.bySlug.get(x.s), rules: x.t })).filter((x) => x.p)]));
       plansBySubject = new Map([...subjectPlans(pw.programs)].map(([sj, xs]) => [sj, xs.map(withPlan).filter((x) => x.p)]));

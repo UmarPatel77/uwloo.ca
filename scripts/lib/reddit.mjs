@@ -68,6 +68,39 @@ export async function loadReddit(dir = 'data/reddit') {
   return { map, meta, removed: removals.ids.size + removals.users.size };
 }
 
+const OVERRIDE = /\boverr(?:ide|ides|iding|idden|ode)\b/i;
+
+/**
+ * Where students talk about overrides: for each course, how many of its posts and comments mention one, and the
+ * threads to read first (ones whose title is about an override, then the newest). For Pathways' override box:
+ * { CODE: [mentions, [[title, post id, time], …]] }. A course is kept when a thread's title is about an override,
+ * or at least three mentions say the word (one passing "maybe you can override" isn't a pattern).
+ */
+export function overrideTalk(map, { threads = 2 } = {}) {
+  const out = {};
+  for (const [code, entries] of map) {
+    const byPost = new Map();
+    // A title that names this course too ("Override CS240 without CS245") is about it, not just near it.
+    const num = /\d.*$/.exec(code)?.[0] ?? code;
+    const named = new RegExp(`(?:^|[^0-9A-Za-z])${num}(?![0-9A-Za-z])|${code.slice(0, code.length - num.length)}\\s*${num}(?![0-9A-Za-z])`, 'i');
+    let n = 0;
+    for (const e of entries) {
+      const titled = OVERRIDE.test(e.title ?? '');
+      if (!titled && !OVERRIDE.test(e.text ?? '') && !(e.in === 'post' && OVERRIDE.test(e.post_text ?? ''))) continue;
+      n++;
+      const th = byPost.get(e.post) ?? { title: e.title ?? '', post: e.post, t: 0, titled, rank: (titled ? 2 : 0) + (named.test(e.title ?? '') ? 1 : 0), n: 0 };
+      th.t = Math.max(th.t, e.t ?? 0);
+      th.n++;
+      byPost.set(e.post, th);
+    }
+    const list = [...byPost.values()].filter((x) => x.title);
+    if (!list.some((x) => x.titled) && n < 3) continue;
+    list.sort((a, b) => b.rank - a.rank || b.t - a.t);
+    out[code] = [n, list.slice(0, threads).map((x) => [x.title, x.post, x.t])];
+  }
+  return out;
+}
+
 const monthYear = (t) => new Date(t * 1000).toLocaleDateString('en-CA', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
 /** The "Discussed on r/uwaterloo" section for one course page, or '' when nobody mentioned it. */

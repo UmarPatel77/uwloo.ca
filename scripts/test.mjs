@@ -2312,6 +2312,175 @@ test('graduate programs: names, pages, counts toward, Pathways’ list', async (
   assert.match(countsSection('ECON101', [{ p: { slug: 'h-economics', name: 'Economics (BA Honours)', type: 'Major' }, roles: ['Required'] }], { label: '2026–27' }), /<a href="\/pathways\/#course=ECON101">Pathways<\/a> puts it in your grid/);
 });
 
+test('pathways: overrides — counts as, what overlaps, who to ask', () => {
+  // [title, units, prereq, coreq, antireq, seasons, cross-listed, gone]
+  const one = (...c) => [{ g: 'all', i: [{ r: 'n', n: 1, c }] }];
+  const C = {
+    MATH117: ['Calculus 1 for Engineering', 0.5, 0, 0, ['MATH127', 'MATH137', 'MATH147'], [4, 0, 0]],
+    MATH137: ['Calculus 1 for Honours Mathematics', 0.5, 0, 0, ['MATH117', 'MATH127', 'MATH147'], [4, 4, 4]],
+    MATH147: ['Calculus 1 (Advanced Level)', 0.5, 0, 0, 0, [4, 0, 0]],
+    MATH138: ['Calculus 2 for Honours Mathematics', 0.5, one('MATH137', 'MATH147'), 0, 0, [4, 4, 4]],
+    MATH135: ['Algebra for Honours Mathematics', 0.5, 0, 0, ['MATH145'], [4, 4, 4]],
+    MATH145: ['Algebra (Advanced Level)', 0.5, 0, 0, 0, [4, 0, 0]],
+    MATH146: ['Linear Algebra 1 (Advanced Level)', 0.5, [{ g: 'all', i: [{ r: 'all', c: ['MATH145'] }] }], 0, ['MATH136'], [0, 4, 0]],
+    SOC327: ['x', 0.5, 0, 0, 0, [4, 0, 0], ['LS327']],
+  };
+  // Antirequisites either way round are overlaps: where an override is usually asked for.
+  assert.ok(PE.overlap('MATH135', 'MATH145', C) && PE.overlap('MATH145', 'MATH135', C));
+  assert.deepEqual(PE.overlapsOf('MATH137', C).sort(), ['MATH117', 'MATH127', 'MATH147']);
+  assert.deepEqual(PE.typicalFor(['MATH145'], new Set(['MATH135', 'CS135']), C), [{ have: 'MATH135', for: 'MATH145' }], 'MATH 146 asks for 145; you have 135');
+  assert.deepEqual(PE.typicalFor(['MATH145'], new Set(['MATH145', 'MATH135']), C), [], 'nothing to ask for when you have it');
+  // "MATH 117 counts as MATH 137": one course under either code, like a cross-listing.
+  assert.equal(PE.aliasCourses(C, []), C, 'no pairs, no copy');
+  const CE = PE.aliasCourses(C, [['MATH117', 'MATH137'], ['BUS127W', 'MATH135'], ['MATH1XX#2', 'MATH147']]);
+  assert.deepEqual(CE.MATH137[6], ['MATH117']);
+  assert.deepEqual(CE.MATH117[6], ['MATH137']);
+  assert.equal(C.MATH137[6], undefined, 'the calendar’s own courses are untouched');
+  assert.deepEqual(CE.BUS127W, ['', 0.5, 0, 0, 0, [0, 0, 0], ['MATH135'], 1], 'a course from elsewhere: a bare entry, marked gone');
+  assert.deepEqual(CE.MATH147[6], ['MATH1XX#2'], 'a second placeholder, under its own key');
+  const equiv = PE.equivOf(CE);
+  assert.deepEqual(equiv.get('SOC327'), ['LS327'], 'cross-listings as before');
+  assert.equal(PE.holds(C.MATH138[2], new Set(['MATH117']), { equiv: PE.equivOf(C) }), false);
+  assert.equal(PE.holds(C.MATH138[2], new Set(['MATH117']), { equiv }), true, 'as a prerequisite');
+  const plan = { s: 'p', n: 'P', t: 'Major', req: [{ h: 'Required Courses', r: [{ r: 'all', c: ['MATH137'] }, { r: 'all', c: ['MATH135'] }] }] };
+  const planned = new Map([['MATH117', { units: 0.5 }], ['BUS127W', { units: 0.5 }]]);
+  assert.equal(PE.evaluate(plan, planned, { courses: C }).have, 0);
+  const ev = PE.evaluate(plan, planned, { courses: CE });
+  assert.equal(ev.have, 2, 'toward a plan');
+  assert.deepEqual([...ev.used].sort(), ['BUS127W', 'MATH117'], 'under the course that’s in the grid');
+  assert.deepEqual(ev.rows.filter((r) => r.kind === 'all').map((r) => r.got), [['MATH137'], ['MATH135']]);
+  // Who decides, in the Registrar's words, and where each faculty says to ask.
+  const h = PE.overrideHelp('pre', 'MATH146', 'mat');
+  assert.equal(h.error, 'Requisites have not been met');
+  assert.match(h.how, /Override Requisites/);
+  assert.match(h.note, /MATH courses aren’t normally given/);
+  assert.equal(h.faculty.name, 'Mathematics');
+  assert.match(h.faculty.url, /^https:\/\/uwaterloo\.ca\/math\//);
+  assert.equal(PE.overrideHelp('pre', 'ECON301', 'art').note, '');
+  assert.match(PE.overrideHelp('anti', 'ECON221', 'art').how, /academic advisor/);
+  assert.equal(PE.overrideHelp('load').error, 'Term maximum exceeded');
+  assert.equal(PE.overrideHelp('pre', 'XX101', 'zzz').faculty, null);
+  for (const f of Object.values(PE.FACULTY_OVERRIDES)) assert.match(f.url, /^https:\/\/uwaterloo\.ca\//);
+});
+
+test('pathways: what can go in a term next (the open nodes)', () => {
+  const pre = (...c) => [{ g: 'all', i: [{ r: 'all', c }] }];
+  const C = {
+    CS135: ['Designing Functional Programs', 0.5, 0, 0, ['CS115'], [4, 4, 4]],
+    CS115: ['Introduction to Computer Science 1', 0.5, 0, 0, 0, [4, 4, 4]],
+    CS136: ['Elementary Algorithm Design', 0.5, pre('CS135'), 0, 0, [4, 4, 4]],
+    CS240: ['Data Structures', 0.5, pre('CS136'), 0, 0, [4, 4, 4]],
+    CS241: ['Sequential Programs', 0.5, pre('CS136'), 0, 0, [4, 4, 4]],
+    CS246: ['Object-Oriented Software Development', 0.5, pre('CS136'), 0, 0, [4, 0, 4]],
+    MATH135: ['Algebra', 0.5, 0, 0, 0, [4, 4, 4]],
+    MATH136: ['Linear Algebra 1', 0.5, pre('MATH135'), 0, 0, [4, 4, 4]],
+    MATH239: ['Combinatorics', 0.5, pre('MATH135'), 0, 0, [4, 4, 4]],
+    ECON101: ['Microeconomics', 0.5, 0, 0, 0, [4, 4, 4]],
+    ECON401: ['Advanced', 0.5, 0, 0, 0, [4, 4, 4]],
+    PHIL145: ['Critical Thinking', 0.5, 0, 0, 0, [4, 4, 4]],
+    STAT230: ['Probability', 0.5, [{ g: 'all', i: [{ r: 'all', c: ['MATH135'] }, { en: 'Enrolled in an Honours Mathematics program' }] }], 0, 0, [4, 4, 4]],
+    OLD100: ['Gone', 0.5, 0, 0, 0, [4, 4, 4], 0, 1],
+    NORUN1: ['Never runs', 0.5, 0, 0, 0, [0, 0, 0]],
+  };
+  const leadsOf = new Map();
+  for (const [k, c] of Object.entries(C)) for (const n of c[2]?.[0]?.i ?? []) for (const x of n.c ?? []) leadsOf.set(x, [...(leadsOf.get(x) ?? []), k]);
+  const leads = (c) => leadsOf.get(c) ?? [];
+  const need = new Map([
+    ['CS136', [{ k: 0, kind: 'required', label: 'Required' }]],
+    ['CS240', [{ k: 0, kind: 'required', label: 'Required' }]],
+    ['CS241', [{ k: 0, kind: 'required', label: 'Required' }]],
+    ['CS246', [{ k: 0, kind: 'required', label: 'Required' }]],
+    ['MATH136', [{ k: 0, kind: 'choice', label: '1 of these' }]],
+    ['ECON101', [{ k: 1, kind: 'words', label: '1.0 unit of ECON' }]],
+    ['ECON401', [{ k: 1, kind: 'words', label: '1.0 unit of ECON' }]],
+    ['OLD100', [{ k: 0, kind: 'required', label: 'Required' }]],
+    ['NORUN1', [{ k: 0, kind: 'required', label: 'Required' }]],
+    ['CS115', [{ k: 0, kind: 'choice', label: '1 of these' }]],
+  ]);
+  const planned = new Map([['CS135', { units: 0.5, row: 0 }], ['MATH135', { units: 0.5, row: 0 }]]);
+  const before = new Set(planned.keys());
+  const run = (more = {}) => PE.readyNow({ courses: C, planned, before, season: 'W', year: 1, need, leads, fresh: before, ...more });
+  const list = run();
+  assert.deepEqual(list.map((x) => x.code), ['CS136', 'MATH136', 'ECON101', 'MATH239', 'STAT230'], 'required, a choice, a rule in words, then what the term before opened that no plan asks for');
+  const cs136 = list[0];
+  assert.deepEqual([cs136.kind, cs136.k, cs136.by, cs136.opens.sort(), cs136.sure], ['required', 0, ['CS135'], ['CS240', 'CS241', 'CS246'], true]);
+  assert.equal(list.find((x) => x.code === 'STAT230').sure, false, 'a prerequisite that names a plan: to check');
+  assert.ok(!list.some((x) => ['CS240', 'CS241', 'CS246'].includes(x.code)), 'not before their prerequisite');
+  assert.ok(!list.some((x) => x.code === 'CS115'), 'not an antirequisite of what’s in the grid');
+  assert.ok(!list.some((x) => ['OLD100', 'NORUN1', 'CS135', 'ECON401'].includes(x.code)), 'not gone, never run, in the grid already, or years ahead');
+  // The term after: CS 136 in, its three open; CS 246 doesn't run in Winter.
+  const p2 = new Map([...planned, ['CS136', { units: 0.5, row: 1 }]]);
+  const next = PE.readyNow({ courses: C, planned: p2, before: new Set(p2.keys()), season: 'W', year: 2, need, leads, fresh: new Set(['CS136']) });
+  assert.deepEqual(next.slice(0, 2).map((x) => x.code), ['CS240', 'CS241']);
+  assert.ok(!next.some((x) => x.code === 'CS246'), 'only what runs that season');
+  assert.ok(PE.readyNow({ courses: C, planned: p2, before: new Set(p2.keys()), season: 'S', year: 2, need, leads }).some((x) => x.code === 'CS246'));
+  assert.equal(run({ limit: 2 }).length, 2);
+  // The regular version before the advanced one; the one for your faculty before another's.
+  const C2 = {
+    MATH137: ['Calculus 1 for Honours Mathematics', 0.5, 0, 0, 0, [4, 4, 4]],
+    MATH147: ['Calculus 1 (Advanced Level)', 0.5, 0, 0, 0, [4, 4, 4]],
+    MATH127: ['Calculus 1 for the Sciences', 0.5, 0, 0, 0, [4, 4, 4]],
+  };
+  const oneOf = new Map(Object.keys(C2).map((c) => [c, [{ k: 0, kind: 'choice', label: '1 of these' }]]));
+  const calc = (plans) => PE.readyNow({ courses: C2, planned: new Map(), before: new Set(), season: 'F', year: 1, need: oneOf, plans }).map((x) => x.code);
+  assert.deepEqual(calc([{ code: 'H-Computer Science', faculty: 'Faculty of Mathematics', name: 'Computer Science' }]), ['MATH137', 'MATH127', 'MATH147']);
+  assert.deepEqual(calc([{ code: 'H-Biology', faculty: 'Faculty of Science', name: 'Biology' }]), ['MATH127', 'MATH137', 'MATH147']);
+  // "Counts as": CS 115 standing for CS 135 opens CS 136 too.
+  const CE = PE.aliasCourses(C, [['CS115', 'CS135']]);
+  const p3 = new Map([['CS115', { units: 0.5, row: 0 }]]);
+  assert.ok(PE.readyNow({ courses: CE, planned: p3, before: new Set(['CS115']), season: 'W', year: 1, need, leads: (c) => [...leads(c), ...(c === 'CS115' ? leads('CS135') : [])], equiv: PE.equivOf(CE) }).some((x) => x.code === 'CS136'));
+});
+
+test('pathways: where students talk about overrides', async () => {
+  const { overrideTalk } = await import('./lib/reddit.mjs');
+  const e = (post, title, text, t, extra = {}) => ({ post, title, text, t, in: 'comment', ...extra });
+  const map = new Map([
+    ['CS240', [
+      e('a1', 'Course selection', 'you could ask for an override into it', 300),
+      e('a2', 'Override CS240 without CS245', 'has anyone done it', 100),
+      e('a3', 'MATH 245 Override', 'I did CS 240 first', 200),
+      e('a4', 'Is CS 240 hard?', 'yes', 400),
+    ]],
+    // One passing mention isn't a pattern; a post's own text counts only when the post is the mention.
+    ['ECON101', [e('b1', 'First year', 'maybe you can override', 50), e('b2', 'Electives', 'take it', 60, { post_text: 'override?' })]],
+    ['PSYCH101', [e('c1', 'Overriding into PSYCH 207', 'without psych 101', 70)]],
+    ['STAT230', [e('d1', 'x', 'override', 1), e('d1', 'x', 'overrode it', 2), e('d2', 'y', 'overridden', 3)]],
+  ]);
+  const o = overrideTalk(map);
+  // The thread that names the course first, then other override threads, then the newest mention.
+  assert.deepEqual(o.CS240, [3, [['Override CS240 without CS245', 'a2', 100], ['MATH 245 Override', 'a3', 200]]]);
+  assert.equal(o.ECON101, undefined);
+  assert.deepEqual(o.PSYCH101, [1, [['Overriding into PSYCH 207', 'c1', 70]]]);
+  assert.deepEqual(o.STAT230, [3, [['y', 'd2', 3], ['x', 'd1', 2]]]);
+  assert.equal(overrideTalk(map, { threads: 1 }).CS240[1].length, 1);
+});
+
+test('pathways: the substitutions a plan’s text names', () => {
+  const html = `<ol> <li>Students may only complete one course from any cross-listed set.</li>
+<li>Students currently or previously enrolled in the Business Administration and Mathematics double degree academic plan may substitute: <ol> <li>BUS121W for MTHEL131.</li> <li>BUS127W/BUS227W for AFM101.</li> </ol> </li>
+<li>List of not acceptable substitutions: <ol> <li>STAT334 is not an acceptable substitute for STAT330 or STAT333.</li> </ol> </li>
+<li>St. Jerome's University students may take PHIL 218J instead of PHIL 221.</li>
+<li>Students majoring in Honours Communication Studies may replace COMMST204 by completing both COMMST100 and COMMST227.</li>
+<li>CS497 may be substituted for CS492, depending on the topic of the course.</li>
+<li>Students who wish to take AFM127/ACTSC127 in place of AFM121 must take CS115 or CS135.</li>
+<li>INTEG340 can be substituted with an alternative research methods course with approval from the School's associate director.</li>
+<li>Students admitted from other programs may substitute the statistics requirement with one of the following statistics courses: ENVS278, STAT202.</li> </ol>`;
+  const subs = PW.substitutions(html);
+  const of = (re) => subs.find((x) => re.test(x.t));
+  assert.equal(subs.length, 9, 'not the line about cross-listed sets');
+  assert.deepEqual([of(/BUS121W/).a, of(/BUS121W/).b], [['BUS121W'], ['MTHEL131']]);
+  assert.match(of(/BUS121W/).t, /^Students currently or previously enrolled in the Business Administration and Mathematics double degree academic plan may substitute: BUS121W for MTHEL131\.$/, 'a list’s lead-in stays with each item');
+  assert.deepEqual([of(/BUS227W/).a, of(/BUS227W/).b], [['BUS127W', 'BUS227W'], ['AFM101']]);
+  assert.deepEqual([of(/STAT334/).a, of(/STAT334/).b, of(/STAT334/).no], [['STAT334'], ['STAT330', 'STAT333'], 1]);
+  assert.deepEqual([of(/PHIL/).a, of(/PHIL/).b, of(/PHIL/).no], [['PHIL218J'], ['PHIL221'], undefined]);
+  assert.deepEqual([of(/COMMST204/).a, of(/COMMST204/).b, of(/COMMST204/).all], [['COMMST100', 'COMMST227'], ['COMMST204'], 1]);
+  assert.deepEqual([of(/CS497/).a, of(/CS497/).b], [['CS497'], ['CS492']]);
+  assert.deepEqual([of(/AFM127/).a, of(/AFM127/).b], [['AFM127', 'ACTSC127'], ['AFM121']], 'not the courses it must be taken with');
+  assert.deepEqual([of(/INTEG340/).a, of(/INTEG340/).b], [[], ['INTEG340']], 'no course named on one side: the sentence still shows');
+  assert.deepEqual([of(/statistics requirement/).a, of(/statistics requirement/).b], [['ENVS278', 'STAT202'], []]);
+  assert.deepEqual(PW.substitutions('<p>Students must complete MATH 135.</p>'), []);
+});
+
 test('pathways: graduate programs in the plan box, and the plans that lead to one', () => {
   const g = (s, n, t, d, su, fi, f, extra = {}) => ({ s, n, t, d, su, fi, f, ...extra });
   const list = [

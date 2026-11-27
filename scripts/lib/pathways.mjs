@@ -14,7 +14,7 @@
 //   seasons: [Fall, Winter, Spring] terms with sections in the last 4 academic years, plus any published term
 import { FACULTY } from './opendata.mjs';
 import { shell } from './render.mjs';
-import { esc, find, findAll, norm, parseHtml, textOf } from './requisites.mjs';
+import { codesIn, esc, find, findAll, norm, parseHtml, textOf } from './requisites.mjs';
 import { termName } from './terms.mjs';
 
 // ---------------- trees ----------------
@@ -579,6 +579,59 @@ export function eligibility(p) {
 }
 
 /** One calendar's programs, in the shape the app reads. */
+/**
+ * The substitutions a plan's own text allows or rules out, for overrides in Pathways: "Students currently or
+ * previously enrolled in the Business Administration and Mathematics double degree academic plan may substitute:
+ * BUS121W for MTHEL131", "St. Jerome's University students may take PHIL 218J instead of PHIL 221", "STAT334 is not
+ * an acceptable substitute for STAT330 or STAT333", "may replace COMMST204 by completing both COMMST100 and
+ * COMMST227". From every prose field (most are under Additional Constraints), one list item or paragraph at a time,
+ * a list's lead-in kept with each of its items.
+ * → [{t: the calendar's sentence, a: [courses taken], b: [courses they stand for], no: 1 when it's ruled out,
+ *     all: 1 when every course in a is needed}]. a or b is empty when the calendar names no course there ("the
+ * statistics requirement", "an acceptable 300-/400-level AFM elective"): the sentence is still shown.
+ */
+export function substitutions(text) {
+  const out = [];
+  const seen = new Set();
+  const codes = (x) => [...new Set(codesIn(String(x ?? '').replace(/([A-Z]{2,8}\s?\d{3}[A-Z]?)\s*\/\s*(?=[A-Z]{2,8}\s?\d{3})/g, '$1, ')))];
+  const read = (sentence) => {
+    const t = norm(sentence).replace(/\s+([.,;:])/g, '$1');
+    if (!/\bsubstitut|\binstead of\b|\bin place of\b|\bmay replace\b|\bin lieu of\b/i.test(t) || !codes(t).length || seen.has(t)) return;
+    seen.add(t);
+    const no = /\bnot (?:an? )?acceptable\b|\bmay not\b|\bcannot\b|\bnot be (?:used|substituted)\b/i.test(t) ? { no: 1 } : {};
+    const item = (a, b, more = {}) => out.push({ t: t.length > 420 ? `${t.slice(0, 417)}…` : t, a: codes(a), b: codes(b), ...no, ...more });
+    let m;
+    // "A is not an acceptable substitute for B", "A may be substituted for B", "may substitute[:] A for B".
+    if ((m = /^(.*?)\b(?:is|are) not (?:an? )?acceptable substitutes? for\b(.*)$/i.exec(t))) return item(m[1], m[2]);
+    if ((m = /^(.*?)\b(?:may|can) be substituted for\b(.*)$/i.exec(t))) return item(m[1], m[2]);
+    if ((m = /\b(?:substitute|substitutions?):?\s+(?:the following:?\s*)?(.*?)\bfor\b(.*)$/i.exec(t)) && (codes(m[1]).length || (codes(m[2]).length && !/\bwith\b/i.test(m[1])))) return item(m[1], m[2]);
+    // "may take A instead of B", "wishing to take A in place of B".
+    if ((m = /^(.*?)\b(?:instead of|in place of|in lieu of)\b(.*)$/i.exec(t))) return item(m[1].replace(/^.*\btake\b/i, ''), m[2].replace(/\bmust\b.*$/i, ''));
+    // "may replace B by completing both A and A", "B may be substituted with A", "may substitute B with A".
+    if ((m = /\bmay replace\b(.*?)\b(?:by completing|with)\b(.*)$/i.exec(t))) return item(m[2], m[1], /\bboth\b/i.test(m[2]) ? { all: 1 } : {});
+    if ((m = /^(.*?)\b(?:substituted|substitute\b.*?)\s+with\b(.*)$/i.exec(t))) return item(m[2], `${m[1]} ${/\bsubstitute\b(.*?)\s+with\b/i.exec(t)?.[1] ?? ''}`);
+    return item('', '');
+  };
+  // Each list item or paragraph, with the lead-ins of the lists it's in ("…may substitute:" + "STAT371 for STAT331.").
+  const own = (n) => norm(n.children.filter((c) => !['ol', 'ul'].includes(c.tag)).map(textOf).join(' '));
+  const walk = (n, lead) => {
+    for (const c of n.children ?? []) {
+      if (!c.tag) continue;
+      if (c.tag === 'li' || c.tag === 'p') {
+        const mine = own(c);
+        const lists = c.children.filter((x) => ['ol', 'ul'].includes(x.tag));
+        if (lists.length && /:\s*$/.test(mine)) for (const l of lists) walk(l, `${lead} ${mine}`.trim());
+        else {
+          if (mine) read(`${lead} ${mine}`);
+          for (const l of lists) walk(l, lead);
+        }
+      } else walk(c, lead);
+    }
+  };
+  walk(parseHtml(String(text ?? '')), '');
+  return out;
+}
+
 export function pathwaysPrograms({ programs, combos }) {
   const list = programs.list.map((p) => {
     const out = {
@@ -633,6 +686,9 @@ export function pathwaysPrograms({ programs, combos }) {
       .filter((o) => !o.to.length && !/\*/.test(o.text) && !/\b(?:majors?|minors?|options?|specializations?|diplomas?|certificates?)$/i.test(o.text.trim()))
       .map((o) => o.text.replace(/,?\s*including:?$/i, '').trim());
     if (said.length) out.cn = [...new Set(said)];
+    // Substitutions its own text allows or rules out ("may substitute: STAT371 for STAT331"), for overrides.
+    const sub = substitutions(Object.values(p.text).join(' '));
+    if (sub.length) out.sub = sub;
     return out;
   });
   // Co-op sequences end up on the majors they're for; the degree charts they came from aren't needed after.
