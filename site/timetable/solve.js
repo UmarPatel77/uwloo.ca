@@ -1,4 +1,4 @@
-// uwloo.ca/calendar: finds the best timetables for a set of courses. Runs in a worker in the browser, and in
+// uwloo.ca/timetable: finds the best timetables for a set of courses. Runs in a worker in the browser, and in
 // the tests (scripts/test.mjs). No DOM here.
 //
 // A course needs one section of each kind it has (LEC, TUT, LAB, TST…). A tutorial or lab goes with the lecture

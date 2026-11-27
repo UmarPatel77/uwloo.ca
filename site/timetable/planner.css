@@ -1,4 +1,4 @@
-/* uwloo.ca/calendar: the timetable planner. Builds on style.css (its tokens: --ink, --paper, --rule, --soft, --gold). */
+/* uwloo.ca/timetable: the timetable planner. Builds on style.css (its tokens: --ink, --paper, --rule, --soft, --gold). */
 :root {
   --c0: #c60078; --c1: #0033be; --c2: #b83700; --c3: #00707c;
   --c4: #57058b; --c5: #4c5d00; --c6: #a8102f; --c7: #6b5000;

@@ -1,7 +1,7 @@
-// uwloo.ca/calendar, the schedule planner: its data (one file per term with sections) and its page.
-// The searching happens in the browser: site/calendar/solve.js, run by site/calendar/planner.js.
+// uwloo.ca/timetable, the schedule planner: its data (one file per term with sections) and its page.
+// The searching happens in the browser: site/timetable/solve.js, run by site/timetable/planner.js.
 //
-// /calendar/{term}.json: {term, name, asOf, from, to, c: {CS136: [title, sections]}}
+// /timetable/{term}.json: {term, name, asOf, from, to, c: {CS136: [title, sections]}}
 //   section: [comp, sec, assoc, class, cap, enrolled, meets]
 //   meet:    [days, start, end]            weekly, over the term's usual weeks (from–to)
 //            [days, start, end, from, to]  weekly, over other weeks
@@ -207,15 +207,38 @@ export function plannerPage({ terms, builtAt, version }) {
 <section class="pl-out" id="pl-out" aria-label="Timetables"><p class="pl-msg">Loading the class schedule…</p></section>
 <noscript><p class="pl-msg">The planner needs JavaScript. Each course’s page still lists its sections.</p></noscript>
 </div>
-<script type="module" src="/calendar/planner.js?v=${esc(version)}"></script>`
+<script type="module" src="/timetable/planner.js?v=${esc(version)}"></script>`
     : `<h1>Plan a timetable</h1><p class="lede">No term’s class schedule is available from UW Open Data right now. Try again after the next rebuild.</p>`;
   return shell({
     title: 'Plan a timetable | uwloo',
     description: 'Add up to 8 Waterloo courses and see every timetable that fits, ranked by start times, days off and gaps. Copy the class numbers into Quest.',
-    path: '/calendar/',
+    path: '/timetable/',
     body,
     builtAt,
     version,
-    head: `<link rel="stylesheet" href="/calendar/planner.css?v=${esc(version)}">`,
+    head: `<link rel="stylesheet" href="/timetable/planner.css?v=${esc(version)}">`,
   });
+}
+
+/**
+ * The planner's old address, /calendar/. It moved to /timetable/ (Nov 2026); links people saved or sent carry the
+ * timetable in what follows the "?", so the page passes that on. GitHub Pages can't redirect, so this is a page.
+ */
+export function plannerMoved() {
+  return `<!doctype html>
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plan a timetable | uwloo</title>
+<link rel="canonical" href="https://uwloo.ca/timetable/">
+<meta name="robots" content="noindex">
+<script>location.replace('/timetable/' + location.search + location.hash);</script>
+<noscript><meta http-equiv="refresh" content="0; url=/timetable/"></noscript>
+</head>
+<body>
+<p>The timetable planner is now at <a href="/timetable/">uwloo.ca/timetable</a>.</p>
+</body>
+</html>
+`;
 }

@@ -117,7 +117,7 @@ export function toSection(c) {
       start: hhmm(m.classMeetingStartTime),
       end: hhmm(m.classMeetingEndTime),
       date: start && start === end ? start : null,
-      // For the schedule planner (uwloo.ca/calendar): the weeks it meets, and a room when Open Data gives one
+      // For the schedule planner (uwloo.ca/timetable): the weeks it meets, and a room when Open Data gives one
       // (it usually gives only the campus, "UW U").
       from: start || null,
       to: end || null,

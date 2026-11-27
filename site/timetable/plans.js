@@ -1,5 +1,5 @@
 // The timetables someone is planning, kept in this browser: one per term. Shared by every page (the header's
-// "Timetable" count), course pages ("Add to timetable", in app.js) and the planner at /calendar/ (planner.js).
+// "Timetable" count), course pages ("Add to timetable", in app.js) and the planner at /timetable/ (planner.js).
 // Stored as {last: '1271', terms: {'1271': 'c=CS136,MATH138&off=16', …}}: each term's planner address, minus t.
 const KEY = 'uwloo.plans';
 const OLD = 'uwloo.planner'; // the planner's first version kept one plan, as its address

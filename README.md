@@ -25,7 +25,7 @@ Waterloo course pages at short URLs. A GitHub Action pulls the university's own 
 | `uwloo.ca/programs` | Every major, minor, option, specialization, diploma and certificate in the current Undergraduate Calendar, each with its own page (below) |
 | `uwloo.ca/programs/grad` | Every master's, PhD and graduate diploma in the current Graduate Calendar, each with its own page (`/programs/grad/ma-in-economics/`, below) |
 | `uwloo.ca/programs/combinations` | Which credentials can't be taken together, from the calendar's Invalid Credential Combinations |
-| `uwloo.ca/calendar` | The timetable planner: add up to 8 courses for this term or next, and see the timetables that fit, best first (below) |
+| `uwloo.ca/timetable` | The timetable planner: add up to 8 courses for this term or next, and see the timetables that fit, best first (below) |
 | `uwloo.ca/courses.csv` | Every course: title, level, whether it's in the current calendars, the last term it ran (looking back 7 years), and its outline.uwaterloo.ca search link. Opens in Excel |
 | `uwloo.ca/1269/cs135` | Redirects to `acal.fast.uwaterloo.ca/course/1269/CS/135` whenever uwloo has no page for it (undergrad codes, and terms uwloo doesn't have) |
 | `uwloo.ca/1065` and earlier terms | Says the online Graduate Calendars start at Fall 2006 |
@@ -189,7 +189,9 @@ WClasses stopped in early 2026, and Open Data deletes a term's sections about a 
 
 The build lays these terms over WClasses' copy, so Open Data's Spring 2026, with final enrolment, replaces WClasses' early read. Open Data withholds instructors and rooms, so from Fall 2025 on those cells are blank.
 
-## The timetable planner (`/calendar/`)
+## The timetable planner (`/timetable/`)
+
+It was at `/calendar/` until November 2026. That address is still a page (`plannerMoved` in `scripts/lib/planner.mjs`) that sends people on to `/timetable/` with whatever followed the `?`, so saved and shared timetables keep working; saved plans are kept by storage key, not by address, so nothing was lost in the move.
 
 Add up to 8 courses and uwloo tries every combination of their sections, then shows the timetables that fit, best first. It covers the terms Open Data has sections for (this term, and next term once it's published). It opens on next term, unless this term started under three weeks ago.
 
@@ -197,12 +199,12 @@ Add up to 8 courses and uwloo tries every combination of their sections, then sh
 - **Best first:** fewer early and late classes (or none before/after the times you pick), the days you want off, short gaps, a free 45 minutes for lunch if you ask, fewer days on campus if you ask, and sections with seats left. Full sections are skipped unless a kind has nothing else.
 - **Busy times:** "Block off time", then drag down a day on the timetable, or pick a day and times. No section that meets in a busy time is used.
 - **Swap and lock:** each section in the table has a menu of the others that fit (ones that would clash say what with). "Lock" keeps a section in every timetable.
-- **Out:** "Copy class numbers" for Quest's shopping cart, an `.ics` file for Google, Apple or Outlook calendars, and a link. In the calendar file, weekly classes repeat over their weeks, skipping the term's days off (holidays, closures, reading week, study days, from Open Data's important dates); on a make-up day ("Tuesday April 6 follows a Friday schedule") the Friday classes meet and the Tuesday ones don't. With "with the term's dates" ticked, every date the University lists for undergraduates that term is an all-day event: classes begin and end, the add and drop deadlines (WD, WF), fee and refund deadlines, the exam schedule's release, the exam period and grades. Final exams for the courses picked (the lecture's section when the exam names sections) come in as events once Open Data has the term's exam schedule; they're listed under the timetable too, and the term's dates are in a list below the buttons. Everything you pick is in the address (`/calendar/?t=1271&c=CS136,MATH138&off=16`), so the link opens the same timetables.
+- **Out:** "Copy class numbers" for Quest's shopping cart, an `.ics` file for Google, Apple or Outlook calendars, and a link. In the calendar file, weekly classes repeat over their weeks, skipping the term's days off (holidays, closures, reading week, study days, from Open Data's important dates); on a make-up day ("Tuesday April 6 follows a Friday schedule") the Friday classes meet and the Tuesday ones don't. With "with the term's dates" ticked, every date the University lists for undergraduates that term is an all-day event: classes begin and end, the add and drop deadlines (WD, WF), fee and refund deadlines, the exam schedule's release, the exam period and grades. Final exams for the courses picked (the lecture's section when the exam names sections) come in as events once Open Data has the term's exam schedule; they're listed under the timetable too, and the term's dates are in a list below the buttons. Everything you pick is in the address (`/timetable/?t=1271&c=CS136,MATH138&off=16`), so the link opens the same timetables.
 
 - **Finding it:** "Timetable" in every page's header, with how many courses are in your plan. Each course page with sections has "+ Add to Winter 2027 timetable" under its title, which adds it without leaving the page (or says it isn't scheduled that term, and offers the term it is in). The home page links it too.
-- **Saved in your browser:** one plan per term (`site/calendar/plans.js`, localStorage `uwloo.plans`). A link to someone else's timetable is shown as it is, and only replaces your plan for that term once you change something.
+- **Saved in your browser:** one plan per term (`site/timetable/plans.js`, localStorage `uwloo.plans`). A link to someone else's timetable is shown as it is, and only replaces your plan for that term once you change something.
 
-The build writes one file per term, `/calendar/{term}.json`, from the same Open Data sections the course pages show, so seats are as of the last build. The search runs in the browser (`site/calendar/solve.js`, in a worker), so nothing about anyone's plan is sent anywhere. 
+The build writes one file per term, `/timetable/{term}.json`, from the same Open Data sections the course pages show, so seats are as of the last build. The search runs in the browser (`site/timetable/solve.js`, in a worker), so nothing about anyone's plan is sent anywhere. 
 ## Programs (`/programs/`)
 
 Every program in the current Undergraduate Calendar (505 in 2026–27: majors, specializations, minors, options, diplomas, certificates and degree requirements), read from the same Kuali API as the courses (`scripts/lib/programs.mjs`): `/programs/{catalog}` for the list, `/program/{catalog}/{pid}` for each one. Their requirement lists come in the same "ruleView" HTML as prerequisites, in sections ("Required Courses", "List 1", "1A Term"), so `requisites.mjs` reads them too.
@@ -372,7 +374,7 @@ scripts/lib/archiveprograms.mjs  the 2021–24 calendars' program pages (data/ar
 scripts/lib/search.mjs         the search index (BM25 postings, LSA vectors, snippets) and page; site/search/ is the app
 scripts/probe-archive.mjs      one-off: maps academic-calendar-archive's 2021–24 program pages and samples Open Data dates and exams
 scripts/fetch-archive-programs.mjs  one-off: the 2021–24 calendars' program pages into data/archive-programs/ (for older Pathways start years)
-site/calendar/                 the planner in the browser: solve.js (the search), planner.js (the page), ics.js, plans.js (saved plans)
+site/timetable/                 the planner in the browser: solve.js (the search), planner.js (the page), ics.js, plans.js (saved plans)
 site/                          CSS, client JS, the URL router used by 404.html
 ```
 

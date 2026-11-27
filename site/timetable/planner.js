@@ -1,14 +1,14 @@
-// uwloo.ca/calendar: add up to 8 courses, see the timetables that fit, best first.
-// Data: /calendar/{term}.json (scripts/lib/planner.mjs). Search: solve.js, in a worker (worker.js).
+// uwloo.ca/timetable: add up to 8 courses, see the timetables that fit, best first.
+// Data: /timetable/{term}.json (scripts/lib/planner.mjs). Search: solve.js, in a worker (worker.js).
 // Everything the person picks is in the address (?t=1271&c=CS136,MATH138…), so a timetable can be shared, and in
 // this browser's saved plans, one per term (plans.js), which course pages add to.
 const root = document.getElementById('planner');
 const V = root.dataset.v;
 const TERMS = JSON.parse(root.dataset.terms);
-const S = await import(`/calendar/solve.js?v=${V}`);
-const { run } = await import(`/calendar/run.js?v=${V}`);
-const { icsFile } = await import(`/calendar/ics.js?v=${V}`);
-const Plans = await import(`/calendar/plans.js?v=${V}`);
+const S = await import(`/timetable/solve.js?v=${V}`);
+const { run } = await import(`/timetable/run.js?v=${V}`);
+const { icsFile } = await import(`/timetable/ics.js?v=${V}`);
+const Plans = await import(`/timetable/plans.js?v=${V}`);
 
 const MAX = 8;
 const KEEP = 60;
@@ -101,7 +101,7 @@ function load() {
     apply(q);
     return;
   }
-  // /calendar/ or /calendar/?t=1271: the saved plan for that term (or the term being planned).
+  // /timetable/ or /timetable/?t=1271: the saved plan for that term (or the term being planned).
   const all = Plans.readPlans();
   state.term = linked ?? Plans.chooseTerm(all, TERMS) ?? DEFAULT_TERM;
   apply(new URLSearchParams(all?.terms[state.term] ?? ''));
@@ -138,7 +138,7 @@ function termFile(term) {
     const asOf = TERMS.find((t) => t.term === term)?.asOf ?? '';
     files.set(
       term,
-      fetch(`/calendar/${term}.json?a=${encodeURIComponent(asOf)}`).then((r) => {
+      fetch(`/timetable/${term}.json?a=${encodeURIComponent(asOf)}`).then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       }),
@@ -156,7 +156,7 @@ function makeWorker() {
   if (!workerOk) return null;
   let w;
   try {
-    w = new Worker(`/calendar/worker.js?v=${V}`, { type: 'module' });
+    w = new Worker(`/timetable/worker.js?v=${V}`, { type: 'module' });
   } catch {
     workerOk = false;
     return null;
