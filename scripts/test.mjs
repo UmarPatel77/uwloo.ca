@@ -1597,13 +1597,12 @@ test('term archive: Open Data terms saved like data/schedules, finished terms on
   assert.match(older, /aria-label="Winter 2025: nothing on WClasses"/, 'before the last term read: "nothing", not "no data"');
 });
 
-// ---------------- the timetable planner (uwloo.ca/timetable) ----------------
+// ---------------- the timetable planner (uwloo.ca/calendar) ----------------
 
-const P = await import('../site/timetable/solve.js');
-const { run: planRun } = await import('../site/timetable/run.js');
-const { icsFile } = await import('../site/timetable/ics.js');
-const { plannerData, plannerMoved, plannerPage } = await import('./lib/planner.mjs');
-const { runInNewContext: runScript } = await import('node:vm');
+const P = await import('../site/calendar/solve.js');
+const { run: planRun } = await import('../site/calendar/run.js');
+const { icsFile } = await import('../site/calendar/ics.js');
+const { plannerData, plannerPage } = await import('./lib/planner.mjs');
 const TERM = { from: '2027-01-06', to: '2027-04-06' };
 const MWF = 1 | 4 | 16;
 const TTh = 2 | 8;
@@ -1750,19 +1749,11 @@ test('planner: term file from Open Data sections; calendar file; page', () => {
   assert.match(text, /DTSTART;TZID=America\/Toronto:20270114T143000/, 'the first Thursday on or after the tutorials start');
   assert.match(text, /SUMMARY:CS 136 TST 201\r\nDTSTART;TZID=America\/Toronto:20270225T190000\r\nDTEND;TZID=America\/Toronto:20270225T205000\r\nDESCRIPTION/, 'a test is one event');
   const html = plannerPage({ terms: [{ term: '1269', name: 'Fall 2026', asOf: null, from: '2026-09-02', courses: 1 }, { term: '1271', name: data.name, asOf: data.asOf, from: data.from, courses: 2 }], builtAt: new Date('2026-11-19T12:00:00Z'), version: 'abc12345' });
-  assert.match(html, /<link rel="canonical" href="https:\/\/uwloo\.ca\/timetable\/">/);
+  assert.match(html, /<link rel="canonical" href="https:\/\/uwloo\.ca\/calendar\/">/);
   assert.match(html, /data-terms="\[\{&quot;term&quot;:&quot;1269&quot;/);
-  assert.match(html, /src="\/timetable\/planner\.js\?v=abc12345"/);
+  assert.match(html, /src="\/calendar\/planner\.js\?v=abc12345"/);
   assert.match(html, /<button type="button" data-term="1271" aria-pressed="true">Winter 2027<\/button>/);
   assert.doesNotMatch(plannerPage({ terms: [], builtAt: new Date(), version: 'x' }), /planner\.js/);
-  // The old address, /calendar/, sends people on with whatever their link carried.
-  const moved = plannerMoved();
-  assert.match(moved, /<link rel="canonical" href="https:\/\/uwloo\.ca\/timetable\/">/);
-  assert.match(moved, /<meta name="robots" content="noindex">/);
-  const went = [];
-  const location = { search: '?t=1271&c=CS136,MATH136', hash: '#x', replace: (u) => went.push(u) };
-  runScript(/<script>([\s\S]*?)<\/script>/.exec(moved)[1], { location });
-  assert.deepEqual(went, ['/timetable/?t=1271&c=CS136,MATH136#x']);
 });
 
 test('planner: an associated-class number of 0 (Open Data’s, for now) pairs with anything; dated labs are classes', () => {
@@ -1792,7 +1783,7 @@ test('planner: an associated-class number of 0 (Open Data’s, for now) pairs wi
 });
 
 test('planner: saved plans per term; the course page button; the header link', async () => {
-  const Plans = await import('../site/timetable/plans.js');
+  const Plans = await import('../site/calendar/plans.js');
   const terms = [
     { term: '1269', from: '2026-09-08' },
     { term: '1271', from: '2027-01-11' },
@@ -1821,10 +1812,10 @@ test('planner: saved plans per term; the course page button; the header link', a
     { t: '1269', n: 'Fall 2026', f: '2026-09-08', h: 1 },
     { t: '1271', n: 'Winter 2027', f: '2027-01-11', h: 1 },
   ]);
-  assert.match(btn, /<a class="plan-btn" href="\/timetable\/\?t=1271&amp;c=CS136">Plan a Winter 2027 timetable with CS 136<\/a>/);
+  assert.match(btn, /<a class="plan-btn" href="\/calendar\/\?t=1271&amp;c=CS136">Plan a Winter 2027 timetable with CS 136<\/a>/);
   assert.match(btn, /data-plan="\[\{&quot;term&quot;:&quot;1269&quot;,&quot;name&quot;:&quot;Fall 2026&quot;,&quot;from&quot;:&quot;2026-09-08&quot;,&quot;has&quot;:true\}/);
   const page = plannerPage({ terms: [{ term: '1271', name: 'Winter 2027', asOf: null, from: '2027-01-11', courses: 1 }], builtAt: new Date(), version: 'v1' });
-  assert.match(page, /<a class="nav-plan" href="\/timetable\/" aria-current="page">Timetable<span class="nav-count" aria-hidden="true"><\/span><\/a>/);
+  assert.match(page, /<a class="nav-plan" href="\/calendar\/" aria-current="page">Timetable<span class="nav-count" aria-hidden="true"><\/span><\/a>/);
   assert.match(page, /<a class="nav-plan nav-path" href="\/pathways\/">Pathways<\/a>/, 'Pathways sits beside it in the header');
   assert.match(page, /<p class="support">uwloo is free and has no ads\. If it’s useful to you: <a href="https:\/\/buymeacoffee\.com\/umarhq">Buy me a coffee<\/a> · <a href="https:\/\/github\.com\/sponsors\/UmarPatel77">Sponsor on GitHub<\/a><\/p>/);
 });

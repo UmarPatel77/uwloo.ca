@@ -23,7 +23,7 @@ import { gradAppearances, loadGradArchive, oldTermIndexPage, oldTermSubjectPage,
 import { loadUgArchive, ugOldSubjectPage, ugOldYearPage } from './lib/ugarchive.mjs';
 import { groupThreads } from '../site/reddit.js';
 import * as opendata from './lib/opendata.mjs';
-import { plannerData, plannerMoved, plannerPage, termDates, termExams } from './lib/planner.mjs';
+import { plannerData, plannerPage, termDates, termExams } from './lib/planner.mjs';
 import {
   coursePage,
   homePage,
@@ -77,7 +77,7 @@ async function main() {
   const rjs = await readFile('site/reddit.js');
   const vjs = await readFile('site/viewer.js');
   const hash = createHash('sha1').update(css).update(js).update(rjs).update(vjs);
-  for (const dir of ['site/timetable', 'site/pathways']) for (const f of (await readdir(dir)).sort()) hash.update(await readFile(join(dir, f)));
+  for (const dir of ['site/calendar', 'site/pathways']) for (const f of (await readdir(dir)).sort()) hash.update(await readFile(join(dir, f)));
   const version = hash.digest('hex').slice(0, 8);
 
   // 1. Calendars (Kuali): undergrad by academic year, grad by term.
@@ -294,7 +294,7 @@ async function main() {
     }
   }
 
-  // The timetable planner (/timetable/): one file of sections per term that has them. Course pages get an
+  // The timetable planner (/calendar/): one file of sections per term that has them. Course pages get an
   // "Add to timetable" button for these terms.
   // With each term's important dates and final exams (Open Data), for its calendar file.
   const planTerms = [];
@@ -305,7 +305,7 @@ async function main() {
     const exams = termExams(await opendata.loadExams(term));
     const file = plannerData(term, sections[term], { asOf: opendata.sectionsAsOf[term] ?? null, titleOf: (c) => primary.get(c)?.course.title ?? '', dates, exams });
     console.log(`Planner ${term}: ${dates.length} dates, final exams for ${Object.keys(file.x ?? {}).length} courses`);
-    pages.push([`timetable/${term}.json`, JSON.stringify(file)]);
+    pages.push([`calendar/${term}.json`, JSON.stringify(file)]);
     planTerms.push({ term, name: file.name, asOf: file.asOf, from: file.from, courses: Object.keys(file.c).length, has: new Set(Object.keys(file.c)) });
   }
   const planFor = (code) => (planTerms.some((t) => t.has.has(code)) ? planTerms.map((t) => ({ t: t.term, n: t.name, f: t.from, h: t.has.has(code) ? 1 : 0 })) : null);
@@ -704,10 +704,8 @@ async function main() {
     : [{ key: 'all', name: 'Subjects', subjects: homeSubjects }];
   const liveCount = new Set([...current.courses.keys(), ...(gradCurrent?.courses.keys() ?? [])]).size;
 
-  pages.push(['timetable/index.html', plannerPage({ ...ctxBase, terms: planTerms })]);
-  sitemap.push('/timetable/');
-  // Its address until Nov 2026: saved and shared links still land, with their timetable.
-  pages.push(['calendar/index.html', plannerMoved()]);
+  pages.push(['calendar/index.html', plannerPage({ ...ctxBase, terms: planTerms })]);
+  sitemap.push('/calendar/');
   console.log(`Planner: ${planTerms.map((t) => `${t.name} (${t.courses} courses)`).join(', ') || 'no terms with sections'}`);
   pages.push(['about/links/index.html', linksAboutPage({ ...ctxBase, repo, meta: foundFile && { links: foundFile.links.length, courses: foundFor.size, generated: foundFile.generated } })]);
   pages.push(['index.html', homePage({ ...ctxBase, current, catalogs: ugNav, gradCatalogs: gradNav, groups, courseCount: liveCount, planner: planTerms.at(-1)?.name ?? null, programCount: programs?.list.length ?? 0 })]);

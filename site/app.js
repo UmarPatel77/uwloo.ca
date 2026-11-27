@@ -139,8 +139,8 @@ for (const fold of document.querySelectorAll('details[data-fold]')) {
 }
 
 // The timetable planner: the header's "Timetable" link shows how many courses are in the plan, and a course
-// page's button adds the course to it without leaving the page (site/timetable/plans.js keeps the plans).
-import(`/timetable/plans.js${new URL(import.meta.url).search}`)
+// page's button adds the course to it without leaving the page (site/calendar/plans.js keeps the plans).
+import(`/calendar/plans.js${new URL(import.meta.url).search}`)
   .then((Plans) => {
     Plans.paintCount();
     const box = document.querySelector('.plan-add');
@@ -167,7 +167,7 @@ function planButton(box, Plans) {
   const note = box.querySelector('.plan-note');
   let term = null;
   let quiet = 0;
-  const open = (t, label) => `<a class="plan-open" href="/timetable/?t=${t}">${label}</a>`;
+  const open = (t, label) => `<a class="plan-open" href="/calendar/?t=${t}">${label}</a>`;
   box.repaint = (focus = false) => {
     const all = Plans.readPlans();
     if (!all) return;
@@ -190,7 +190,7 @@ function planButton(box, Plans) {
       html = `<button type="button" class="plan-btn" aria-pressed="true">✓ In your ${esc(t.name)} timetable</button>${open(term, 'See timetables →')}`;
     } else if (!t.has) {
       const other = [...terms].reverse().find((x) => x.has);
-      html = `<span class="plan-no">Not scheduled in ${esc(t.name)}</span>${other ? `<a class="plan-open" href="/timetable/?t=${other.term}&amp;c=${code}">Plan ${esc(other.name)} with ${esc(name)} →</a>` : ''}`;
+      html = `<span class="plan-no">Not scheduled in ${esc(t.name)}</span>${other ? `<a class="plan-open" href="/calendar/?t=${other.term}&amp;c=${code}">Plan ${esc(other.name)} with ${esc(name)} →</a>` : ''}`;
     } else if (n >= 8) {
       html = `<span class="plan-no">Your ${esc(t.name)} timetable has 8 courses, the most it takes</span>${open(term, 'Open it →')}`;
     } else {
