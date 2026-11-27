@@ -48,8 +48,9 @@ const plain = (html) =>
  */
 export function gradParts(title) {
   const t = norm(title);
-  const acc = /^Accelerated (Master['’]s|Doctoral) Program in (.+)$/i.exec(t);
-  if (acc) return { degree: /doctoral/i.test(acc[1]) ? 'Accelerated PhD' : 'Accelerated master’s', subject: acc[2], variant: '' };
+  // "Accelerated Master's Program in Statistics", "OD-Accelerated Master's Program in Vision Science" (with the OD).
+  const acc = /^(?:([A-Z]{2,})-)?Accelerated (Master['’]s|Doctoral) Program in (.+)$/i.exec(t);
+  if (acc) return { degree: `${acc[1] ? `${acc[1]} and a${''}` : 'A'}ccelerated ${/doctoral/i.test(acc[2]) ? 'PhD' : 'master’s'}`, subject: acc[3], variant: '' };
   const m = /^(.*?)\s*\(([A-Za-z][A-Za-z.]*)\)\s*(.*)$/.exec(t);
   if (!m) return { degree: t, subject: '', variant: '' };
   let rest = m[3];
@@ -144,10 +145,20 @@ export function gradPathways(programs, titleOf = () => '') {
       ...(reg.length ? { reg } : {}),
       ...(delivery.length ? { del: delivery } : {}),
       ...(p.text.specialNotice ? { notice: plain(p.text.specialNotice) } : {}),
+      ...(p.text.admissionRequirements ? { ad: firstWords(plain(p.text.admissionRequirements), 260) } : {}),
       ...(req.length ? { req } : {}),
     };
   });
   return { list, ct };
+}
+
+/** The first sentences of some text, up to about n characters ("…" if it stops in the middle of one). */
+function firstWords(text, n) {
+  const t = String(text ?? '').trim();
+  if (t.length <= n) return t;
+  const cut = t.slice(0, n + 1);
+  const end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('; '));
+  return end > n / 3 ? cut.slice(0, end + 1) : `${cut.slice(0, cut.lastIndexOf(' ')).replace(/[,;:]$/, '')}…`;
 }
 
 const factsDl = (rows) => `<dl class="facts">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
@@ -190,6 +201,7 @@ export function gradProgramPage({ p, programs, ugPrograms = null, cat, known, bu
   <p class="kicker"><a href="/programs/grad/">Graduate programs</a> · ${esc(p.type)}</p>
   <h1><span class="title">${esc(p.name)}</span></h1>
   ${factsDl(facts)}
+  <p class="plan-link"><a href="/pathways/#grad=${esc(p.slug)}">See it in Pathways</a> <span class="t">with the undergraduate plans that lead to it, to start your grid from</span></p>
 </header>
 ${p.text.specialNotice ? `<div class="gone-note">${text('specialNotice')}</div>` : ''}
 ${prose('degreeRequirementsGrad', 'Degree requirements', 'dreq-h')}

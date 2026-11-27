@@ -29,6 +29,37 @@ function useSet(list) {
   cant = new Map(P.map((p) => [p.s, new Set(p.cant ?? [])]));
 }
 useSet(data.programs);
+/**
+ * Why one plan can't go with another (either way round), or '': the calendar's table and rules (cant: "Accounting
+ * and Financial Management, Bachelor of" can't be combined with "Any stand-alone major"), then what keeps two majors
+ * apart beyond them (engine.js: two versions of one, a general BA major with another).
+ */
+function clash(a, b) {
+  if (!a || !b || a === b) return '';
+  const x = bySlug.get(a);
+  const y = bySlug.get(b);
+  if (cant.get(a)?.has(b) || cant.get(b)?.has(a)) {
+    // Its group ("any stand-alone major") says why when the other is one: a major that isn't a joint honours plan or
+    // taken with another (Arts and Business), which the table names on their own when it means them.
+    const standAlone = (q) => q?.t === 'Major' && !/Joint Honours/.test(q.n) && q.fi !== 'Arts and Business';
+    const solo = x?.solo && standAlone(y) && cant.get(a)?.has(b) ? x : y?.solo && standAlone(x) && cant.get(b)?.has(a) ? y : null;
+    return solo ? `${E.planParts(solo).name} can’t be combined with ${solo.solo.replace(/^Any\b/, 'any')}` : 'the calendar’s invalid combinations';
+  }
+  // A specialization is for its majors: when none of them can go with a plan, neither can it (AFM's, with Math/CPA).
+  for (const [p, q] of [
+    [x, y],
+    [y, x],
+  ]) {
+    if (p?.t !== 'Specialization' || !p.open?.length || !q || p.open.includes(q.s)) continue;
+    const why = p.open.map((m) => clash(m, q.s));
+    if (why.every(Boolean)) return `it’s for ${E.planParts(bySlug.get(p.open[0])).name} majors, and ${why[0].replace(/^the calendar’s invalid combinations$/, 'the calendar rules that out')}`;
+  }
+  return E.planClash(x, y, { coop: state.rows.some((r) => r.k === 'c') });
+}
+/** Your plans a plan can't go with. */
+const clashes = (s) => state.plans.filter((c) => clash(s, c));
+/** "can’t go with Mathematics/Chartered Professional Accountancy (…why…)", for a plan's chip or panel. */
+const clashText = (s, list = clashes(s)) => (list.length ? `can’t go with ${list.map((c) => E.planParts(bySlug.get(c)).name).join(', ')} (${clash(s, list[0])})` : '');
 const yearList = data.years ?? [];
 const years = yearList.map((y) => y.year).sort((a, b) => a - b);
 /** The calendar year whose rules apply to someone starting in a given Fall. */
@@ -171,7 +202,7 @@ const shareable = ({ explore, exorder, exview, exfac, ...s }) => ({ ...s, rows: 
 
 let state = null;
 const hash = location.hash.slice(1);
-const fromHash = hash && !/^(?:add|show|course)=|^(?:browse|grad)$/.test(hash) ? decode(hash) : null;
+const fromHash = hash && !/^(?:add|show|course|grad)=|^(?:browse|grad)$/.test(hash) ? decode(hash) : null;
 if (fromHash) state = fromHash;
 else {
   try {
@@ -231,8 +262,11 @@ function showCourse(code) {
   revealCard(at ? at.row : null);
   document.querySelector('#pw-detail .pw-dcard h3 a')?.focus({ preventScroll: true });
 }
-// From /programs: the list of every plan; from /programs/grad/, its Graduate view.
+// From /programs: the list of every plan; from /programs/grad/, its Graduate view; from a graduate program's page,
+// its panel (#grad=ma-in-economics).
 const pendingBrowse = hash === 'browse' ? 'all' : hash === 'grad' ? 'grad' : null;
+const gradHash = (h) => (/^grad=/.test(h) ? decodeURIComponent(h.slice(5)) : null);
+const pendingGrad = gradHash(hash);
 // The same links followed with Pathways already open.
 addEventListener('hashchange', () => {
   const h = location.hash.slice(1);
@@ -241,6 +275,11 @@ addEventListener('hashchange', () => {
     history.replaceState(null, '', location.pathname);
     analyze();
     return showCourse(code);
+  }
+  const grad = gradHash(h);
+  if (grad) {
+    history.replaceState(null, '', location.pathname);
+    return openGrad(grad);
   }
   const s = decodeURIComponent(h.replace(/^(?:show|add)=/, ''));
   if (!/^(?:show|add)=/.test(h) || !bySlug.has(s)) return;
@@ -479,7 +518,8 @@ function plansHtml() {
     for (let b = a + 1; b < A.plans.length; b++) {
       const x = A.plans[a];
       const y = A.plans[b];
-      if (cant.get(x.s)?.has(y.s) || cant.get(y.s)?.has(x.s)) warns.push(`<strong>${esc(x.n)}</strong> can’t be combined with <strong>${esc(y.n)}</strong>. <a href="/programs/combinations/">The calendar’s rules</a>`);
+      const why = clash(x.s, y.s);
+      if (why) warns.push(`<strong>${esc(x.n)}</strong> can’t be combined with <strong>${esc(y.n)}</strong>: ${esc(why)}. <a href="/programs/combinations/">The calendar’s rules</a>`);
     }
   const majors = A.plans.filter((p) => p.t === 'Major').map((p) => p.s);
   for (const p of A.plans) if (p.open?.length && majors.length && !p.open.some((s) => majors.includes(s))) warns.push(`<strong>${esc(p.n)}</strong> is for students in ${p.open.map((s) => bySlug.get(s)?.n).filter(Boolean).slice(0, 4).map(esc).join('; ')}.`);
@@ -510,7 +550,7 @@ function plansHtml() {
     }
   }
   return `<div class="pw-plans"><ul>${chips}</ul>
-<form class="pw-addplan" id="pw-addplan" autocomplete="off">${kindChips()}<label class="vh" for="pw-pq">Add a plan</label><div class="pw-pqbox"><input id="pw-pq" placeholder="${esc(planType ? `Search ${PLAN_KINDS[planType].toLowerCase()}, or pick from the list` : A.plans.length ? 'Add a minor, option, specialization… (math/cpa, cs, afm)' : 'Add your major, minors, options… (math/cpa, cs, afm)')}" role="combobox" aria-expanded="false" aria-controls="pw-psugg" aria-autocomplete="list" spellcheck="false"><ul id="pw-psugg" class="pw-sugg" role="listbox" hidden></ul></div></form>
+<form class="pw-addplan" id="pw-addplan" autocomplete="off">${kindChips()}<label class="vh" for="pw-pq">Add a plan</label><div class="pw-pqbox"><input id="pw-pq" placeholder="${esc(planType ? `Search ${kindName(planType).toLowerCase()}, or pick from the list` : A.plans.length ? 'Add a minor, option, specialization… (math/cpa, cs, afm)' : 'Add your major, minors, options… (math/cpa, cs, afm)')}" role="combobox" aria-expanded="false" aria-controls="pw-psugg" aria-autocomplete="list" spellcheck="false"><ul id="pw-psugg" class="pw-sugg" role="listbox" hidden></ul></div></form>
 <p class="pw-stilltease"><button type="button" class="pw-linkbtn" data-act="still">Still open ↓</button> <span class="t" id="pw-extease">${esc(exTease || 'every plan by faculty and field, with what goes with yours')}</span></p>
 ${A.plans.length ? '<p class="pw-acts"><button type="button" class="pw-fillbtn" data-act="fill">Fill in courses…</button> <button type="button" class="pw-findbtn pw-bestbtn" data-act="best" title="Picks the courses that count toward the most of your plans, so you take the fewest, and adds terms (5A, 5B…) if they don’t fit">Optimal plan…</button> <button type="button" class="pw-findbtn" data-act="find">Find courses…</button></p>' : ''}
 ${undo ? `<p class="pw-offer" role="status"><span>Added ${plural(undo.n, 'course')} from ${undo.names.length > 2 ? `${undo.names.length} plans` : esc(undo.names.join(' and '))}.</span> <button type="button" class="pw-linkbtn" data-act="undo">Undo</button></p>` : offered ? `<p class="pw-offer" role="status"><span>Added <b>${esc(offered.n)}</b>.</span>${coop} <button type="button" class="pw-fillbtn" data-act="fill" data-only="${esc(offered.s)}">Fill in its courses</button> <button type="button" class="pw-linkbtn" data-act="nooffer">Not now</button></p>` : ''}
@@ -840,10 +880,10 @@ function countsPart(code, key) {
   });
   const yours = mine.filter(Boolean).join('');
   const chip = (p, why) => {
-    const no = state.plans.filter((c) => cant.get(p.s)?.has(c) || cant.get(c)?.has(p.s));
+    const no = clashes(p.s);
     const who = E.whoFor(p, myMajors());
     const tag = no.length ? ' <small class="pw-ftag">not with yours</small>' : who.tag ? ` <small class="pw-ftag">${esc(who.tag)}</small>` : '';
-    const note = no.length ? `can’t go with ${E.planParts(bySlug.get(no[0])).name}` : who.why;
+    const note = no.length ? clashText(p.s, no) : who.why;
     return `<button type="button" class="pw-fc${no.length || !who.ok ? ' no' : ''}" data-pshow="${esc(p.s)}" title="${esc(`${p.n}: ${why}${note ? ` · ${note}` : ''}`)}">${esc(planLabel(p))}${tag}</button>`;
   };
   const group = (list, kind, why, where) => {
@@ -1160,12 +1200,45 @@ function gradPanel(g, key) {
     const shown = exAll.has(`g:${g.s}|${i}`) ? codes : codes.slice(0, SHORT_LIST);
     return `<div class="pw-pdrule"><p class="pw-pdlab">${esc(r.h)}${codes.length ? ` <span class="t">${plural(codes.length, 'course')} named</span>` : ''}</p>${shown.length ? `<ul class="pw-pdlist" id="pw-pdl${i}">${shown.map(course).join('')}</ul>` : ''}${codes.length > shown.length ? `<p class="pw-pdmore"><button type="button" class="pw-linkbtn" data-pdall="${i}" data-pdi="${i}">All ${codes.length}</button></p>` : ''}${r.t ? `<p class="pw-pdw">${esc(r.t)}</p>` : ''}${r.m ? `<p class="pw-pdw"><b>Milestones:</b> ${esc(r.m)}</p>` : ''}</div>`;
   });
-  return `<div class="pw-pd" id="pw-pd" data-row="${esc(key)}" role="region" aria-label="${esc(g.n)}">
+  // Getting there: the undergraduate plans in its field, to start your grid from (yours ticked; ones that can't go
+  // with yours struck, as everywhere). An accelerated program's first courses come in your last undergraduate year.
+  const leads = E.gradLeads(g, P).slice(0, 12);
+  const lead = (p) => {
+    if (state.plans.includes(p.s)) return `<span class="pw-fc got" title="${esc(`${p.n}: one of your plans`)}">✓ ${esc(planLabel(p))}</span>`;
+    const no = clashes(p.s);
+    return `<button type="button" class="pw-fc${no.length ? ' no' : ''}" data-plan="${esc(p.s)}" title="${esc(no.length ? `${p.n}: ${clashText(p.s, no)}` : `Add ${p.n} to your plans`)}">+ ${esc(planLabel(p))} <small class="pw-ftag">${esc(p.t.toLowerCase())}</small></button>`;
+  };
+  const getting = leads.length
+    ? `<div class="pw-pdrule"><p class="pw-pdlab">Getting there <span class="t">undergraduate plans in its field${/ccelerated/.test(g.d) ? '; its first graduate courses come in your last undergraduate year' : ''}</span></p><p class="pw-gleads">${leads.map(lead).join('')}</p></div>`
+    : '';
+  return `<div class="pw-pd" id="pw-pd" data-row="${esc(key)}" role="region" aria-label="${esc(g.n)}" tabindex="-1">
 <div class="pw-pdhead"><p><b>${esc(g.n)}</b> <span class="t">${esc(g.t)}${g.u ? ` · ${esc(g.u)}` : ''}</span></p><p class="pw-pdacts"><a href="/programs/grad/${esc(g.s)}/">Its page</a> <button type="button" class="pw-pdx" data-exclose aria-label="Close ${esc(g.n)}">×</button></p></div>
 ${g.notice ? `<p class="pw-pdnote"><span class="pw-no">${esc(g.notice)}</span></p>` : ''}
 ${facts.length ? `<p class="pw-pdprog">${esc(facts.join(' · '))}.</p>` : ''}
+${g.ad ? `<p class="pw-pdw"><b>Admission:</b> ${esc(g.ad)} <a href="/programs/grad/${esc(g.s)}/#adm-h">The rest</a></p>` : ''}
+${getting}
 ${parts.join('')}
-<p class="t pw-pdfoot">From the ${esc(GRAD.cat)} Graduate Calendar. Its page has admission requirements, research areas and the rest.</p></div>`;
+<p class="t pw-pdfoot">From the ${esc(GRAD.cat)} Graduate Calendar. Its page has all its admission requirements, research areas and the rest.</p></div>`;
+}
+/** A graduate program's row in the Graduate list (its faculty and field). */
+const gradRow = (g) => `g|${E.facultyOf(g).group || OTHER}|${g.fi}`;
+/** A graduate program's panel, in Still open's Graduate list: from the plan box, or a link (/pathways/#grad=slug). */
+async function openGrad(slug) {
+  closePlanSugg();
+  const pq = document.getElementById('pw-pq');
+  if (pq) pq.value = '';
+  await loadGrad();
+  const g = GRAD.list.find((x) => x.s === slug);
+  state.exview = 'grad';
+  state.exfac = '';
+  exOpen = g ? { s: `g:${g.s}`, row: gradRow(g) } : null;
+  exFrom = null;
+  render();
+  clearTimeout(dirTimer);
+  renderDirections();
+  const pd = document.getElementById('pw-pd');
+  (pd ?? document.getElementById('pw-explore'))?.scrollIntoView({ block: 'start' });
+  pd?.focus({ preventScroll: true });
 }
 /** Every graduate program by faculty and field; the ones in your majors' fields first (accelerated ones on top). */
 function gradHtml() {
@@ -1249,12 +1322,12 @@ function withYourPlans() {
 function planChip(p, label, row) {
   const open = exOpen?.s === p.s && exOpen.row === row;
   const mine = state.plans.includes(p.s);
-  const no = mine ? [] : state.plans.filter((c) => cant.get(p.s)?.has(c) || cant.get(c)?.has(p.s));
+  const no = mine ? [] : clashes(p.s);
   // Who it's for, as the calendar says: "Math students only", "paused".
   const who = E.whoFor(p, myMajors());
-  const tag = who.tag && !mine ? ` <small class="pw-ftag">${esc(who.tag)}</small>` : '';
+  const tag = no.length ? ' <small class="pw-ftag">not with yours</small>' : who.tag && !mine ? ` <small class="pw-ftag">${esc(who.tag)}</small>` : '';
   const cls = mine ? ' got' : no.length || !who.ok ? ' no' : '';
-  const why = mine ? 'one of your plans' : no.length ? `can’t go with ${E.planParts(bySlug.get(no[0])).name}` : who.why;
+  const why = mine ? 'one of your plans' : no.length ? clashText(p.s, no) : who.why;
   return `<button type="button" class="pw-fc${cls}" data-exopen="${esc(p.s)}" aria-expanded="${open}" title="${esc(p.n)}${why ? `: ${esc(why)}` : ''}">${esc(label)}${mine ? ' ✓' : ''}${tag}</button>`;
 }
 /** A plan's name in its field's row: "BA Honours" in Economics, "Literature · BA Honours" in English. */
@@ -1344,13 +1417,14 @@ function planPanel(p, key) {
   const { name, kind } = E.planParts(p);
   const { college } = E.facultyOf(p);
   const ev = E.evaluate(p, planned, { courses: C, faculty: SF });
-  const no = mine ? [] : state.plans.filter((c) => cant.get(p.s)?.has(c) || cant.get(c)?.has(p.s));
+  const no = mine ? [] : clashes(p.s);
   const who = E.whoFor(p, myMajors());
   const tw = E.takenWith(p, P);
   const kindWord = p.t === 'Degree Requirements' ? 'degree requirements' : p.t.toLowerCase();
   const notes = [
-    no.length && `<span class="pw-no">Can’t go with ${esc(no.map((c) => E.planParts(bySlug.get(c)).name).join(', '))}.</span>`,
+    no.length && `<span class="pw-no">${esc(clashText(p.s, no).replace(/^c/, 'C'))}.</span>`,
     who.why && `<span${who.ok ? '' : ' class="pw-no"'}>${esc(who.why)}</span>`,
+    p.cn?.length && `<span>Also can’t be combined with, in the calendar’s words: ${p.cn.map((t) => `“${esc(t)}”`).join('; ')}.</span>`,
     tw && `<span>${esc(tw.text)}${tw.plans.length ? `: ${tw.plans.slice(0, 4).map((q) => esc(E.planParts(q).name + (q.t === 'Major' ? ` (${E.planParts(q).kind})` : ''))).join(', ')}${tw.plans.length > 4 ? ` and ${tw.plans.length - 4} more` : ''}` : ''}.</span>`,
   ].filter(Boolean);
   const course = (c) => {
@@ -1476,9 +1550,9 @@ function renderDirections() {
   const forOthers = (p) => Boolean(p.open?.length && !p.open.some((s) => majors.includes(s)));
   const inFac = (p) => (entry ? entry.has(p) : !fac || facKey(p) === fac);
   const mine = myMajors();
-  const found = E.directions(P.filter(inFac), planned, { chosen: state.plans, cant, courses: C, types: [view] });
+  const found = E.directions(P.filter(inFac), planned, { chosen: state.plans, clash, courses: C, types: [view] });
   // Every one, with ones whose rules are all in words (no courses to count) after.
-  const inWords = P.filter((p) => p.t === view && inFac(p) && !state.plans.includes(p.s) && !found.some((x) => x.p === p)).map((p) => ({ p, need: 0, have: 0, left: 0, unknown: true, blocked: state.plans.filter((c) => cant.get(p.s)?.has(c) || cant.get(c)?.has(p.s)) }));
+  const inWords = P.filter((p) => p.t === view && inFac(p) && !state.plans.includes(p.s) && !found.some((x) => x.p === p)).map((p) => ({ p, need: 0, have: 0, left: 0, unknown: true, blocked: clashes(p.s) }));
   const every = [...found, ...inWords]
     .map((x, i) => ({ ...x, i, other: forOthers(x.p), who: E.whoFor(x.p, mine) }))
     .map((x) => ({ ...x, shut: x.blocked.length > 0 || !x.who.ok }))
@@ -1493,7 +1567,7 @@ function renderDirections() {
     const open = exOpen?.s === p.s && exOpen.row === p.s;
     const sub = p.t === 'Major' ? kind : of ? `(${of})` : '';
     // A specialization says whose it is; other plans only open to some majors say which.
-    const note = blocked.length ? `<span class="pw-no">can’t go with ${esc(E.planParts(bySlug.get(blocked[0])).name)}</span>` : !who.ok ? `<span class="pw-no" title="${esc(who.why)}">${esc(who.tag)}</span>` : who.tag ? `<small class="pw-ftag" title="${esc(who.why)}">${esc(who.tag)}</small>` : other && p.t !== 'Specialization' ? `<span class="t">for ${esc(p.open.map((s) => bySlug.get(s)?.fi).filter(Boolean).slice(0, 2).join(', '))} majors</span>` : '';
+    const note = blocked.length ? `<span class="pw-no" title="${esc(clash(p.s, blocked[0]))}">can’t go with ${esc(E.planParts(bySlug.get(blocked[0])).name)}</span>` : !who.ok ? `<span class="pw-no" title="${esc(who.why)}">${esc(who.tag)}</span>` : who.tag ? `<small class="pw-ftag" title="${esc(who.why)}">${esc(who.tag)}</small>` : other && p.t !== 'Specialization' ? `<span class="t">for ${esc(p.open.map((s) => bySlug.get(s)?.fi).filter(Boolean).slice(0, 2).join(', '))} majors</span>` : '';
     const share = need ? Math.round((100 * have) / need) : 0;
     const prog = need ? `<span class="pw-exprog" title="${have} of ${need}${unknown ? '+' : ''} courses it names"><span class="pw-exmeter" style="--f:${share}%"></span>${left ? `${left} to go` : 'all planned'}</span>` : '<span class="pw-exprog t">rules in words</span>';
     return `<li data-row="${esc(p.s)}"${shut ? ' class="blocked"' : other ? ' class="other"' : ''}><div class="pw-exrow"><span class="pw-exname"><a href="/programs/${esc(p.s)}/" title="${esc(p.n)}">${esc(name)}</a>${sub ? ` <span class="t">${esc(sub)}</span>` : ''}${college ? ` <span class="pw-col">${esc(college)}</span>` : ''}</span> ${prog}${note ? ` ${note}` : ''} <span class="pw-exacts"><button type="button" class="pw-linkbtn" data-exopen="${esc(p.s)}" aria-expanded="${open}">${open ? 'Hide' : 'Courses'}</button>${shut ? '' : ` <button type="button" class="pw-linkbtn" data-plan="${esc(p.s)}">Add</button>`}</span></div>${open ? planPanel(p, p.s) : ''}</li>`;
@@ -1878,7 +1952,7 @@ app.addEventListener('click', async (e) => {
   if (kindChip) {
     planType = kindChip.dataset.ptype === planType ? '' : kindChip.dataset.ptype;
     if (planType !== 'Degree Requirements') state.exview = planType || 'all';
-    if (planType && planType !== 'Degree Requirements') state.dir = planType;
+    if (TYPE_ORDER.includes(planType) && planType !== 'Degree Requirements') state.dir = planType;
     const typed = document.getElementById('pw-pq')?.value ?? '';
     render();
     const pq = document.getElementById('pw-pq');
@@ -1898,6 +1972,11 @@ app.addEventListener('click', async (e) => {
   const ent = t.closest('#pw-psugg [data-entry]');
   if (ent) {
     openEntry(ent.dataset.entry);
+    return;
+  }
+  const gr = t.closest('#pw-psugg [data-grad]');
+  if (gr) {
+    openGrad(gr.dataset.grad);
     return;
   }
   const pl = t.closest('[data-plan]');
@@ -2318,7 +2397,6 @@ function setGoal(text, { focus = true } = {}) {
 function goalPlans() {
   if (!fill?.rel) return [];
   const chosen = new Set(state.plans);
-  const blocked = new Set(A.plans.flatMap((p) => p.cant ?? []));
   const majors = A.plans.filter((p) => p.t === 'Major');
   const faculties = new Set(majors.map((p) => p.f));
   // Courses by subject, for plans that ask for units of a few subjects ("4.0 units of CLAS, GRK, or LAT").
@@ -2331,7 +2409,8 @@ function goalPlans() {
   }
   const out = [];
   for (const p of P) {
-    if (!['Minor', 'Option', 'Specialization', 'Diploma', 'Certificate'].includes(p.t) || chosen.has(p.s) || blocked.has(p.s) || (p.cant ?? []).some((x) => chosen.has(x))) continue;
+    // Not one that can't go with your plans (the calendar's table and general rules: no minor in your major's subject).
+    if (!['Minor', 'Option', 'Specialization', 'Diploma', 'Certificate'].includes(p.t) || chosen.has(p.s) || clashes(p.s).length) continue;
     // A specialization is for the majors it names; an option, for its faculty's majors (Engineering's for
     // engineering students); engineering's plans for engineering students.
     if (p.t === 'Specialization' && !(p.open ?? []).some((x) => majors.some((m) => m.s === x))) continue;
@@ -2914,10 +2993,13 @@ dlgFind.addEventListener('close', () => {
 // "afm", "syde"); the chips above it narrow the list to one kind of plan, and list them all with nothing typed.
 // Up and down move through the list, Enter adds the one picked.
 const PLAN_KINDS = { Major: 'Majors', Minor: 'Minors', Specialization: 'Specializations', Option: 'Options', Diploma: 'Diplomas', Certificate: 'Certificates', 'Degree Requirements': 'Degree requirements' };
+const kindName = (t) => PLAN_KINDS[t] ?? (t === 'grad' ? 'Graduate programs' : 'Plans');
+const GRAD_KIND = { "Master's": 'Master’s', PhD: 'PhD', 'Graduate Diploma': 'Graduate diploma' };
 let planType = ''; // a kind of plan the chips narrow the list to, or ''
 let planActive = 0; // the suggestion Enter adds
 /** Plans for what's typed, best first; with a kind picked and nothing typed, every plan of that kind. */
 function planHits(q) {
+  if (planType === 'grad') return [];
   const queries = E.planQueries(q);
   const tokens = queries[0];
   const pool = P.filter((p) => !state.plans.includes(p.s) && (!planType || p.t === planType));
@@ -2937,7 +3019,7 @@ function planHits(q) {
 function kindChips() {
   const left = (t) => P.filter((p) => p.t === t && !state.plans.includes(p.s)).length;
   const kinds = Object.keys(PLAN_KINDS).filter((t) => P.some((p) => p.t === t));
-  return `<div class="pw-ptypes" role="group" aria-label="Show one kind of plan"><button type="button" data-ptype="" aria-pressed="${!planType}">All</button>${kinds.map((t) => `<button type="button" data-ptype="${esc(t)}" aria-pressed="${planType === t}">${esc(PLAN_KINDS[t])} <span>${left(t)}</span></button>`).join('')}</div>`;
+  return `<div class="pw-ptypes" role="group" aria-label="Show one kind of plan"><button type="button" data-ptype="" aria-pressed="${!planType}">All</button>${kinds.map((t) => `<button type="button" data-ptype="${esc(t)}" aria-pressed="${planType === t}">${esc(PLAN_KINDS[t])} <span>${left(t)}</span></button>`).join('')}<button type="button" data-ptype="grad" aria-pressed="${planType === 'grad'}" title="Master’s, PhDs and graduate diplomas: what each needs, and the undergraduate plans that lead to it">Graduate${GRAD?.list.length ? ` <span>${GRAD.list.length}</span>` : ''}</button></div>`;
 }
 const MAX_SUGG = 12;
 /** Entry programs whose name the words typed start ("life sci", "phys", "honours arts"). */
@@ -2953,20 +3035,48 @@ function planSuggest(input) {
   const list = document.getElementById('pw-psugg');
   const typed = input.value.trim();
   const hits = planHits(input.value);
-  const shown = typed ? hits.slice(0, MAX_SUGG) : hits;
   const entries = entryHits(typed);
   planActive = 0;
-  const faculty = (p) => (p.f ? ` · ${p.f.replace(/^Facult(y|ies) of /, '')}` : '');
+  const faculty = (f) => (f ? ` · ${f.replace(/^Facult(y|ies) of /, '')}` : '');
+  // Graduate programs (the Graduate Calendar's, read the first time they're asked for): first when what's typed asks
+  // for them ("master", "phd", "mmath cs"), after the undergraduate plans otherwise, and on their own under Graduate.
+  let grads = [];
+  let gradFirst = planType === 'grad';
+  if (planType === 'grad' || (!planType && typed.length >= 2)) {
+    if (!GRAD) {
+      loadGrad().then(() => {
+        const el = document.getElementById('pw-pq');
+        if (el && document.activeElement === el && el.value.trim() === typed) {
+          if (planType === 'grad') render();
+          planSuggest(document.getElementById('pw-pq') ?? el);
+        }
+      });
+    } else if (planType === 'grad' && !typed) grads = [...GRAD.list].sort((a, b) => a.n.localeCompare(b.n));
+    else {
+      const found = E.gradHits(GRAD.list, typed);
+      grads = found.hits;
+      gradFirst ||= found.grad;
+    }
+  }
+  const maxGrad = planType === 'grad' ? (typed ? MAX_SUGG : grads.length) : gradFirst ? 10 : 4;
+  const shown = typed ? hits.slice(0, gradFirst ? 4 : MAX_SUGG) : hits;
+  const gshown = grads.slice(0, maxGrad);
   // An entry program first-years apply to ("Life Sciences") isn't a plan: it opens its majors in the list below.
-  const entryRows = entries.map((e, i) => `<li role="option" id="pw-po${i}" data-entry="${esc(e.name)}" aria-selected="${i === 0}"><b>${esc(e.name)}</b> <span>Entry program · see its ${E.entryProgram(e.name, P)?.majors.length ?? 0} majors</span></li>`);
+  let n = 0;
+  const opt = (attrs, body) => `<li role="option" id="pw-po${n}" ${attrs} aria-selected="${n++ === 0}">${body}</li>`;
+  const entryRows = entries.map((e) => opt(`data-entry="${esc(e.name)}"`, `<b>${esc(e.name)}</b> <span>Entry program · see its ${E.entryProgram(e.name, P)?.majors.length ?? 0} majors</span>`)).join('');
+  const planRows = () => shown.map((p) => opt(`data-plan="${esc(p.s)}"`, `<b>${esc(p.n)}</b> <span>${esc(p.t)}${esc(faculty(p.f))}</span>`)).join('') + (typed && hits.length > shown.length ? `<li class="pw-smore" aria-hidden="true">${hits.length - shown.length} more ${planType ? kindName(planType).toLowerCase() : 'plans'}: keep typing${planType ? '' : ', or pick a kind below'}</li>` : '');
+  const gradRows = () =>
+    gshown.length
+      ? `${planType === 'grad' ? '' : `<li class="pw-shead" aria-hidden="true">Graduate programs${grads.length > gshown.length ? ` <span>${grads.length}</span>` : ''}</li>`}${gshown.map((g) => opt(`data-grad="${esc(g.s)}"`, `<b>${esc(g.n)}</b> <span>Graduate · ${esc(GRAD_KIND[g.t] ?? g.t)}${esc(faculty(g.f))}</span>`)).join('')}${grads.length > gshown.length ? `<li class="pw-smore" aria-hidden="true">${grads.length - gshown.length} more graduate programs: keep typing, or pick Graduate below</li>` : ''}`
+      : '';
   list.innerHTML =
-    entryRows.join('') +
-    shown.map((p, i) => `<li role="option" id="pw-po${i + entries.length}" data-plan="${esc(p.s)}" aria-selected="${i + entries.length === 0}"><b>${esc(p.n)}</b> <span>${esc(p.t)}${esc(faculty(p))}</span></li>`).join('') +
-    (typed && hits.length > MAX_SUGG ? `<li class="pw-smore" aria-hidden="true">${hits.length - MAX_SUGG} more: keep typing${planType ? '' : ', or pick a kind below'}</li>` : '') +
-    (typed && !hits.length && !entries.length ? `<li class="pw-smore" aria-hidden="true">No ${planType ? PLAN_KINDS[planType].toLowerCase() : 'plans'} match “${esc(typed)}”</li>` : '');
+    entryRows +
+    (gradFirst ? gradRows() + planRows() : planRows() + gradRows()) +
+    (typed && !hits.length && !entries.length && !grads.length ? `<li class="pw-smore" aria-hidden="true">${planType === 'grad' && !GRAD ? 'Reading the graduate programs…' : `No ${planType ? kindName(planType).toLowerCase() : 'plans or graduate programs'} match “${esc(typed)}”`}</li>` : '');
   list.hidden = !list.children.length;
-  input.setAttribute('aria-expanded', String(shown.length + entries.length > 0));
-  if (shown.length + entries.length) input.setAttribute('aria-activedescendant', 'pw-po0');
+  input.setAttribute('aria-expanded', String(n > 0));
+  if (n) input.setAttribute('aria-activedescendant', list.querySelector('li[aria-selected="true"]')?.id ?? 'pw-po0');
   else input.removeAttribute('aria-activedescendant');
 }
 function closePlanSugg() {
@@ -3006,9 +3116,13 @@ app.addEventListener('submit', (e) => {
   e.preventDefault();
   const list = document.getElementById('pw-psugg');
   if (list?.hidden) planSuggest(document.getElementById('pw-pq'));
-  const pick = list?.querySelector('li[aria-selected="true"]') ?? list?.querySelector('li[data-plan]');
+  const pick = list?.querySelector('li[aria-selected="true"]') ?? list?.querySelector('li[data-plan], li[data-grad]');
   if (pick?.dataset.entry) {
     openEntry(pick.dataset.entry);
+    return;
+  }
+  if (pick?.dataset.grad) {
+    openGrad(pick.dataset.grad);
     return;
   }
   if (pick) {
@@ -3028,7 +3142,7 @@ app.addEventListener('keydown', (e) => {
       }
       return;
     }
-    const items = [...list.querySelectorAll('li[data-plan], li[data-entry]')];
+    const items = [...list.querySelectorAll('li[data-plan], li[data-entry], li[data-grad]')];
     if (!items.length) return;
     e.preventDefault();
     planActive = (planActive + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
@@ -3044,9 +3158,9 @@ app.addEventListener('keydown', (e) => {
 });
 // The pointer picks too; pressing on the list keeps the box focused, so the click lands.
 app.addEventListener('mousemove', (e) => {
-  const li = e.target.closest('#pw-psugg li[data-plan], #pw-psugg li[data-entry]');
+  const li = e.target.closest('#pw-psugg li[data-plan], #pw-psugg li[data-entry], #pw-psugg li[data-grad]');
   if (!li || li.getAttribute('aria-selected') === 'true') return;
-  const items = [...document.querySelectorAll('#pw-psugg li[data-plan], #pw-psugg li[data-entry]')];
+  const items = [...document.querySelectorAll('#pw-psugg li[data-plan], #pw-psugg li[data-entry], #pw-psugg li[data-grad]')];
   planActive = items.indexOf(li);
   items.forEach((x) => x.setAttribute('aria-selected', String(x === li)));
   document.getElementById('pw-pq')?.setAttribute('aria-activedescendant', li.id);
@@ -3094,4 +3208,5 @@ if (pendingAdopt) adopt(pendingAdopt);
 if (pendingShow) openPanel(pendingShow);
 else if (pendingBrowse) openBrowse({ view: pendingBrowse });
 else if (pendingCourse) showCourse(pendingCourse);
+else if (pendingGrad) openGrad(pendingGrad);
 else render();

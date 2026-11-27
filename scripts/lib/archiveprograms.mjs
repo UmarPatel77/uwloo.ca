@@ -836,6 +836,8 @@ export function archivePrograms(pages, { known = [], subjects = new Map() } = {}
         ...(match?.co ? { co: 1 } : {}),
         ...(match?.re ? { re: 1 } : {}),
         ...(match?.cant ? { cant: match.cant } : {}),
+        ...(match?.solo ? { solo: match.solo } : {}),
+        ...(match?.cn ? { cn: match.cn } : {}),
         ...(pl.type === 'Specialization' && parent ? { parent } : {}),
         src: page.url,
       });

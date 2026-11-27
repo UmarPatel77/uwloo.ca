@@ -326,6 +326,14 @@ async function main() {
     const icc = programsLib.parseCombinations(policy?.body ?? '');
     const { byProgram, stats } = programsLib.combosFor(icc.rows, programs, icc.rulesHtml);
     console.log(`Programs: ${programs.list.length}; combinations table ${stats.rows} rows, ${stats.plans} matched to programs, ${stats.matched}/${stats.names} names`);
+    // The policy's general rules too, on the program pages ("a minor in the same subject as a major"), read by the
+    // same code Pathways uses.
+    try {
+      const E = await import('../site/pathways/engine.js');
+      programsLib.addGeneralCombos(byProgram, programs, pathwaysPrograms({ programs, combos: byProgram }), (a, b) => E.planClash(a, b));
+    } catch (err) {
+      console.warn(`! General combination rules left off the program pages (${err.message})`);
+    }
     for (const p of programs.list) {
       pages.push([`programs/${p.slug}/index.html`, programsLib.programPage({ ...ctxBase, p, programs, combos: byProgram, cat: progCat, known: linkable, courses: progCat.courses, subjects: new Set(progCat.subjects) })]);
       sitemap.push(`/programs/${p.slug}/`);

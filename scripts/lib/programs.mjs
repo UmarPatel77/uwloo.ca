@@ -437,9 +437,38 @@ export function nameIndex(programs) {
   return index;
 }
 
+/**
+ * Names the table still uses for programs the calendar has since renamed (the policy's own rule covers "the same
+ * credential that has been renamed"). Each one checked: Recreation and Sport Business's page on uwaterloo.ca
+ * (future-students/programs/recreation-and-sport-business) is now "Sport and Recreation Management degree", and
+ * the 2023–24 Technical Writing Minor's course list is the 2026–27 Technical and Professional Writing Minor's.
+ */
+const RENAMED = new Map([
+  ['recreation and sport business major', 'sport and recreation management major'],
+  ['technical writing minor', 'technical and professional writing minor'],
+]);
+export const renamedTo = (name) => RENAMED.get(normName(name)) ?? null;
+
+/**
+ * A whole degree, "Mathematics, Bachelor of": every major that leads to it (Pure Mathematics, Statistics, the BBA and
+ * BMath double degree…) and its degree requirements. Not "Bachelor of Science and Financial Management" for
+ * "Science, Bachelor of": the degree's name has to end there.
+ */
+function degreePrograms(degree, programs) {
+  const at = new RegExp(`\\(${degree}(?:\\s*[-,)]|\\s*$| and bachelor of )|\\band ${degree}(?:\\s*[-,)]|\\s*$)`);
+  return programs.list.filter((p) => (p.type === 'Major' && at.test(normName(p.title))) || (p.type === 'Degree Requirements' && normName(p.title).startsWith(`${degree} degree requirements`)));
+}
+
 /** The programs a name in the combinations table refers to ([] when it's a group like "Any stand-alone major"). */
 export function matchName(name, index, programs) {
+  const alias = renamedTo(name);
+  if (alias) return matchName(alias, index, programs);
   const n = normName(name).replace(/\bbcs double degree\b/, 'computer science double degree').replace(/\bbmath double degree\b/, 'mathematics double degree');
+  const degree = /^(.+), bachelor of$/.exec(n);
+  if (degree) {
+    const all = degreePrograms(`bachelor of ${degree[1]}`, programs);
+    if (all.length) return all;
+  }
   const paren = /\(([^)]*)\)/.exec(n)?.[1] ?? '';
   const degrees = degreesIn(paren);
   const narrow = (list) => {
@@ -496,8 +525,48 @@ export function matchName(name, index, programs) {
 }
 
 /**
+ * The table's groups, which matchName leaves alone: "Any stand-alone major" (every major but the joint honours plans,
+ * which are made to be paired), "Any other stand-alone major" (not the row's own field: Mathematical Economics' other
+ * version, the French majors for the French Teaching Specialization), "Any other stand-alone Arts major" (that
+ * faculty's), "Any other stand-alone or Mathematics Joint plan" (the Faculty of Mathematics' joint honours plans too).
+ * → programs, or [] for a group it can't read ("Any plan similar to one on the student's Laurier record").
+ */
+/**
+ * A major taken with another isn't a stand-alone one: Arts and Business says "Complete the requirements for a Faculty
+ * of Arts honours major or Honours Liberal Studies", so Liberal Studies' "Any other stand-alone Arts major" leaves it be.
+ */
+const flatText = new WeakMap();
+const takenWithAnother = (p) => {
+  if (!flatText.has(p)) flatText.set(p, norm(JSON.stringify([p.sections ?? [], p.text ?? {}]).replace(/<[^>]+>/g, ' ')));
+  return /\bcomplete the requirements for (?:a|an|another) [^.]{0,80}?\bmajor\b/i.test(flatText.get(p));
+};
+
+export function groupOf(text, subjects, programs) {
+  const t = norm(text).toLowerCase();
+  // "any second English major" (for English majors): the family's others, per program (combosFor leaves each out).
+  const second = /^any second (.+?) majors?$/.exec(t);
+  if (second) return programs.list.filter((p) => p.type === 'Major' && (baseOf(p) === second[1] || baseOf(p).startsWith(`${second[1]} - `)));
+  const major = /^any (other )?stand-alone (?:([a-z]+) )?majors?$/.exec(t);
+  const plus = /^any (other )?stand-alone or ([a-z]+) joint (?:honours )?plans?$/.exec(t);
+  const m = major ?? plus;
+  if (!m) return [];
+  const fac = major ? (m[2] ?? null) : null;
+  const jointFac = plus ? m[2] : null;
+  const own = new Set(subjects.map((q) => normName(q.field ?? '')).filter(Boolean));
+  const inFac = (p, f) => new RegExp(`\\b${f}\\b`, 'i').test(p.faculty ?? '');
+  return programs.list.filter((p) => {
+    if (p.type !== 'Major' || subjects.includes(p) || takenWithAnother(p)) return false;
+    if (m[1] && own.has(normName(p.field ?? ''))) return false;
+    if (/joint honours/i.test(p.title ?? p.name ?? '')) return Boolean(jointFac && inFac(p, jointFac));
+    return !fac || inFac(p, fac);
+  });
+}
+
+/**
  * Per program, what the table says it can't be combined with, both ways round:
- * pid → [{text, to: [programs]}]. Also returns how much of the table matched.
+ * pid → [{text, to: [programs]}]. Also returns how much of the table matched. A group ("Any stand-alone major") is
+ * kept as written on its program's page, and each major it covers gets one line for all of them ("Programs that take
+ * no other major", back: true: Pathways checks both ways round, so its data needs only the first).
  */
 export function combosFor(rows, programs, rulesHtml = null) {
   const index = nameIndex(programs);
@@ -508,14 +577,36 @@ export function combosFor(rows, programs, rulesHtml = null) {
   for (const row of rows) {
     const subjects = matchName(row.plan, index, programs);
     if (subjects.length) plans++;
-    const others = row.cannot.map((text) => ({ text, to: matchName(text, index, programs) }));
+    const others = row.cannot.map((text) => {
+      const to = matchName(text, index, programs);
+      const group = to.length ? [] : groupOf(text, subjects, programs);
+      return group.length ? { text, to: group, group: true } : { text, to };
+    });
     names += others.length;
     matched += others.filter((o) => o.to.length).length;
     row.to = subjects;
     row.others = others;
-    for (const p of subjects) for (const o of others) if (!o.to.includes(p)) out.get(p.pid).set(o.text, o);
-    for (const o of others) for (const q of o.to) if (!subjects.includes(q)) out.get(q.pid).set(row.plan, { text: row.plan, to: subjects });
+    for (const p of subjects) {
+      for (const o of others) {
+        if (o.group && /^any second /i.test(o.text)) out.get(p.pid).set(o.text, { ...o, to: o.to.filter((q) => q !== p) });
+        else if (!o.to.includes(p)) out.get(p.pid).set(o.text, o);
+      }
+    }
+    for (const o of others) {
+      for (const q of o.to) {
+        if (subjects.includes(q)) continue;
+        if (!o.group) out.get(q.pid).set(row.plan, { text: row.plan, to: subjects });
+        else if (/^any second /i.test(o.text)) continue;
+        else {
+          const solo = out.get(q.pid).get('solo') ?? { text: 'Programs that take no other major', to: [], rule: true, back: true };
+          for (const x of subjects) if (!solo.to.includes(x)) solo.to.push(x);
+          out.get(q.pid).set('solo', solo);
+        }
+      }
+    }
   }
+  // A program that takes no other major already says so: the line for the others it's covered by adds nothing.
+  for (const entries of out.values()) if ([...entries.values()].some((o) => o.group)) entries.delete('solo');
   // The general rules: no two "and Financial Management" bachelor's degrees,
   const fm = programs.list.filter((p) => p.type === 'Major' && / and financial management$/.test(baseOf(p)));
   if (rulesHtml && /“and Financial Management” bachelor|"and Financial Management" bachelor/.test(textOf(typeof rulesHtml === 'string' ? parseHtml(rulesHtml) : rulesHtml))) {
@@ -536,6 +627,36 @@ export function combosFor(rows, programs, rulesHtml = null) {
     else if (topics.has(field)) out.get(p.pid).set(`topic:${field}`, { text: `Another ${p.field} topic specialization: one at most`, to: siblings, rule: true });
   }
   return { byProgram: new Map([...out].map(([k, v]) => [k, tidyCombos([...v.values()])])), stats: { rows: rows.length, plans, names, matched } };
+}
+
+/**
+ * The policy's general rules (above its table), pair by pair, onto each program's "can't be combined with": one line
+ * per rule naming the programs it rules out (or how many, past a dozen), not repeating ones the table names. clash
+ * is engine.js's planClash on Pathways' shape of each program (shaped: pathwaysPrograms), so the pages and Pathways
+ * read the rules the same way. Pathways' data leaves these out (general: true): its app applies the rules itself.
+ */
+export function addGeneralCombos(byProgram, programs, shaped, clash) {
+  const bySlug = new Map(shaped.map((x) => [x.s, x]));
+  for (const p of programs.list) {
+    const a = bySlug.get(p.slug);
+    if (!a) continue;
+    const rules = new Map();
+    for (const q of programs.list) {
+      const b = q !== p && bySlug.get(q.slug);
+      const why = b ? clash(a, b) : '';
+      if (!why) continue;
+      if (!rules.has(why)) rules.set(why, []);
+      rules.get(why).push(q);
+    }
+    const list = byProgram.get(p.pid) ?? [];
+    const named = new Set(list.flatMap((o) => o.to));
+    for (const [why, to] of rules) {
+      const rest = to.filter((q) => !named.has(q));
+      if (rest.length) list.push({ text: `${why[0].toUpperCase()}${why.slice(1)}`, to: rest, rule: true, general: true });
+    }
+    byProgram.set(p.pid, list);
+  }
+  return byProgram;
 }
 
 /** Majors the general rules limit to one "topic" specialization ("Economics (maximum of one topic specialization)"). */
@@ -669,8 +790,13 @@ export function programPage({ p, programs, combos, cat, known, courses = null, s
     const gone = /\*/.test(o.text);
     const lost = !gone && !o.to.length && looksLikeProgram(o.text);
     const label = esc(o.text.replace(/\*/g, '').trim());
-    const links =
-      o.to.length === 1 && !o.rule
+    const names = (to) => to.map((q) => `<a href="/programs/${q.slug}/">${esc(q.name)}</a>`).join(', ');
+    if (o.general) return `<li>${label} <span class="t">(${o.to.length > 12 ? `${o.to.length} ${o.to.every((q) => q.type === 'Major') ? 'majors' : 'programs'}` : names(o.to)})</span></li>`;
+    const links = o.group
+      ? `${label} <span class="t">(${o.to.length} ${o.to.every((q) => q.type === 'Major') ? 'majors' : 'programs'}${/^any second /i.test(o.text) ? '' : `: every one but joint honours plans${/other/i.test(o.text) ? ' and its own' : ''}`})</span>`
+      : renamedTo(o.text) && o.to.length
+        ? `${label} <span class="t">(renamed since: ${o.to.map((q) => `<a href="/programs/${q.slug}/">${esc(q.name)}</a>`).join(', ')})</span>`
+      : o.to.length === 1 && !o.rule
         ? programLink(o.to[0])
         : o.to.length
           ? `${label} <span class="t">(${o.to.map((q) => `<a href="/programs/${q.slug}/">${esc(q.name)}</a>`).join(', ')})</span>`
@@ -702,7 +828,7 @@ ${prose('minimumAverageSRequired', 'Averages', 'avg-h')}
 ${prose('declarationRequirements', 'Declaring', 'dec-h')}
 <section aria-labelledby="icc-h"><h2 id="icc-h">Can’t be combined with</h2>${
     cant.length
-      ? `<ul class="plinks">${cant.map(cantItem).join('')}</ul><p class="t">${cant.some((o) => !o.rule) ? 'From the calendar’s table of invalid credential combinations. Its' : 'From the calendar’s rules on combining credentials. Its other'} <a href="/programs/combinations/">general rules</a> apply too, such as no minor in the same subject as your major.</p>`
+      ? `<ul class="plinks">${cant.map(cantItem).join('')}</ul><p class="t">From the calendar’s <a href="/programs/combinations/">${cant.some((o) => !o.rule) ? `table of invalid credential combinations${cant.some((o) => o.rule) ? ' and the general rules above it' : ''}` : 'general rules on combining credentials'}</a>. Confirm a combination with an academic advisor before you declare it.</p>`
       : `<p class="none">Nothing in the calendar’s table of invalid credential combinations. Its <a href="/programs/combinations/">general rules</a> still apply, such as no minor in the same subject as your major.</p>`
   }</section>
 ${prose('admissionRequirements', 'Admission', 'adm-h')}
@@ -812,20 +938,32 @@ const looksLikeProgram = (text) => !/^(any|students|all)\b/i.test(text.trim()) &
 
 export function combinationsPage({ icc, cat, known, programs, builtAt, version }) {
   const rules = richText(icc.rulesHtml, { known, byId: programs.byId, cat });
-  const name = (text, to) => {
+  const name = (text, to, group = false) => {
     const lost = !/\*/.test(text) && !to?.length && looksLikeProgram(text);
     const label = esc(text.replace(/\*/g, '').trim()) + (/\*/.test(text) ? ' <span class="t">(no longer offered)</span>' : lost ? ` <span class="t">(not in the ${esc(cat.label)} calendar by this name)</span>` : '');
+    if (group) return `${label} <span class="t">(${to.length} majors)</span>`;
+    if (renamedTo(text) && to?.length) return `${label} <span class="t">(renamed since: ${to.map((q) => `<a href="/programs/${q.slug}/">${esc(q.name)}</a>`).join(', ')})</span>`;
     if (to?.length === 1) return `<a href="/programs/${to[0].slug}/">${label}</a>`;
     if (to?.length) return `${label} <span class="t">(${to.map((q) => `<a href="/programs/${q.slug}/">${esc(q.name)}</a>`).join(', ')})</span>`;
     return label;
   };
+  // How much of the table uwloo can apply, and what it can't (and why).
+  const all = icc.rows.flatMap((r) => r.others ?? []);
+  const unread = all.filter((o) => !o.to?.length);
+  const gone = unread.filter((o) => /\*/.test(o.text)).length;
+  const lostNames = [...new Set([...icc.rows.filter((r) => !r.to?.length).map((r) => r.plan), ...unread.filter((o) => !/\*/.test(o.text) && looksLikeProgram(o.text)).map((o) => o.text)])];
+  const words = unread.filter((o) => !/\*/.test(o.text) && !looksLikeProgram(o.text)).length;
+  const read = icc.rows.length
+    ? `<p class="t icc-read">uwloo reads every row: ${icc.rows.filter((r) => r.to?.length).length} of the ${icc.rows.length} programs and ${all.length - unread.length} of the ${all.length} names they can’t be combined with are matched to programs (groups like “Any stand-alone major”, whole degrees like “Mathematics, Bachelor of”, and names the calendar has since changed included), and Pathways applies each pair both ways round. Not matched: ${[gone && `${gone} no longer offered (*)`, lostNames.length && `${lostNames.map((n) => `“${esc(n.replace(/\*/g, ''))}”`).join(', ')}, not programs in this calendar`, words && `${words} conditions in words (“Students who have completed a Diploma in HRM…”), shown on those programs’ pages and in Pathways`].filter(Boolean).join('; ')}.</p>`
+    : '';
   const rows = icc.rows
-    .map((r) => `<tr><th scope="row">${name(r.plan, r.to)}</th><td>${esc(r.faculty)}</td><td><ul>${(r.others ?? r.cannot.map((text) => ({ text }))).map((o) => `<li>${name(o.text, o.to)}</li>`).join('')}</ul></td></tr>`)
+    .map((r) => `<tr><th scope="row">${name(r.plan, r.to)}</th><td>${esc(r.faculty)}</td><td><ul>${(r.others ?? r.cannot.map((text) => ({ text }))).map((o) => `<li>${name(o.text, o.to, o.group)}</li>`).join('')}</ul></td></tr>`)
     .join('');
   const body = `<p class="kicker"><a href="/programs/">Programs</a></p>
 <h1>What can’t be combined</h1>
 <p class="lede">The ${esc(cat.label)} Undergraduate Calendar’s rules on which credentials can’t be taken together, with each program linked to its page.</p>
 <div class="notes icc">${rules}</div>
+${read}
 <div class="scroll"><table class="icc-table"><caption>Specific invalid credential combinations (${icc.rows.length})</caption><thead><tr><th scope="col">Program</th><th scope="col">Faculty</th><th scope="col">Can’t be combined with</th></tr></thead><tbody>${rows}</tbody></table></div>
 <p class="t">From <a href="${esc(`${cat.pageUrl}#/policy/${ICC_PID}`)}">Invalid Credential Combinations</a> in the official calendar, which has the final word. Confirm a combination with an academic advisor before you declare it.</p>`;
   return shell({

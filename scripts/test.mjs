@@ -1894,9 +1894,11 @@ test('programs: invalid credential combinations, matched to programs', () => {
   assert.deepEqual(codes('Communications Studies major*'), ['4G-Communication Studies'], 'a spelling slip');
   assert.deepEqual(codes('Any stand-alone major'), []);
   const { byProgram, stats } = PR.combosFor(icc.rows, progs, icc.rulesHtml);
-  assert.deepEqual(stats, { rows: 5, plans: 3, names: 8, matched: 6 });
-  const of = (code) => byProgram.get(progs.list.find((p) => p.code === code).pid).map((o) => [o.text, o.to.map((p) => p.code)]);
-  assert.deepEqual(of('H-Accounting & Financial Management'), [['Arts and Business', []], ['Management Studies Minor', ['Management Studies Minor']], ['Any stand-alone major', []]]);
+  assert.deepEqual(stats, { rows: 5, plans: 3, names: 8, matched: 7 }, 'a group counts as matched');
+  const of = (code) => byProgram.get(progs.list.find((p) => p.code === code).pid).map((o) => [o.text, o.to.map((p) => p.code).sort()]);
+  assert.deepEqual(of('H-Accounting & Financial Management'), [['Arts and Business', []], ['Management Studies Minor', ['Management Studies Minor']], ['Any stand-alone major', ['4G-Communication Studies', 'H-Data Science (BCS)', 'H-Data Science (BMath)']]], '"Any stand-alone major": every other major');
+  assert.ok(byProgram.get(progs.list.find((p) => p.code === 'H-Accounting & Financial Management').pid).find((o) => o.text === 'Any stand-alone major').group);
+  assert.deepEqual(of('H-Data Science (BCS)'), [['Programs that take no other major', ['H-Accounting & Financial Management']]], 'and each of those majors says so once');
   assert.deepEqual(of('Management Studies Minor'), [['Accounting and Financial Management, Bachelor of', ['H-Accounting & Financial Management']]], 'both ways round');
   assert.deepEqual(of('Aging Studies Option'), [['Gerontology, Diploma in', ['Gerontology Diploma']], ['Gerontology Minor', ['Gerontology Minor']]], '"Minor or Diploma" collapses into the two it names');
   assert.deepEqual([...PR.topicMajors(icc.rulesHtml)], ['economics', 'mathematical economics']);
@@ -1953,6 +1955,125 @@ test('programs: degree names, renamed specializations, and the "and Financial Ma
   assert.match(page, /<li>Chemical Physics major <span class="t">\(not in the 2026–27 calendar by this name\)<\/span><\/li>/);
   assert.match(page, /<li>Geomatics major <span class="t">\(no longer offered\)<\/span><\/li>/);
   assert.match(page, /<li>Any stand-alone major<\/li>/);
+  const twoMajors = progs.list.filter((q) => q.type === 'Major' && q !== afm).slice(0, 2);
+  const grouped = PR.programPage({ p: afm, programs: progs, combos: new Map([[afm.pid, [{ text: 'Any stand-alone major', to: twoMajors, group: true }]]]), cat: { label: '2026–27', pageUrl: 'x' }, known: new Set(), builtAt: new Date(), version: 'v' });
+  assert.match(grouped, /<li>Any stand-alone major <span class="t">\(2 majors: every one but joint honours plans\)<\/span><\/li>/, 'as the calendar words it, not 190 links');
+});
+
+test('programs: the combinations table’s groups ("Any other stand-alone Arts major")', () => {
+  const fac = (e, name) => ({ ...e, facultyCalendarDisplay: { name } });
+  const list = [
+    fac(progEntry('a', 'va', 'H-Liberal Studies', 'Liberal Studies (Bachelor of Arts - Honours)', 'Major', 'Liberal Studies'), 'Faculty of Arts'),
+    fac(progEntry('b', 'vb', 'H-Economics', 'Economics (Bachelor of Arts - Honours)', 'Major', 'Economics'), 'Faculty of Arts'),
+    fac(progEntry('c', 'vc', 'H-French', 'French (Bachelor of Arts - Honours)', 'Major', 'French'), 'Faculty of Arts'),
+    fac(progEntry('d', 'vd', 'FR-French Teaching Specialization', 'French Teaching Specialization', 'Specialization', 'French'), 'Faculty of Arts'),
+    fac(progEntry('e', 've', 'H-Pure Mathematics', 'Pure Mathematics (Bachelor of Mathematics - Honours)', 'Major', 'Pure Mathematics'), 'Faculty of Mathematics'),
+    fac(progEntry('f', 'vf', 'H-Mathematical Studies', 'Mathematical Studies (Bachelor of Mathematics - Honours)', 'Major', 'Mathematical Studies'), 'Faculty of Mathematics'),
+    fac(progEntry('g', 'vg', 'JH-Statistics', 'Statistics (Joint Honours)', 'Major', 'Statistics'), 'Faculty of Mathematics'),
+    fac(progEntry('h', 'vh', 'JH-Biology', 'Biology (Joint Honours)', 'Major', 'Biology'), 'Faculty of Science'),
+    fac(progEntry('i', 'vi', 'Economics Minor', 'Economics Minor', 'Minor', 'Economics'), 'Faculty of Arts'),
+    fac(progEntry('j', 'vj', 'H-Arts & Business', 'Arts and Business (Bachelor of Arts - Honours)', 'Major', 'Arts and Business'), 'Faculty of Arts'),
+  ];
+  const details = new Map(list.map((e) => [e.pid, { pid: e.pid }]));
+  details.set('j', { pid: 'j', graduationRequirements: '<p>Complete the requirements for a Faculty of Arts honours major or Honours Liberal Studies.</p>' });
+  const progs = PR.readPrograms(list, details);
+  const one = (code) => progs.list.filter((p) => p.code === code);
+  const codes = (text, row) => PR.groupOf(text, one(row), progs).map((p) => p.code).sort();
+  assert.deepEqual(codes('Any stand-alone major', 'H-Economics'), ['H-French', 'H-Liberal Studies', 'H-Mathematical Studies', 'H-Pure Mathematics'], 'majors only, and joint honours plans aren’t stand-alone');
+  assert.deepEqual(codes('Any other stand-alone Arts major', 'H-Liberal Studies'), ['H-Economics', 'H-French'], 'its faculty’s, and not Arts and Business: it’s taken with another major (Honours Liberal Studies, for one)');
+  assert.deepEqual(codes('Any other stand-alone or Mathematics Joint plan', 'H-Mathematical Studies'), ['H-Economics', 'H-French', 'H-Liberal Studies', 'H-Pure Mathematics', 'JH-Statistics'], 'and the Faculty of Mathematics’ joint plans');
+  assert.deepEqual(codes('Any other stand-alone major', 'FR-French Teaching Specialization'), ['H-Economics', 'H-Liberal Studies', 'H-Mathematical Studies', 'H-Pure Mathematics'], '“other”: not the French major it’s part of');
+  assert.deepEqual(codes('Any plan similar to one appearing on the student’s Laurier academic record transcript', 'H-Economics'), [], 'a group it can’t read stays as written');
+});
+
+test('programs: whole degrees, renamed programs and "any second" in the combinations table', () => {
+  const list = [
+    progEntry('a', 'va', 'Degree Reqs: BMath', 'Bachelor of Mathematics Degree Requirements', 'Degree Requirements', 'Degree Requirements'),
+    progEntry('b', 'vb', 'H-Pure Mathematics', 'Pure Mathematics (Bachelor of Mathematics - Honours)', 'Major', 'Pure Mathematics'),
+    progEntry('c', 'vc', '3G-Mathematics', 'Mathematics (Bachelor of Mathematics, Three-Year General)', 'Major', 'Mathematics'),
+    progEntry('d', 'vd', 'H-BBA & BMath Double Degree', 'Business Administration and Mathematics Double Degree (Bachelor of Business Administration and Bachelor of Mathematics - Honours)', 'Major', 'Mathematics and Business'),
+    progEntry('e', 've', 'H-Science & Financial Management', 'Science and Financial Management (Bachelor of Science and Financial Management - Honours)', 'Major', 'Science and Financial Management'),
+    progEntry('f', 'vf', 'H-Biology', 'Biology (Bachelor of Science - Honours)', 'Major', 'Biology'),
+    progEntry('g', 'vg', 'Mathematics Minor', 'Mathematics Minor', 'Minor', 'Mathematics'),
+    progEntry('h', 'vh', 'H-Sport & Recreation Management', 'Sport and Recreation Management (Bachelor of Arts - Honours)', 'Major', 'Sport and Recreation Management'),
+    progEntry('i', 'vi', 'JH-Sport & Recreation Management', 'Sport and Recreation Management (Joint Honours)', 'Major', 'Sport and Recreation Management'),
+    progEntry('j', 'vj', 'Technical & Professional Writing Minor', 'Technical and Professional Writing Minor', 'Minor', 'English'),
+    progEntry('k', 'vk', 'H-English - Literature', 'English - Literature (Bachelor of Arts - Honours)', 'Major', 'English'),
+    progEntry('l', 'vl', 'H-English - Rhetoric', 'English - Rhetoric, Media, and Professional Communication (Bachelor of Arts - Honours)', 'Major', 'English'),
+  ];
+  const progs = PR.readPrograms(list, new Map(list.map((e) => [e.pid, { pid: e.pid }])));
+  const idx = PR.nameIndex(progs);
+  const codes = (name) => PR.matchName(name, idx, progs).map((p) => p.code).sort();
+  const bmath = ['3G-Mathematics', 'Degree Reqs: BMath', 'H-BBA & BMath Double Degree', 'H-Pure Mathematics'];
+  assert.deepEqual(codes('Mathematics, Bachelor of'), bmath, 'every plan that leads to the degree, and its requirements');
+  assert.deepEqual(codes('Science, Bachelor of'), ['H-Biology'], 'not the Bachelor of Science and Financial Management');
+  assert.deepEqual(codes('Recreation and Sport Business major'), ['H-Sport & Recreation Management', 'JH-Sport & Recreation Management'], 'renamed since');
+  assert.equal(PR.renamedTo('Technical Writing Minor'), 'technical and professional writing minor');
+  assert.deepEqual(codes('Technical Writing Minor'), ['Technical & Professional Writing Minor']);
+  const rows = [
+    { plan: 'English majors', faculty: 'Arts', cannot: ['any second English major', 'Technical Writing Minor'] },
+    { plan: 'Mathematics, Bachelor of', faculty: 'Mathematics', cannot: ['Mathematics Minor'] },
+    { plan: 'Mathematics Minor', faculty: 'Mathematics', cannot: ['Students who have completed a Diploma in Math'] },
+  ];
+  const { byProgram, stats } = PR.combosFor(rows, progs);
+  assert.deepEqual(stats, { rows: 3, plans: 3, names: 4, matched: 3 });
+  const of = (code) => byProgram.get(progs.list.find((p) => p.code === code).pid).map((o) => [o.text, o.to.map((p) => p.code).sort()]);
+  assert.deepEqual(of('H-English - Literature'), [['any second English major', ['H-English - Rhetoric']], ['Technical Writing Minor', ['Technical & Professional Writing Minor']]], 'each English major: the others');
+  assert.deepEqual(of('Mathematics Minor'), [['Mathematics, Bachelor of', bmath], ['Students who have completed a Diploma in Math', []]], 'BMath students can’t take the Mathematics Minor');
+  // Pathways: the pairs, and what the table says in words for the plan's panel.
+  const minor = PW.pathwaysPrograms({ programs: progs, combos: byProgram }).find((p) => p.c === 'Mathematics Minor');
+  assert.deepEqual(minor.cant.sort(), ['3g-mathematics', 'degree-reqs-bmath', 'h-bba-and-bmath-double-degree', 'h-pure-mathematics']);
+  assert.deepEqual(minor.cn, ['Students who have completed a Diploma in Math']);
+});
+
+test('programs and pathways: the calendar’s general rules on combining credentials', () => {
+  const pl = (s, n, t, fi, f = '', extra = {}) => ({ s, n, t, fi, f, ...extra });
+  const anth = pl('h-anthropology', 'Anthropology (Bachelor of Arts - Honours)', 'Major', 'Anthropology', 'Faculty of Arts');
+  const anthMinor = pl('anthropology-minor', 'Anthropology Minor', 'Minor', 'Anthropology', 'Faculty of Arts');
+  const se = pl('h-software-engineering', 'Software Engineering (Bachelor of Software Engineering - Honours)', 'Major', 'Software Engineering', 'Faculty of Engineering');
+  const seOpt = pl('software-engineering-option', 'Software Engineering Option', 'Option', 'Options: Faculty of Engineering', 'Faculty of Engineering', { deg: ['Bachelor of Applied Science', 'Bachelor of Architectural Studies'] });
+  const aiOpt = pl('artificial-intelligence-option', 'Artificial Intelligence Option', 'Option', 'Options: Faculty of Engineering', 'Faculty of Engineering', { deg: ['Bachelor of Applied Science', 'Bachelor of Software Engineering'] });
+  const cmwMinor = pl('church-music-and-worship-minor', 'Church Music and Worship Minor', 'Minor', 'Church Music and Worship', 'Faculty of Arts');
+  const cmwDip = pl('church-music-and-worship-diploma', 'Diploma in Church Music and Worship', 'Diploma', 'Church Music and Worship', 'Faculty of Arts');
+  const jp1 = pl('japanese-language-i-diploma', 'Diploma in Japanese Language I', 'Diploma', 'Japanese', 'Faculty of Arts');
+  const jp2 = pl('japanese-language-ii-diploma', 'Diploma in Japanese Language II', 'Diploma', 'Japanese', 'Faculty of Arts');
+  const ko1 = pl('korean-language-i-diploma', 'Diploma in Korean Language I', 'Diploma', 'Korean', 'Faculty of Arts');
+  const bas = pl('h-architectural-studies', 'Architectural Studies (Bachelor of Architectural Studies - Honours)', 'Major', 'Architectural Studies', 'Faculty of Engineering');
+  const bmsc = pl('h-medical-sciences', 'Medical Sciences (Bachelor of Medical Sciences - Honours)', 'Major', 'Medical Sciences', 'Faculty of Science');
+  const chemMinor = pl('chemistry-minor', 'Chemistry Minor', 'Minor', 'Chemistry', 'Faculty of Science');
+  const econMinor = pl('economics-minor', 'Economics Minor', 'Minor', 'Economics', 'Faculty of Arts');
+  const jhstat = pl('jh-statistics', 'Statistics (Joint Honours)', 'Major', 'Statistics', 'Faculty of Mathematics');
+  const jhbio = pl('jh-biology', 'Biology (Joint Honours)', 'Major', 'Biology', 'Faculty of Science');
+  const dsbcs = pl('h-data-science-bcs', 'Data Science (Bachelor of Computer Science - Honours)', 'Major', 'Data Science', 'Faculty of Mathematics');
+  const dsbmath = pl('h-data-science-bmath', 'Data Science (Bachelor of Mathematics - Honours)', 'Major', 'Data Science', 'Faculty of Mathematics');
+  const bbabcs = pl('h-bba-and-bcs-double-degree', 'Business Administration and Computer Science Double Degree (Bachelor of Business Administration and Bachelor of Computer Science - Honours)', 'Major', 'Computer Science', 'Faculty of Mathematics');
+  const pmath = pl('h-pure-mathematics', 'Pure Mathematics (Bachelor of Mathematics - Honours)', 'Major', 'Pure Mathematics', 'Faculty of Mathematics', { co: 1, re: 1 });
+  const phil = pl('h-philosophy', 'Philosophy (Bachelor of Arts - Honours)', 'Major', 'Philosophy', 'Faculty of Arts', { re: 1 });
+  assert.equal(PE.planClash(anth, anthMinor), 'a minor in the same subject as a major');
+  assert.equal(PE.planClash(seOpt, se), 'an option in the same subject as a major', 'either way round');
+  assert.equal(PE.planClash(cmwMinor, cmwDip), 'a minor and a diploma in the same subject');
+  assert.equal(PE.planClash(jp1, jp2), 'two diplomas in the same language');
+  assert.equal(PE.planClash(jp1, ko1), '');
+  assert.equal(PE.planClash(bas, aiOpt), 'a BAS student takes only the Faculty of Engineering options that allow it');
+  assert.equal(PE.planClash(bas, seOpt), '', 'the Software Engineering Option says it’s for BAS students');
+  assert.equal(PE.planClash(bmsc, chemMinor), 'a BMSc student takes no Faculty of Science minor or option');
+  assert.equal(PE.planClash(bmsc, econMinor), '', 'another faculty’s minor is fine');
+  assert.equal(PE.planClash(jhstat, jhbio), 'a BMath joint honours plan doesn’t combine with another faculty’s joint honours plan');
+  assert.equal(PE.planClash(dsbmath, pmath), 'Data Science doesn’t combine with another Faculty of Mathematics honours plan');
+  assert.equal(PE.planClash(dsbcs, bbabcs), '', 'the BCS (Data Science) can be the BBA and BCS double degree’s BCS half');
+  assert.equal(PE.planClash(pmath, phil), '', 'outside co-op');
+  assert.equal(PE.planClash(pmath, phil, { coop: true }), 'in co-op, a BCS or BMath honours plan doesn’t combine with an honours plan that has no co-op');
+  assert.equal(PE.planClash(pmath, { ...phil, co: 1 }, { coop: true }), '', 'one with co-op too is fine');
+  // On the program pages: one line per rule, and not in Pathways' pairs (its app applies the rules).
+  const list = [progEntry('a', 'va', 'H-Economics', 'Economics (Bachelor of Arts - Honours)', 'Major', 'Economics'), progEntry('b', 'vb', '3G-Economics', 'Economics (Bachelor of Arts - Three-Year General)', 'Major', 'Economics'), progEntry('c', 'vc', 'Economics Minor', 'Economics Minor', 'Minor', 'Economics')];
+  const progs = PR.readPrograms(list, new Map(list.map((e) => [e.pid, { pid: e.pid }])));
+  const byProgram = PR.addGeneralCombos(new Map(), progs, PW.pathwaysPrograms({ programs: progs, combos: new Map() }), (x, y) => PE.planClash(x, y));
+  const minor = progs.list.find((p) => p.code === 'Economics Minor');
+  assert.deepEqual(byProgram.get(minor.pid).map((o) => [o.text, o.to.map((q) => q.code).sort(), o.general]), [['A minor in the same subject as a major', ['3G-Economics', 'H-Economics'], true]]);
+  const page = PR.programPage({ p: minor, programs: progs, combos: byProgram, cat: { label: '2026–27', pageUrl: 'x' }, known: new Set(), builtAt: new Date(), version: 'v' });
+  assert.match(page, /<li>A minor in the same subject as a major <span class="t">\(<a href="\/programs\/h-economics\/">Economics \(Bachelor of Arts - Honours\)<\/a>, <a href="\/programs\/3g-economics\/">/);
+  assert.match(page, /From the calendar’s <a href="\/programs\/combinations\/">general rules on combining credentials<\/a>/);
+  assert.equal(PW.pathwaysPrograms({ programs: progs, combos: byProgram }).find((p) => p.c === 'Economics Minor').cant, undefined);
 });
 
 // ---------------- pathways (/pathways/) ----------------
@@ -2151,6 +2272,7 @@ test('graduate programs: names, pages, counts toward, Pathways’ list', async (
   assert.deepEqual(G.gradParts("Accelerated Master's Program in Biostatistics"), { degree: 'Accelerated master’s', subject: 'Biostatistics', variant: '' });
   assert.deepEqual(G.gradParts('Master of Business, Entrepreneurship and Technology (MBET)'), { degree: 'MBET', subject: '', variant: '' });
   assert.deepEqual(G.gradParts('Doctor of Philosophy (PhD) in Earth Sciences - Water'), { degree: 'PhD', subject: 'Earth Sciences', variant: 'Water' });
+  assert.deepEqual(G.gradParts("OD-Accelerated Master's Program in Vision Science"), { degree: 'OD and accelerated master’s', subject: 'Vision Science', variant: '' });
 
   // The probe's real Fall 2026 Graduate Calendar records (data/probe/samples).
   const dir = new URL('../data/probe/samples/', import.meta.url);
@@ -2177,15 +2299,74 @@ test('graduate programs: names, pages, counts toward, Pathways’ list', async (
   assert.match(html, /Economics as an undergraduate/);
   assert.match(html, /href="\/programs\/h-economics\/"/);
   assert.match(html, /https:\/\/example\.org\/catalog#\/programs\//);
+  assert.match(html, new RegExp(`<a href="/pathways/#grad=${phd.slug}">See it in Pathways</a>`), 'into Pathways, with the plans that lead to it');
   const index = G.gradProgramsIndexPage({ programs: grad, cat: { label: 'Fall 2026' }, builtAt: new Date(), version: 't' });
   assert.match(index, /href="\/programs\/grad\/[a-z0-9-]+\/"/);
   const { list, ct } = G.gradPathways(grad, (c) => `Title ${c}`);
   assert.equal(list.length, grad.list.length);
+  assert.ok(list.some((g) => g.ad && g.ad.length <= 262), 'admission in a sentence or two');
   assert.ok(list.every((g) => g.s && g.n && g.t && g.d));
   assert.ok(Object.values(ct).every((t) => t.startsWith('Title ')));
   const one = [...counts.entries()][0];
   assert.match(countsSection(one[0], one[1], { label: 'Fall 2026' }, [], { grad: true }), /Graduate programs in the Fall 2026 Graduate Calendar/);
   assert.match(countsSection('ECON101', [{ p: { slug: 'h-economics', name: 'Economics (BA Honours)', type: 'Major' }, roles: ['Required'] }], { label: '2026–27' }), /<a href="\/pathways\/#course=ECON101">Pathways<\/a> puts it in your grid/);
+});
+
+test('pathways: graduate programs in the plan box, and the plans that lead to one', () => {
+  const g = (s, n, t, d, su, fi, f, extra = {}) => ({ s, n, t, d, su, fi, f, ...extra });
+  const list = [
+    g('ma-in-economics', 'Master of Arts (MA) in Economics', "Master's", 'MA', 'Economics', 'Economics', 'Faculty of Arts', { req: [{ h: 'Courses', c: ['ECON601', 'ECON602', 'ECON611'] }] }),
+    g('phd-in-economics', 'Doctor of Philosophy (PhD) in Economics', 'PhD', 'PhD', 'Economics', 'Economics', 'Faculty of Arts'),
+    g('mmath-in-computer-science', 'Master of Mathematics (MMath) in Computer Science', "Master's", 'MMath', 'Computer Science', 'Computer Science', 'Faculty of Mathematics', { req: [{ h: 'Courses', c: ['CS686', 'CS761', 'CS798'] }] }),
+    g('mmath-in-pure-mathematics', 'Master of Mathematics (MMath) in Pure Mathematics', "Master's", 'MMath', 'Pure Mathematics', 'Pure Mathematics', 'Faculty of Mathematics'),
+    g('gdip-in-climate-change', 'Graduate Diploma (GDip) in Climate Change (Type 2/Concurrent)', 'Graduate Diploma', 'GDip', 'Climate Change', 'Climate Change', 'Faculty of Environment'),
+    g('accelerated-master-s-program-in-statistics', "Accelerated Master's Program in Statistics", "Master's", 'Accelerated master’s', 'Statistics', 'Statistics', 'Faculty of Mathematics'),
+  ];
+  const names = (q) => PE.gradHits(list, q).hits.map((x) => x.s);
+  assert.deepEqual(PE.gradHits(list, 'master'), { hits: PE.gradHits(list, 'master').hits, grad: true });
+  assert.deepEqual(names('master'), ['ma-in-economics', 'mmath-in-computer-science', 'mmath-in-pure-mathematics', 'accelerated-master-s-program-in-statistics'], 'master’s, accelerated ones last');
+  assert.deepEqual(names('Doctor'), ['phd-in-economics']);
+  assert.deepEqual(names('phd'), ['phd-in-economics']);
+  assert.ok(PE.gradHits(list, 'doc').grad, 'the start of a word for them asks for them too');
+  assert.deepEqual(names('mmath cs'), ['mmath-in-computer-science'], 'initials, as plans');
+  assert.deepEqual(names('ma economics'), ['ma-in-economics']);
+  assert.equal(PE.gradHits(list, 'ma').grad, false, '“ma” alone starts “math” too');
+  assert.equal(PE.gradHits(list, 'economics').grad, false, 'a subject alone: undergraduate plans first');
+  assert.deepEqual(names('economics'), ['ma-in-economics', 'phd-in-economics']);
+  assert.deepEqual(names('graduate diploma'), ['gdip-in-climate-change']);
+  assert.deepEqual(names('econ'), ['ma-in-economics', 'phd-in-economics'], 'a course subject’s letters');
+  assert.deepEqual(names('afm'), []);
+  const major = (s, n, fi, t = 'Major') => ({ s, n, t, fi });
+  const P = [major('h-economics', 'Economics (Bachelor of Arts - Honours)', 'Economics'), major('4g-economics', 'Economics (Bachelor of Arts - Four-Year General)', 'Economics'), major('economics-minor', 'Economics Minor', 'Economics', 'Minor'), major('h-history', 'History (Bachelor of Arts - Honours)', 'History'), { s: 'econ-dr', n: 'Bachelor of Arts Degree Requirements (Arts)', t: 'Degree Requirements', fi: 'Economics' }];
+  assert.deepEqual(PE.gradLeads(list[0], P).map((p) => p.s), ['h-economics', '4g-economics', 'economics-minor'], 'majors (honours first), then minors; not degree requirements');
+});
+
+test('pathways: two majors that can’t be taken together, beyond the calendar’s table', () => {
+  const major = (s, n, fi) => ({ s, n, t: 'Major', fi });
+  const econ = major('h-economics', 'Economics (Bachelor of Arts - Honours)', 'Economics');
+  const econ4 = major('4g-economics', 'Economics (Bachelor of Arts - Four-Year General)', 'Economics');
+  const hist = major('h-history', 'History (Bachelor of Arts - Honours)', 'History');
+  const hist3 = major('3g-history', 'History (Bachelor of Arts - Three-Year General)', 'History');
+  const cpa = major('h-mathematics-chartered-professional-accountancy', 'Mathematics/Chartered Professional Accountancy (Bachelor of Mathematics - Honours)', 'Mathematics/Chartered Professional Accountancy');
+  const afm = major('h-accounting-and-financial-management', 'Accounting and Financial Management (Bachelor of Accounting and Financial Management - Honours)', 'Accounting and Financial Management');
+  const jhstat = major('jh-statistics', 'Statistics (Joint Honours)', 'Statistics');
+  assert.equal(PE.majorsClash(econ, econ4), 'two versions of Economics');
+  assert.equal(PE.majorsClash(econ, hist3), 'a BA combines two honours majors only, not a general one');
+  assert.equal(PE.majorsClash(econ4, hist), 'a BA combines two honours majors only, not a general one', 'either way round');
+  assert.equal(PE.majorsClash(econ, hist), '', 'two honours BA majors: a double major');
+  assert.equal(PE.majorsClash(econ, jhstat), '', 'joint honours plans pair across faculties');
+  assert.equal(PE.majorsClash(cpa, afm), '', 'different degrees alone aren’t a reason (the calendar’s table has AFM’s rule)');
+  assert.equal(PE.majorsClash(econ, { s: 'economics-minor', n: 'Economics Minor', t: 'Minor', fi: 'Economics' }), '', 'majors only');
+  const bcs = major('h-computer-science-bcs', 'Computer Science (Bachelor of Computer Science - Honours)', 'Computer Science');
+  const pmath = major('h-pure-mathematics', 'Pure Mathematics (Bachelor of Mathematics - Honours)', 'Pure Mathematics');
+  const jhstatm = { ...jhstat, f: 'Faculty of Mathematics' };
+  const jhcs = major('jh-computer-science-bcs', 'Computer Science (Bachelor of Computer Science - Joint Honours)', 'Computer Science');
+  assert.equal(PE.majorsClash(bcs, pmath), 'a stand-alone BCS doesn’t combine with any BMath plan');
+  assert.equal(PE.majorsClash(jhstatm, bcs), 'a stand-alone BCS doesn’t combine with any BMath plan', 'including Math’s joint honours plans');
+  assert.equal(PE.majorsClash(jhcs, pmath), '', 'a BCS joint honours plan isn’t stand-alone');
+  const req = (code) => [{ h: 'Required Courses', r: [{ r: 'all', c: [code] }] }];
+  const found = PE.directions([{ ...afm, req: req('AFM101') }, { ...hist, req: req('HIST101') }], new Map(), { chosen: [cpa.s], clash: (a, b) => (a === afm.s && b === cpa.s ? 'AFM takes no other major' : '') });
+  assert.deepEqual(found.map((x) => [x.p.s, x.blocked]), [['h-history', []], [afm.s, [cpa.s]]], 'directions takes the clash check, and what can’t go with yours comes last');
 });
 
 test('pathways: who a plan is for, options by degree, entry programs, other names', () => {

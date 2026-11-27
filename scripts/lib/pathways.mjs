@@ -620,8 +620,19 @@ export function pathwaysPrograms({ programs, combos }) {
     // A term-by-term program's usual load (engineering puts 6 or 7 in a term): the most its terms list.
     const ld = Math.max(0, ...out.req.filter((x) => /^\d[AB]\s+Term\b/i.test(x.h ?? '')).map((x) => termLoad(x.r)));
     if (ld > 5) out.ld = Math.min(7, ld);
-    const cant = (combos?.get(p.pid) ?? []).flatMap((o) => o.to.map((q) => q.slug)).filter((s) => s !== p.slug);
+    // Each pair once is enough (Pathways checks both ways round): not the line every major gets from a group rule.
+    const cant = (combos?.get(p.pid) ?? []).filter((o) => !o.back && !o.general).flatMap((o) => o.to.map((q) => q.slug)).filter((s) => s !== p.slug);
     if (cant.length) out.cant = [...new Set(cant)];
+    // "Accounting and Financial Management, Bachelor of: Any stand-alone major": why so many, in the calendar's words.
+    const solo = (combos?.get(p.pid) ?? []).find((o) => o.group);
+    if (solo) out.solo = solo.text;
+    // What the table says in words rather than programs ("Students who have completed a Diploma in HRM…", "Any plan
+    // similar to one appearing on the student's Laurier academic record transcript", "Honours Arts Co-op"), for its
+    // panel. Not names of programs that have gone (marked * or not in the calendar any more): no one can pick those.
+    const said = (combos?.get(p.pid) ?? [])
+      .filter((o) => !o.to.length && !/\*/.test(o.text) && !/\b(?:majors?|minors?|options?|specializations?|diplomas?|certificates?)$/i.test(o.text.trim()))
+      .map((o) => o.text.replace(/,?\s*including:?$/i, '').trim());
+    if (said.length) out.cn = [...new Set(said)];
     return out;
   });
   // Co-op sequences end up on the majors they're for; the degree charts they came from aren't needed after.

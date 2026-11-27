@@ -1028,13 +1028,13 @@ export function optimize(plans, planned, { courses = {}, equiv, faculty = {}, ct
  * Programs still within reach: each one's courses still needed, given what's planned. programs: the data
  * file's list; chosen: slugs already picked; cant: slug → Set of slugs it can't go with.
  */
-export function directions(programs, planned, { chosen = [], cant = new Map(), courses = {}, types = null } = {}) {
+export function directions(programs, planned, { chosen = [], cant = new Map(), clash = null, courses = {}, types = null } = {}) {
   const out = [];
   for (const p of programs) {
     if (chosen.includes(p.s) || (types && !types.includes(p.t))) continue;
     const r = evaluate(p, planned, { courses });
     if (!r.need) continue;
-    const blocked = chosen.filter((c) => cant.get(p.s)?.has(c) || cant.get(c)?.has(p.s));
+    const blocked = chosen.filter((c) => (clash ? clash(p.s, c) : cant.get(p.s)?.has(c) || cant.get(c)?.has(p.s)));
     out.push({ p, need: r.need, have: r.have, left: r.need - r.have, unknown: r.unknown, blocked });
   }
   return out.sort((a, b) => a.blocked.length - b.blocked.length || a.left - b.left || b.have - a.have || a.p.n.localeCompare(b.p.n));
@@ -1180,8 +1180,164 @@ export function takenWith(p, programs) {
   return plans.length ? { text: plans.length === 1 ? 'For students in' : 'For students in one of', plans } : null;
 }
 
+/**
+ * Graduate programs (grad.json's list) for what's typed into the plan box: "master", "phd", "doctor", "mmath cs",
+ * "ma economics", "graduate diploma". Every word typed starts one of the program's words (its name, degree, subject,
+ * field, unit, faculty, and what its kind is called: master's, masters, doctoral, doctorate, graduate, grad), best
+ * first: the subject or field first, then master's, PhDs, diplomas. grad: whether what's typed asks for graduate
+ * programs at all ("master", "phd", an MMath), so they can come before undergraduate plans.
+ */
+const GRAD_KIND_WORDS = {
+  "Master's": ['master', 'masters', 'graduate', 'grad', 'postgraduate'],
+  PhD: ['phd', 'doctor', 'doctoral', 'doctorate', 'graduate', 'grad', 'postgraduate'],
+  'Graduate Diploma': ['diploma', 'graduate', 'grad', 'gdip', 'postgraduate'],
+};
+const gradIndex = new WeakMap();
+const gradTokens = (text) => planTokens(String(text ?? '').replace(/[’']/g, ''));
+function gradWords(g) {
+  if (!gradIndex.has(g)) {
+    // Like a plan's: the subjects most of its named courses are in ("cs" finds the MMath in Computer Science).
+    const count = new Map();
+    let n = 0;
+    for (const r of g.req ?? []) {
+      for (const c of r.c ?? []) {
+        const sj = /^[A-Z]+/.exec(c)?.[0];
+        if (!sj) continue;
+        count.set(sj, (count.get(sj) ?? 0) + 1);
+        n++;
+      }
+    }
+    gradIndex.set(g, {
+      subject: gradTokens(g.su || g.fi),
+      name: gradTokens(g.n),
+      other: [...new Set([...gradTokens(`${g.fi ?? ''} ${g.v ?? ''} ${g.u ?? ''} ${g.f ?? ''} ${g.d}`), ...(GRAD_KIND_WORDS[g.t] ?? []), ...(/accelerated/i.test(g.d) ? GRAD_KIND_WORDS["Master's"] : [])])],
+      codes: [...count].filter(([, k]) => k >= 2 && k / n >= 0.25).map(([sj]) => sj.toLowerCase()),
+    });
+  }
+  return gradIndex.get(g);
+}
+const GRAD_ASK = ['master', 'masters', 'phd', 'doctor', 'doctoral', 'doctorate', 'graduate', 'postgraduate', 'gdip', 'accelerated', 'grad'];
+export function gradHits(list, text) {
+  const words = gradTokens(text).filter((w) => !['program', 'programs', 'degree', 's'].includes(w));
+  if (!words.length || !list?.length) return { hits: [], grad: false };
+  // Asking for graduate programs: one of the words for them (or the start of one: "mast", "doc"), or a graduate
+  // degree's letters ("mmath", "masc"; "ma" only with more words, since it starts "math" too).
+  const degrees = new Set(list.map((g) => g.d.toLowerCase()));
+  const grad = words.some((w) => GRAD_ASK.some((a) => a === w || (w.length >= 3 && a.startsWith(w))) || (degrees.has(w) && (w.length >= 3 || words.length > 1)));
+  const KIND = ["Master's", 'PhD', 'Graduate Diploma'];
+  const hits = list
+    .map((g) => {
+      const x = gradWords(g);
+      let score = 0;
+      for (const w of words) {
+        const sub = wordMatch(w, x.subject).s;
+        const oth = wordMatch(w, x.other).s;
+        const best = Math.max(sub ? sub + 1 : 0, wordMatch(w, x.name).s, oth ? oth - 0.5 : 0, x.codes.includes(w) ? 3.5 : 0);
+        if (best <= 0) return null;
+        score += best;
+      }
+      return { g, score: score + (words.includes(g.d.toLowerCase()) ? 1 : 0) };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score || KIND.indexOf(a.g.t) - KIND.indexOf(b.g.t) || /ccelerated/.test(a.g.d) - /ccelerated/.test(b.g.d) || a.g.n.localeCompare(b.g.n))
+    .map((x) => x.g);
+  return { hits, grad };
+}
+
+/**
+ * The undergraduate plans that lead to a graduate program, from where Pathways starts: majors (then minors and
+ * specializations) in its field, or named for its subject ("Economics" for an MA in Economics; "Statistics" for an
+ * MMath in Statistics - Biostatistics). Its own field's honours majors first.
+ */
+export function gradLeads(g, programs) {
+  const stem = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const keys = new Set([stem(g.fi), stem(g.su)].filter(Boolean));
+  const hit = (p) => keys.has(stem(fieldOf(p))) || keys.has(stem(planParts(p).name));
+  const order = ['Major', 'Specialization', 'Minor'];
+  const rank = (p) => order.indexOf(p.t) * 10 + (/Joint Honours/.test(p.n) ? 1 : /General/.test(p.n) ? 2 : 0);
+  return programs.filter((p) => order.includes(p.t) && hit(p)).sort((a, b) => rank(a) - rank(b) || a.n.localeCompare(b.n));
+}
+
 /** Plans open only to some majors that are open to this one: its specializations (the only plans that list majors). */
 export const openTo = (major, programs) => programs.filter((q) => q.s !== major.s && q.open?.includes(major.s));
+
+/**
+ * What keeps two majors apart beyond the calendar's table (which data.json's cant has): two versions of one major
+ * (Economics' BA Honours and its Four-Year General; Computer Science's BCS and BMath; English's Literature and its
+ * Rhetoric), and two of the calendar's general rules: in a BA a general major with any other ("When pursuing a
+ * Bachelor of Arts, students may combine two honours major academic plans only"), and "A stand-alone Bachelor of
+ * Computer Science (BCS) academic plan with any Bachelor of Mathematics (BMath) academic plan (including Joint
+ * Honours academic plans)". → why, in a few words, or ''. Majors from two faculties can still pair, as joint honours
+ * plans or a concurrent degree, so a different degree alone isn't a reason.
+ */
+export function majorsClash(a, b, ctx = {}) {
+  if (!a || !b || a.s === b.s || a.t !== 'Major' || b.t !== 'Major') return '';
+  if (fieldOf(a) === fieldOf(b)) return `two versions of ${fieldOf(a)}`;
+  const pa = planParts(a);
+  const pb = planParts(b);
+  const ba = (x) => x.of === 'Bachelor of Arts';
+  if (ba(pa) && ba(pb) && (/General/.test(pa.kind) || /General/.test(pb.kind))) return 'a BA combines two honours majors only, not a general one';
+  const bcs = (x) => x.of === 'Bachelor of Computer Science' && !/Joint/.test(x.kind);
+  const bmath = (p, x) => x.of === 'Bachelor of Mathematics' || (!x.of && /Joint Honours/.test(p.n) && /Mathematics/.test(p.f ?? ''));
+  if ((bcs(pa) && bmath(b, pb)) || (bcs(pb) && bmath(a, pa))) return 'a stand-alone BCS doesn’t combine with any BMath plan';
+  // "A stand-alone BMath Joint Honours academic plan with any non-Mathematics Joint Honours academic plan."
+  const jh = (p) => /Joint Honours/.test(p.n);
+  const mathJH = (p, x) => jh(p) && bmath(p, x);
+  const otherJH = (p) => jh(p) && !/Mathematics/.test(p.f ?? '');
+  if ((mathJH(a, pa) && otherJH(b)) || (mathJH(b, pb) && otherJH(a))) return 'a BMath joint honours plan doesn’t combine with another faculty’s joint honours plan';
+  // "Data Science (BMath or BCS) with any other Faculty of Mathematics Honours or Joint Honours academic plan, except
+  // that the BCS (Data Science) can make up the BCS component of the Business Administration and Computer Science
+  // double degree program."
+  const ds = (p) => fieldOf(p) === 'Data Science';
+  const mathHonours = (p, x) => /Mathematics/.test(p.f ?? '') && /Honours/.test(x.kind || p.n);
+  for (const [p, x, q, y] of [
+    [a, pa, b, pb],
+    [b, pb, a, pa],
+  ]) {
+    if (ds(p) && mathHonours(q, y) && !(x.of === 'Bachelor of Computer Science' && /Business Administration and Computer Science/.test(q.n))) return 'Data Science doesn’t combine with another Faculty of Mathematics honours plan';
+  }
+  // "A stand-alone BCS Honours co-operative academic plan or BMath Honours co-operative academic plan with any
+  // stand-alone regular Honours academic plan (including Joint Honours academic plans)": with work terms in the grid,
+  // not with an honours plan that has no co-op.
+  if (ctx.coop) {
+    const coopMath = (x) => (x.of === 'Bachelor of Computer Science' || x.of === 'Bachelor of Mathematics') && /Honours/.test(x.kind) && !/Joint/.test(x.kind);
+    const regularOnly = (p, x) => p.re && !p.co && /Honours/.test(x.kind || p.n);
+    if ((coopMath(pa) && regularOnly(b, pb)) || (coopMath(pb) && regularOnly(a, pa))) return 'in co-op, a BCS or BMath honours plan doesn’t combine with an honours plan that has no co-op';
+  }
+  return '';
+}
+
+const OTHER_KINDS = ['Minor', 'Option', 'Diploma', 'Certificate'];
+const subjectStem = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+/** The subject a plan is in: a major's or minor's field, an option's name ("Software Engineering Option": software engineering). */
+const subjectOf = (p) => subjectStem(p.t === 'Option' || /^Options\b/.test(p.fi ?? '') ? planParts(p).name : p.fi || planParts(p).name);
+
+/**
+ * The calendar's general rules on combining credentials (above the table on its Invalid Credential Combinations
+ * page; data.json's cant has the table): why two plans can't be taken together, or ''. Two majors as in
+ * majorsClash; "two credentials with significant overlapping content": a minor, option, diploma or certificate in the
+ * same subject as a major, a minor and a diploma in the same subject, two diplomas in the same language; a BAS
+ * student and a Faculty of Engineering option that doesn't say it's for them; a BMSc student and a Faculty of Science
+ * minor or option. ctx.coop: the grid has work terms.
+ */
+export function planClash(a, b, ctx = {}) {
+  if (!a || !b || a.s === b.s) return '';
+  const two = majorsClash(a, b, ctx);
+  if (two) return two;
+  for (const [x, y] of [
+    [a, b],
+    [b, a],
+  ]) {
+    const px = planParts(x);
+    if (x.t === 'Major' && OTHER_KINDS.includes(y.t) && [subjectStem(fieldOf(x)), subjectStem(px.name)].includes(subjectOf(y))) return `${y.t === 'Option' ? 'an option' : `a ${y.t.toLowerCase()}`} in the same subject as a major`;
+    if (x.t === 'Minor' && y.t === 'Diploma' && subjectOf(x) === subjectOf(y)) return 'a minor and a diploma in the same subject';
+    if (x.t === 'Major' && px.of === 'Bachelor of Architectural Studies' && y.t === 'Option' && /Engineering/.test(y.f ?? '') && !(y.deg ?? []).includes('Bachelor of Architectural Studies')) return 'a BAS student takes only the Faculty of Engineering options that allow it';
+    if (x.t === 'Major' && px.of === 'Bachelor of Medical Sciences' && (y.t === 'Minor' || y.t === 'Option') && /\bScience\b/.test(y.f ?? '')) return 'a BMSc student takes no Faculty of Science minor or option';
+  }
+  const language = (p) => (p.t === 'Diploma' ? /^(.+?) Language(?: (?:I{1,3}|[1-3]))?$/.exec(planParts(p).name)?.[1] : null);
+  if (language(a) && language(a) === language(b)) return 'two diplomas in the same language';
+  return '';
+}
 
 /**
  * A major's degrees the way an option's "available to" list names them: "Bachelor of Applied Science", and for a
