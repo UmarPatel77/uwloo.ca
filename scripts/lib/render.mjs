@@ -36,7 +36,7 @@ ${head}
 <header class="bar">
   <a class="mark" href="/">uwloo</a>
   <a class="nav-plan nav-path" href="/pathways/"${path === '/pathways/' ? ' aria-current="page"' : ''}>Pathways</a>
-  <a class="nav-plan" href="/calendar/"${path === '/calendar/' ? ' aria-current="page"' : ''}>Timetable<span class="nav-count" aria-hidden="true"></span></a>
+  <a class="nav-plan" href="/timetable/"${path === '/timetable/' ? ' aria-current="page"' : ''}>Timetable<span class="nav-count" aria-hidden="true"></span></a>
   <form class="jump" action="/" role="search">
     <label class="vh" for="q">Go to a course code</label>
     <span aria-hidden="true">uwloo.ca/</span><input id="q" name="q" placeholder="cs135" autocomplete="off" autocapitalize="none" spellcheck="false">
@@ -175,7 +175,7 @@ export function planButton(code, plan) {
   if (!has.length) return '';
   const t = has.at(-1);
   const terms = plan.map((p) => ({ term: p.t, name: p.n, from: p.f, has: Boolean(p.h) }));
-  return `<div class="plan-add" data-code="${esc(code)}" data-name="${esc(fmtCode(code))}" data-plan="${esc(JSON.stringify(terms))}"><span class="plan-ctl"><a class="plan-btn" href="/calendar/?t=${esc(t.t)}&amp;c=${esc(code)}">Plan a ${esc(t.n)} timetable with ${esc(fmtCode(code))}</a></span><span class="t plan-note" role="status"></span></div>`;
+  return `<div class="plan-add" data-code="${esc(code)}" data-name="${esc(fmtCode(code))}" data-plan="${esc(JSON.stringify(terms))}"><span class="plan-ctl"><a class="plan-btn" href="/timetable/?t=${esc(t.t)}&amp;c=${esc(code)}">Plan a ${esc(t.n)} timetable with ${esc(fmtCode(code))}</a></span><span class="t plan-note" role="status"></span></div>`;
 }
 
 /**
@@ -543,7 +543,7 @@ export function homePage({ current, catalogs, gradCatalogs, groups, courseCount,
 </form>
 <p class="lede">Prerequisites, what a course leads to, and when it actually runs, for ${courseCount.toLocaleString('en-CA')} Waterloo undergraduate and graduate courses.</p>
 <ol id="results" class="results" role="listbox" aria-label="Matching courses"></ol>
-${planner ? `<p class="plan-link home-plan"><a href="/calendar/">Plan your ${esc(planner)} timetable</a> <span class="t">Add your courses; see every schedule that fits, best first.</span></p>` : ''}
+${planner ? `<p class="plan-link home-plan"><a href="/timetable/">Plan your ${esc(planner)} timetable</a> <span class="t">Add your courses; see every schedule that fits, best first.</span></p>` : ''}
 <p class="plan-link home-plan"><a href="/search/">Search courses by topic</a> <span class="t">“dynamic programming”, “latin”, “fourier series”: what courses are about, from their descriptions, course websites and r/uwaterloo.</span></p>
 ${programCount ? `<p class="plan-link home-plan"><a href="/pathways/">Map out your degree</a> <span class="t">Your major, minors and specializations, term by term: prerequisites, course loads, and what’s still open.</span></p>
 <p class="plan-link home-plan"><a href="/programs/">Browse all ${programCount} programs</a> <span class="t">Majors, minors, options and specializations, with their courses and what can’t be combined.</span></p>` : ''}
